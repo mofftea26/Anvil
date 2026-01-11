@@ -1,0 +1,55 @@
+{
+  "app": {
+    "name": "Anvil"
+  },
+  "auth": {
+    "title": "Sign in",
+    "subtitle": "Access your coaching dashboard and training tools.",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "signIn": "Sign in",
+    "signUp": "Create account",
+    "signOut": "Sign out",
+    "magicLink": "Magic link",
+    "sendLink": "Send link",
+    "forgotPassword": "Forgot password?",
+    "resetPassword": "Reset password",
+    "newPassword": "New password",
+    "saveNewPassword": "Save new password",
+    "haveAccount": "Already have an account?",
+    "noAccount": "Don’t have an account?",
+    "goToSignUp": "Create one",
+    "goToSignIn": "Sign in",
+    "magicHint": "We’ll email you a secure link to sign in.",
+    "resetHint": "We’ll email you a link to reset your password.",
+    "checkEmailTitle": "Check your email",
+    "checkEmailSubtitle": "If the address exists, you’ll receive instructions shortly.",
+    "errors": {
+      "invalidEmail": "Please enter a valid email address.",
+      "passwordMin": "Password must be at least 8 characters.",
+      "passwordMismatch": "Passwords do not match.",
+      "generic": "Something went wrong. Please try again.",
+      "missingTokens": "We couldn’t validate the link. Please try again."
+    }
+  },
+  "common": {
+    "continue": "Continue",
+    "loading": "Loading…",
+    "back": "Back"
+  },
+  "trainer": {
+    "homeTitle": "Trainer Dashboard",
+    "homeSubtitle": "Manage clients, invites, and programs."
+  },
+  "client": {
+    "homeTitle": "Client Dashboard",
+    "homeSubtitle": "View your plan, track progress, and stay consistent."
+  },
+  "state": {
+    "initializing": "Initializing…",
+    "authError": "We couldn’t complete authentication."
+  }
+}

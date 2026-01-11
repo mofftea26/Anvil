@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "fitflow-coach",
-    "slug": "fitflow-coach",
+    "name": "anvil",
+    "slug": "anvil",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "fitflowcoach",
+    "scheme": "anvil",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -43,6 +43,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "907c1d6a-313a-4705-a864-80674339af6d"
+      }
+    },
+    "owner": "dancho26"
   }
 }

@@ -1,0 +1,55 @@
+{
+  "app": {
+    "name": "Anvil"
+  },
+  "auth": {
+    "title": "Connexion",
+    "subtitle": "Accédez à votre tableau de bord et à vos outils d’entraînement.",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "signIn": "Se connecter",
+    "signUp": "Créer un compte",
+    "signOut": "Se déconnecter",
+    "magicLink": "Lien magique",
+    "sendLink": "Envoyer le lien",
+    "forgotPassword": "Mot de passe oublié ?",
+    "resetPassword": "Réinitialiser le mot de passe",
+    "newPassword": "Nouveau mot de passe",
+    "saveNewPassword": "Enregistrer le nouveau mot de passe",
+    "haveAccount": "Vous avez déjà un compte ?",
+    "noAccount": "Vous n’avez pas de compte ?",
+    "goToSignUp": "Créer un compte",
+    "goToSignIn": "Se connecter",
+    "magicHint": "Nous vous envoyons un lien sécurisé par e-mail pour vous connecter.",
+    "resetHint": "Nous vous envoyons un lien par e-mail pour réinitialiser votre mot de passe.",
+    "checkEmailTitle": "Vérifiez vos e-mails",
+    "checkEmailSubtitle": "Si l’adresse existe, vous recevrez les instructions sous peu.",
+    "errors": {
+      "invalidEmail": "Veuillez saisir une adresse e-mail valide.",
+      "passwordMin": "Le mot de passe doit contenir au moins 8 caractères.",
+      "passwordMismatch": "Les mots de passe ne correspondent pas.",
+      "generic": "Une erreur est survenue. Veuillez réessayer.",
+      "missingTokens": "Impossible de valider le lien. Veuillez réessayer."
+    }
+  },
+  "common": {
+    "continue": "Continuer",
+    "loading": "Chargement…",
+    "back": "Retour"
+  },
+  "trainer": {
+    "homeTitle": "Tableau de bord coach",
+    "homeSubtitle": "Gérez vos clients, invitations et programmes."
+  },
+  "client": {
+    "homeTitle": "Tableau de bord client",
+    "homeSubtitle": "Consultez votre plan, suivez vos progrès et restez régulier."
+  },
+  "state": {
+    "initializing": "Initialisation…",
+    "authError": "Impossible de finaliser l’authentification."
+  }
+}
