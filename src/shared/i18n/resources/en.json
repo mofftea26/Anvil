@@ -35,21 +35,111 @@
       "missingTokens": "We couldn’t validate the link. Please try again."
     }
   },
-  "common": {
-    "continue": "Continue",
-    "loading": "Loading…",
-    "back": "Back"
-  },
-  "trainer": {
-    "homeTitle": "Trainer Dashboard",
-    "homeSubtitle": "Manage clients, invites, and programs."
+  "tabs": {
+    "dashboard": "Dashboard",
+    "profile": "Profile"
   },
   "client": {
-    "homeTitle": "Client Dashboard",
-    "homeSubtitle": "View your plan, track progress, and stay consistent."
+    "dashboardTitle": "Dashboard",
+    "dashboardSubtitle": "Your plan and progress will live here.",
+    "profileTitle": "Profile",
+    "profileCardRole": "Role",
+    "profileSignOut": "Sign out"
+  },
+  "trainer": {
+    "dashboardTitle": "Dashboard",
+    "dashboardSubtitle": "Clients, programs, and invites will live here.",
+    "profileTitle": "Profile",
+    "profileCardRole": "Role",
+    "profileSignOut": "Sign out"
+  },
+  "common": {
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "loading": "Loading…",
+    "back": "Back",
+    "continue": "Continue",
+    "done": "Done",
+    "cancel": "Cancel",
+    "close": "Close",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "refresh": "Refresh",
+    "next": "Next",
+    "previous": "Previous",
+    "selectPlaceholder": "Select…",
+    "optional": "Optional"
   },
   "state": {
     "initializing": "Initializing…",
     "authError": "We couldn’t complete authentication."
+  },
+  "onboarding": {
+    "profileTitle": "Set up your profile",
+    "profileSubtitle": "Add your name to personalize your experience.",
+    "save": "Save",
+    "roleTitle": "Choose your role",
+    "roleSubtitle": "This helps us set up the right experience.",
+    "trainer": "Trainer",
+    "client": "Client",
+    "roleHintTrainer": "Manage clients, programs, and invites.",
+    "roleHintClient": "Follow your plan, track progress, and connect with a coach."
+  },
+  "profile": {
+    "sections": {
+      "account": "Account",
+      "basic": "Basic info",
+      "body": "Body metrics",
+      "preferences": "Preferences"
+    },
+    "fields": {
+      "nationality": "Nationality",
+      "gender": "Gender",
+      "birthDate": "Birth date",
+      "heightCm": "Height (cm)",
+      "weightKg": "Weight (kg)",
+      "unitSystem": "Unit system",
+      "activityLevel": "Activity level",
+      "target": "Target"
+    },
+    "placeholders": {
+      "date": "YYYY-MM-DD"
+    },
+    "gender": {
+      "male": "Male",
+      "female": "Female"
+    },
+    "unitSystem": {
+      "metric": "Metric (cm / kg)",
+      "imperial": "Imperial (ft / lb)"
+    },
+    "activityLevel": {
+      "sedentary": "Sedentary",
+      "sedentaryDesc": "Little to no activity (mostly sitting).",
+      "light": "Light",
+      "lightDesc": "1–3 sessions/week or frequent walking.",
+      "moderate": "Moderate",
+      "moderateDesc": "3–5 sessions/week with regular movement.",
+      "active": "Active",
+      "activeDesc": "6+ sessions/week or physically demanding work.",
+      "athlete": "Athlete",
+      "athleteDesc": "Very intense training, often double sessions."
+    },
+    "target": {
+      "fatLoss": "Fat loss",
+      "maintenance": "Maintenance",
+      "muscleGain": "Muscle gain",
+      "recomp": "Recomposition",
+      "performance": "Performance"
+    },
+    "actions": {
+      "saveChanges": "Save changes",
+      "signOut": "Sign out"
+    }
   }
 }

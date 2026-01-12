@@ -3,6 +3,7 @@ import { useEffect } from "react";
 
 import { useAppDispatch } from "../../../shared/hooks/useAppDispatch";
 import { supabase } from "../../../shared/supabase/client";
+import { profileActions } from "../../profile/store/profileSlice";
 import { getUserRole } from "../api/getUserRole";
 import { authActions } from "../store/authSlice";
 
@@ -70,6 +71,7 @@ export function useAuthBootstrap() {
         if (!session?.user?.id || !session?.access_token) {
           if (!isMounted) return;
           dispatch(authActions.setUnauthenticated());
+          dispatch(profileActions.resetProfile());
           return;
         }
 
@@ -110,6 +112,7 @@ export function useAuthBootstrap() {
 
           if (!session?.user?.id || !session?.access_token) {
             dispatch(authActions.setUnauthenticated());
+            dispatch(profileActions.resetProfile());
             return;
           }
 

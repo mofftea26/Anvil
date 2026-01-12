@@ -1,4 +1,5 @@
 // src/shared/theme/tamagui.config.ts
+import { createAnimations } from "@tamagui/animations-react-native";
 import { tokens } from "@tamagui/config/v3";
 import { createInterFont } from "@tamagui/font-inter";
 import { createTamagui } from "tamagui";
@@ -19,12 +20,39 @@ const bodyFont = createInterFont({
   },
 });
 
+/**
+ * ✅ Animations must exist in config for Sheet.animation / Overlay.animation to be typed.
+ * We define the tokens used by Tamagui demos: "medium" and "lazy" (plus "quick"/"bouncy").
+ */
+const animations = createAnimations({
+  quick: {
+    type: "timing",
+    duration: 150,
+  },
+  medium: {
+    type: "timing",
+    duration: 250,
+  },
+  lazy: {
+    type: "timing",
+    duration: 400,
+  },
+  bouncy: {
+    type: "spring",
+    damping: 18,
+    mass: 1,
+    stiffness: 250,
+  },
+});
+
 export const tamaguiConfig = createTamagui({
   defaultTheme: "dark",
   shouldAddPrefersColorThemes: false, // IMPORTANT: no light theme ever
   themeClassNameOnRoot: true,
 
   tokens,
+  animations,
+
   fonts: {
     heading: headingFont,
     body: bodyFont,
@@ -36,7 +64,7 @@ export const tamaguiConfig = createTamagui({
       background: "#0B0D10",
       color: "#E7EAF0",
 
-      // surfaces (use these in cards/sheets later)
+      // surfaces
       surface: "#11151B",
       surface2: "#161C24",
 

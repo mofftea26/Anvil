@@ -35,7 +35,6 @@ export default function ForgotPasswordScreen() {
       <YStack
         flex={1}
         backgroundColor="$background"
-        padding="$6"
         justifyContent="center"
         gap="$3"
       >

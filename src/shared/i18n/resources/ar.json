@@ -1,7 +1,5 @@
 {
-  "app": {
-    "name": "Anvil"
-  },
+  "app": { "name": "Anvil" },
   "auth": {
     "title": "تسجيل الدخول",
     "subtitle": "ادخل إلى لوحة التحكم وأدوات التدريب الخاصة بك.",
@@ -18,39 +16,117 @@
     "forgotPassword": "نسيت كلمة المرور؟",
     "resetPassword": "إعادة تعيين كلمة المرور",
     "newPassword": "كلمة مرور جديدة",
-    "saveNewPassword": "حفظ كلمة المرور",
+    "saveNewPassword": "حفظ كلمة المرور الجديدة",
     "haveAccount": "لديك حساب بالفعل؟",
     "noAccount": "ليس لديك حساب؟",
-    "goToSignUp": "أنشئ حسابًا",
+    "goToSignUp": "أنشئ حساباً",
     "goToSignIn": "سجّل الدخول",
-    "magicHint": "سنرسل لك رابطًا آمنًا لتسجيل الدخول.",
-    "resetHint": "سنرسل لك رابطًا لإعادة تعيين كلمة المرور.",
+    "magicHint": "سنرسل لك رابطاً آمناً لتسجيل الدخول.",
+    "resetHint": "سنرسل لك رابطاً لإعادة تعيين كلمة المرور.",
     "checkEmailTitle": "تحقق من بريدك الإلكتروني",
-    "checkEmailSubtitle": "إذا كان البريد موجودًا، ستصلك التعليمات قريبًا.",
+    "checkEmailSubtitle": "إذا كان العنوان موجوداً، ستصلك التعليمات قريباً.",
     "errors": {
-      "invalidEmail": "يرجى إدخال بريد إلكتروني صالح.",
-      "passwordMin": "يجب أن تكون كلمة المرور 8 أحرف على الأقل.",
+      "invalidEmail": "يرجى إدخال بريد إلكتروني صحيح.",
+      "passwordMin": "كلمة المرور يجب أن تكون 8 أحرف على الأقل.",
       "passwordMismatch": "كلمتا المرور غير متطابقتين.",
-      "generic": "حدث خطأ. حاول مرة أخرى.",
-      "missingTokens": "تعذر التحقق من الرابط. حاول مرة أخرى."
+      "generic": "حدث خطأ ما. حاول مرة أخرى.",
+      "missingTokens": "لم نتمكن من التحقق من الرابط. حاول مرة أخرى."
     }
   },
-  "common": {
-    "continue": "متابعة",
-    "loading": "جارٍ التحميل…",
-    "back": "رجوع"
+  "tabs": { "dashboard": "لوحة التحكم", "profile": "الملف الشخصي" },
+  "client": {
+    "dashboardTitle": "لوحة التحكم",
+    "dashboardSubtitle": "ستظهر خطتك وتقدمك هنا.",
+    "profileTitle": "الملف الشخصي",
+    "profileCardRole": "الدور",
+    "profileSignOut": "تسجيل الخروج"
   },
   "trainer": {
-    "homeTitle": "لوحة المدرب",
-    "homeSubtitle": "إدارة العملاء والدعوات والبرامج."
+    "dashboardTitle": "لوحة التحكم",
+    "dashboardSubtitle": "سيظهر العملاء والبرامج والدعوات هنا.",
+    "profileTitle": "الملف الشخصي",
+    "profileCardRole": "الدور",
+    "profileSignOut": "تسجيل الخروج"
   },
-  "client": {
-    "homeTitle": "لوحة العميل",
-    "homeSubtitle": "عرض الخطة، تتبّع التقدم، والالتزام بالروتين."
+  "common": {
+    "showPassword": "إظهار كلمة المرور",
+    "hidePassword": "إخفاء كلمة المرور",
+    "loading": "جارٍ التحميل…",
+    "back": "رجوع",
+    "continue": "متابعة",
+    "done": "تم",
+    "cancel": "إلغاء",
+    "close": "إغلاق",
+    "save": "حفظ",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "view": "عرض",
+    "search": "بحث",
+    "filter": "تصفية",
+    "sort": "ترتيب",
+    "refresh": "تحديث",
+    "next": "التالي",
+    "previous": "السابق",
+    "selectPlaceholder": "اختر…",
+    "optional": "اختياري"
   },
-
   "state": {
     "initializing": "جارٍ التهيئة…",
-    "authError": "تعذر إكمال تسجيل الدخول."
+    "authError": "لم نتمكن من إكمال المصادقة."
+  },
+  "onboarding": {
+    "profileTitle": "إعداد ملفك",
+    "profileSubtitle": "أضف اسمك لتخصيص تجربتك.",
+    "save": "حفظ",
+    "roleTitle": "اختر دورك",
+    "roleSubtitle": "يساعدنا ذلك على إعداد التجربة المناسبة.",
+    "trainer": "مدرب",
+    "client": "عميل",
+    "roleHintTrainer": "إدارة العملاء والبرامج والدعوات.",
+    "roleHintClient": "اتبع خطتك وتتبّع تقدمك وتواصل مع مدرب."
+  },
+  "profile": {
+    "sections": {
+      "account": "الحساب",
+      "basic": "المعلومات",
+      "body": "القياسات",
+      "preferences": "التفضيلات"
+    },
+    "fields": {
+      "nationality": "الجنسية",
+      "gender": "الجنس",
+      "birthDate": "تاريخ الميلاد",
+      "heightCm": "الطول (سم)",
+      "weightKg": "الوزن (كغ)",
+      "unitSystem": "نظام الوحدات",
+      "activityLevel": "مستوى النشاط",
+      "target": "الهدف"
+    },
+    "placeholders": { "date": "YYYY-MM-DD" },
+    "gender": { "male": "ذكر", "female": "أنثى" },
+    "unitSystem": {
+      "metric": "متري (سم / كغ)",
+      "imperial": "إمبيريال (قدم / رطل)"
+    },
+    "activityLevel": {
+      "sedentary": "قليل الحركة",
+      "sedentaryDesc": "نشاط محدود أو شبه معدوم (غالباً جلوس).",
+      "light": "خفيف",
+      "lightDesc": "1–3 تمارين أسبوعياً أو مشي كثير.",
+      "moderate": "متوسط",
+      "moderateDesc": "3–5 تمارين أسبوعياً مع حركة منتظمة.",
+      "active": "نشيط",
+      "activeDesc": "6+ تمارين أسبوعياً أو عمل بدني.",
+      "athlete": "رياضي",
+      "athleteDesc": "تمارين مكثفة جداً وغالباً حصتان يومياً."
+    },
+    "target": {
+      "fatLoss": "خسارة دهون",
+      "maintenance": "ثبات الوزن",
+      "muscleGain": "زيادة عضل",
+      "recomp": "إعادة تركيب",
+      "performance": "أداء"
+    },
+    "actions": { "saveChanges": "حفظ التغييرات", "signOut": "تسجيل الخروج" }
   }
 }

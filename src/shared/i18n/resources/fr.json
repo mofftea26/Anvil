@@ -1,11 +1,9 @@
 {
-  "app": {
-    "name": "Anvil"
-  },
+  "app": { "name": "Anvil" },
   "auth": {
-    "title": "Connexion",
-    "subtitle": "Accédez à votre tableau de bord et à vos outils d’entraînement.",
-    "email": "E-mail",
+    "title": "Se connecter",
+    "subtitle": "Accédez à votre tableau de bord et à vos outils de coaching.",
+    "email": "Email",
     "password": "Mot de passe",
     "confirmPassword": "Confirmer le mot de passe",
     "firstName": "Prénom",
@@ -21,35 +19,117 @@
     "saveNewPassword": "Enregistrer le nouveau mot de passe",
     "haveAccount": "Vous avez déjà un compte ?",
     "noAccount": "Vous n’avez pas de compte ?",
-    "goToSignUp": "Créer un compte",
+    "goToSignUp": "En créer un",
     "goToSignIn": "Se connecter",
-    "magicHint": "Nous vous envoyons un lien sécurisé par e-mail pour vous connecter.",
-    "resetHint": "Nous vous envoyons un lien par e-mail pour réinitialiser votre mot de passe.",
-    "checkEmailTitle": "Vérifiez vos e-mails",
-    "checkEmailSubtitle": "Si l’adresse existe, vous recevrez les instructions sous peu.",
+    "magicHint": "Nous vous enverrons un lien sécurisé pour vous connecter.",
+    "resetHint": "Nous vous enverrons un lien pour réinitialiser votre mot de passe.",
+    "checkEmailTitle": "Vérifiez votre email",
+    "checkEmailSubtitle": "Si l’adresse existe, vous recevrez des instructions sous peu.",
     "errors": {
-      "invalidEmail": "Veuillez saisir une adresse e-mail valide.",
+      "invalidEmail": "Veuillez saisir une adresse email valide.",
       "passwordMin": "Le mot de passe doit contenir au moins 8 caractères.",
       "passwordMismatch": "Les mots de passe ne correspondent pas.",
       "generic": "Une erreur est survenue. Veuillez réessayer.",
       "missingTokens": "Impossible de valider le lien. Veuillez réessayer."
     }
   },
-  "common": {
-    "continue": "Continuer",
-    "loading": "Chargement…",
-    "back": "Retour"
+  "tabs": { "dashboard": "Tableau de bord", "profile": "Profil" },
+  "client": {
+    "dashboardTitle": "Tableau de bord",
+    "dashboardSubtitle": "Votre plan et vos progrès apparaîtront ici.",
+    "profileTitle": "Profil",
+    "profileCardRole": "Rôle",
+    "profileSignOut": "Se déconnecter"
   },
   "trainer": {
-    "homeTitle": "Tableau de bord coach",
-    "homeSubtitle": "Gérez vos clients, invitations et programmes."
+    "dashboardTitle": "Tableau de bord",
+    "dashboardSubtitle": "Clients, programmes et invitations apparaîtront ici.",
+    "profileTitle": "Profil",
+    "profileCardRole": "Rôle",
+    "profileSignOut": "Se déconnecter"
   },
-  "client": {
-    "homeTitle": "Tableau de bord client",
-    "homeSubtitle": "Consultez votre plan, suivez vos progrès et restez régulier."
+  "common": {
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe",
+    "loading": "Chargement…",
+    "back": "Retour",
+    "continue": "Continuer",
+    "done": "Terminé",
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "view": "Voir",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "sort": "Trier",
+    "refresh": "Actualiser",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "selectPlaceholder": "Sélectionner…",
+    "optional": "Optionnel"
   },
   "state": {
     "initializing": "Initialisation…",
-    "authError": "Impossible de finaliser l’authentification."
+    "authError": "Nous n’avons pas pu finaliser l’authentification."
+  },
+  "onboarding": {
+    "profileTitle": "Configurer votre profil",
+    "profileSubtitle": "Ajoutez votre nom pour personnaliser votre expérience.",
+    "save": "Enregistrer",
+    "roleTitle": "Choisissez votre rôle",
+    "roleSubtitle": "Cela nous aide à configurer la bonne expérience.",
+    "trainer": "Coach",
+    "client": "Client",
+    "roleHintTrainer": "Gérez clients, programmes et invitations.",
+    "roleHintClient": "Suivez votre plan, vos progrès et connectez-vous à un coach."
+  },
+  "profile": {
+    "sections": {
+      "account": "Compte",
+      "basic": "Informations",
+      "body": "Mesures",
+      "preferences": "Préférences"
+    },
+    "fields": {
+      "nationality": "Nationalité",
+      "gender": "Genre",
+      "birthDate": "Date de naissance",
+      "heightCm": "Taille (cm)",
+      "weightKg": "Poids (kg)",
+      "unitSystem": "Système d’unités",
+      "activityLevel": "Niveau d’activité",
+      "target": "Objectif"
+    },
+    "placeholders": { "date": "AAAA-MM-JJ" },
+    "gender": { "male": "Homme", "female": "Femme" },
+    "unitSystem": {
+      "metric": "Métrique (cm / kg)",
+      "imperial": "Impérial (ft / lb)"
+    },
+    "activityLevel": {
+      "sedentary": "Sédentaire",
+      "sedentaryDesc": "Peu ou pas d’activité (principalement assis).",
+      "light": "Léger",
+      "lightDesc": "1–3 séances/semaine ou beaucoup de marche.",
+      "moderate": "Modéré",
+      "moderateDesc": "3–5 séances/semaine avec activité régulière.",
+      "active": "Actif",
+      "activeDesc": "6+ séances/semaine ou travail physique.",
+      "athlete": "Athlète",
+      "athleteDesc": "Entraînement très intense, souvent deux séances/jour."
+    },
+    "target": {
+      "fatLoss": "Perte de graisse",
+      "maintenance": "Maintien",
+      "muscleGain": "Prise de muscle",
+      "recomp": "Recomposition",
+      "performance": "Performance"
+    },
+    "actions": {
+      "saveChanges": "Enregistrer les modifications",
+      "signOut": "Se déconnecter"
+    }
   }
 }
