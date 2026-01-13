@@ -43,7 +43,8 @@
   },
   "tabs": {
     "dashboard": "Dashboard",
-    "profile": "Profile"
+    "profile": "Profile",
+    "clients": "Clients"
   },
   "client": {
     "dashboardTitle": "Dashboard",
@@ -90,7 +91,60 @@
     "change": "Change",
     "chooseFile": "Choose file",
     "pickColor": "Pick a color",
-    "orEnterHex": "Or enter HEX"
+    "orEnterHex": "Or enter HEX",
+    "share": "Share",
+    "copy": "Copy"
+  },
+  "linking": {
+    "clients": {
+      "title": "Clients",
+      "empty": "No clients yet.",
+      "viewClient": "View client",
+      "archive": "Archive",
+      "unarchive": "Unarchive",
+      "addClient": "Add client"
+    },
+    "addClient": {
+      "title": "Add client",
+      "inviteCode": "Code",
+      "requests": "Requests",
+      "createByEmail": "Email"
+    },
+    "invite": {
+      "generate": "Generate invite code",
+      "code": "Code",
+      "copied": "Copied to clipboard",
+      "shareMessage": "Use this invite code to link with my coaching account:"
+    },
+    "requests": {
+      "title": "Requests",
+      "empty": "No pending requests.",
+      "accept": "Accept",
+      "decline": "Decline",
+      "cancel": "Cancel"
+    },
+    "client": {
+      "linkTrainer": "Link trainer",
+      "redeemTitle": "Redeem invite code",
+      "requestTitle": "Request trainer by email",
+      "inviteCode": "Invite code",
+      "trainerEmail": "Trainer email",
+      "message": "Message (optional)",
+      "redeem": "Redeem",
+      "sendRequest": "Send request"
+    },
+    "coach": {
+      "title": "My coach",
+      "notLinked": "No coach linked yet.",
+      "linkNow": "Link now"
+    },
+    "errors": {
+      "invalidInviteCode": "Invalid invite code.",
+      "inviteExpired": "Invite has expired.",
+      "inviteNotRedeemable": "Invite is not redeemable.",
+      "onlyTrainers": "Only trainers can do that.",
+      "roleLocked": "Role cannot be changed once set."
+    }
   },
   "state": {
     "initializing": "Initializing…",

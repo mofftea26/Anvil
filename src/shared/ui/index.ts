@@ -12,6 +12,8 @@ export { ProgressBar } from "./components/ProgressBar";
 export { Chip } from "./components/Chip";
 export { ColorPickerField } from "./components/ColorPickerField";
 export { ImagePickerField } from "./components/ImagePickerField";
+export { IconButton } from "./components/IconButton";
+export type { IconButtonProps } from "./components/IconButton";
 export { VStack, HStack } from "./layout/Stack";
 export { KeyboardScreen } from "./layout/KeyboardScreen";
 export { ToastProvider } from "./toast/ToastProvider";

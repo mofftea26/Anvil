@@ -11,6 +11,14 @@ export type ApiError = {
 export const api = createApi({
   reducerPath: "api",
   baseQuery: fakeBaseQuery<ApiError>(),
-  tagTypes: ["User", "Profile", "Auth"],
+  tagTypes: [
+    "User",
+    "Profile",
+    "Auth",
+    "TrainerClients",
+    "TrainerInvites",
+    "TrainerRequests",
+    "Coach",
+  ],
   endpoints: () => ({}),
 });

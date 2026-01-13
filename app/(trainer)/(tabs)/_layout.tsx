@@ -46,6 +46,19 @@ export default function TrainerTabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="clients"
+        options={{
+          title: t("tabs.clients"),
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? "people" : "people-outline"}
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: t("tabs.profile"),

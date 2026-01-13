@@ -39,7 +39,7 @@
       "missingTokens": "لم نتمكن من التحقق من الرابط. حاول مرة أخرى."
     }
   },
-  "tabs": { "dashboard": "لوحة التحكم", "profile": "الملف الشخصي" },
+  "tabs": { "dashboard": "لوحة التحكم", "profile": "الملف الشخصي", "clients": "العملاء" },
   "client": {
     "dashboardTitle": "لوحة التحكم",
     "dashboardSubtitle": "ستظهر خطتك وتقدمك هنا.",
@@ -85,7 +85,60 @@
     "change": "تغيير",
     "chooseFile": "اختر ملفاً",
     "pickColor": "اختر لوناً",
-    "orEnterHex": "أو أدخل HEX"
+    "orEnterHex": "أو أدخل HEX",
+    "share": "مشاركة",
+    "copy": "نسخ"
+  },
+  "linking": {
+    "clients": {
+      "title": "العملاء",
+      "empty": "لا يوجد عملاء بعد.",
+      "viewClient": "عرض العميل",
+      "archive": "أرشفة",
+      "unarchive": "إلغاء الأرشفة",
+      "addClient": "إضافة عميل"
+    },
+    "addClient": {
+      "title": "إضافة عميل",
+      "inviteCode": "Code",
+      "requests": "الطلبات",
+      "createByEmail": "Email"
+    },
+    "invite": {
+      "generate": "إنشاء رمز دعوة",
+      "code": "الرمز",
+      "copied": "تم النسخ",
+      "shareMessage": "استخدم هذا الرمز للربط مع حسابي:"
+    },
+    "requests": {
+      "title": "الطلبات",
+      "empty": "لا توجد طلبات معلّقة.",
+      "accept": "قبول",
+      "decline": "رفض",
+      "cancel": "إلغاء"
+    },
+    "client": {
+      "linkTrainer": "ربط مدرب",
+      "redeemTitle": "استخدام رمز الدعوة",
+      "requestTitle": "طلب مدرب عبر البريد",
+      "inviteCode": "رمز الدعوة",
+      "trainerEmail": "بريد المدرب",
+      "message": "رسالة (اختياري)",
+      "redeem": "تأكيد",
+      "sendRequest": "إرسال الطلب"
+    },
+    "coach": {
+      "title": "مدربي",
+      "notLinked": "لا يوجد مدرب مرتبط بعد.",
+      "linkNow": "اربط الآن"
+    },
+    "errors": {
+      "invalidInviteCode": "رمز دعوة غير صالح.",
+      "inviteExpired": "انتهت صلاحية الرمز.",
+      "inviteNotRedeemable": "لا يمكن استخدام هذا الرمز.",
+      "onlyTrainers": "هذا الإجراء للمدربين فقط.",
+      "roleLocked": "لا يمكن تغيير الدور بعد اختياره."
+    }
   },
   "state": {
     "initializing": "جارٍ التهيئة…",

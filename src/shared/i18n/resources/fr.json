@@ -39,7 +39,7 @@
       "missingTokens": "Impossible de valider le lien. Veuillez réessayer."
     }
   },
-  "tabs": { "dashboard": "Tableau de bord", "profile": "Profil" },
+  "tabs": { "dashboard": "Tableau de bord", "profile": "Profil", "clients": "Clients" },
   "client": {
     "dashboardTitle": "Tableau de bord",
     "dashboardSubtitle": "Votre plan et vos progrès apparaîtront ici.",
@@ -85,7 +85,60 @@
     "change": "Modifier",
     "chooseFile": "Choisir un fichier",
     "pickColor": "Choisir une couleur",
-    "orEnterHex": "Ou saisir le HEX"
+    "orEnterHex": "Ou saisir le HEX",
+    "share": "Partager",
+    "copy": "Copier"
+  },
+  "linking": {
+    "clients": {
+      "title": "Clients",
+      "empty": "Aucun client pour le moment.",
+      "viewClient": "Voir le client",
+      "archive": "Archiver",
+      "unarchive": "Désarchiver",
+      "addClient": "Ajouter un client"
+    },
+    "addClient": {
+      "title": "Ajouter un client",
+      "inviteCode": "Code",
+      "requests": "Demandes",
+      "createByEmail": "Email"
+    },
+    "invite": {
+      "generate": "Générer un code",
+      "code": "Code",
+      "copied": "Copié",
+      "shareMessage": "Utilisez ce code pour vous lier à mon compte coach :"
+    },
+    "requests": {
+      "title": "Demandes",
+      "empty": "Aucune demande en attente.",
+      "accept": "Accepter",
+      "decline": "Refuser",
+      "cancel": "Annuler"
+    },
+    "client": {
+      "linkTrainer": "Lier un coach",
+      "redeemTitle": "Utiliser un code",
+      "requestTitle": "Demander un coach par email",
+      "inviteCode": "Code",
+      "trainerEmail": "Email du coach",
+      "message": "Message (optionnel)",
+      "redeem": "Valider",
+      "sendRequest": "Envoyer"
+    },
+    "coach": {
+      "title": "Mon coach",
+      "notLinked": "Aucun coach lié.",
+      "linkNow": "Lier maintenant"
+    },
+    "errors": {
+      "invalidInviteCode": "Code d’invitation invalide.",
+      "inviteExpired": "Le code a expiré.",
+      "inviteNotRedeemable": "Le code n’est pas utilisable.",
+      "onlyTrainers": "Seuls les coachs peuvent faire cela.",
+      "roleLocked": "Le rôle ne peut plus être changé."
+    }
   },
   "state": {
     "initializing": "Initialisation…",

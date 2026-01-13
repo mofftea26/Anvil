@@ -22,7 +22,7 @@ export function ImagePickerField({ label, value, onChange }: Props) {
     if (!perm.granted) return;
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images"] as ImagePicker.MediaType[],
       allowsEditing: true,
       quality: 0.9,
     });
