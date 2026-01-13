@@ -10,15 +10,13 @@ import {
 } from "@expo-google-fonts/inter";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { Provider as ReduxProvider } from "react-redux";
-import { TamaguiProvider } from "tamagui";
 
-import { KeyboardScreen } from "@/src/shared/components/KeyboardScreen";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { AuthBootstrap } from "../src/features/auth/components/AuthBootstrap";
+import { AppErrorBoundary } from "../src/shared/components/AppErrorBoundary";
 import { applyRtlIfNeeded } from "../src/shared/i18n/rtl";
-import { tamaguiConfig } from "../src/shared/theme/tamagui.config";
+import { darkTheme, ThemeProvider, ToastProvider } from "../src/shared/ui";
 import { store } from "../src/store/store";
 applyRtlIfNeeded(defaultLanguage);
 
@@ -33,23 +31,24 @@ export default function RootLayout() {
 
   return (
     <ReduxProvider store={store}>
-      <TamaguiProvider config={tamaguiConfig} defaultTheme="dark">
-        <AuthBootstrap />
-        <SafeAreaProvider>
-          <SafeAreaView
-            edges={["top"]}
-            style={{
-              flex: 1,
-              backgroundColor: "#0B0D10",
-            }}
-          >
-            <KeyboardScreen>
-              <Stack screenOptions={{ headerShown: false }} />
-            </KeyboardScreen>
-          </SafeAreaView>
-        </SafeAreaProvider>
-        <StatusBar style="light" />
-      </TamaguiProvider>
+      <ThemeProvider>
+        <ToastProvider>
+          <AuthBootstrap />
+          <SafeAreaProvider>
+            <SafeAreaView
+              edges={["top"]}
+              style={{
+                flex: 1,
+                backgroundColor: darkTheme.colors.background,
+              }}
+            >
+              <AppErrorBoundary>
+                <Stack screenOptions={{ headerShown: false }} />
+              </AppErrorBoundary>
+            </SafeAreaView>
+          </SafeAreaProvider>
+        </ToastProvider>
+      </ThemeProvider>
     </ReduxProvider>
   );
 }

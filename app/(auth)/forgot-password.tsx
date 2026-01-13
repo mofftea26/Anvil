@@ -1,15 +1,16 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocalSearchParams } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
-import { Button, Text, YStack } from "tamagui";
 import { z } from "zod";
 
 import { useAuthActions } from "../../src/features/auth/hooks/useAuthActions";
 import { AppInput } from "../../src/shared/components/AppInput";
 import { useAppTranslation } from "../../src/shared/i18n/useAppTranslation";
+import { appToast, Button, KeyboardScreen, Text, useTheme, VStack } from "../../src/shared/ui";
 
 export default function ForgotPasswordScreen() {
   const { t } = useAppTranslation();
+  const theme = useTheme();
   const params = useLocalSearchParams<{ mode?: string }>();
   const mode = params.mode;
 
@@ -27,56 +28,40 @@ export default function ForgotPasswordScreen() {
 
   const onSubmit = form.handleSubmit(async (values) => {
     await doForgotPassword(values.email.trim());
+    appToast.success(t("auth.toasts.resetLinkSent"));
   });
 
   // If we came here from magic link / signup submission, show a simple "check email" message.
   if (mode === "magic" || mode === "signup") {
     return (
-      <YStack
-        flex={1}
-        backgroundColor="$background"
-        justifyContent="center"
-        gap="$3"
-      >
-        <Text fontSize={26} fontWeight="700">
-          {t("auth.checkEmailTitle")}
-        </Text>
-        <Text opacity={0.75} lineHeight={22}>
-          {t("auth.checkEmailSubtitle")}
-        </Text>
+      <KeyboardScreen centerIfShort padding={theme.spacing.xl}>
+        <VStack style={{ gap: theme.spacing.md }}>
+          <Text weight="bold" style={{ fontSize: 26, lineHeight: 30 }}>
+            {t("auth.checkEmailTitle")}
+          </Text>
+          <Text muted>{t("auth.checkEmailSubtitle")}</Text>
 
-        <Link href="/(auth)/sign-in" asChild>
-          <Button
-            marginTop="$4"
-            backgroundColor="$surface"
-            borderColor="$borderColor"
-            borderWidth={1}
-          >
-            {t("auth.goToSignIn")}
-          </Button>
-        </Link>
-      </YStack>
+          <Link href="/(auth)/sign-in" asChild>
+            <Button variant="secondary" style={{ marginTop: theme.spacing.lg }}>
+              {t("auth.goToSignIn")}
+            </Button>
+          </Link>
+        </VStack>
+      </KeyboardScreen>
     );
   }
 
   return (
-    <YStack
-      flex={1}
-      backgroundColor="$background"
-      padding="$6"
-      justifyContent="center"
-      gap="$5"
-    >
-      <YStack gap="$2">
-        <Text fontSize={28} fontWeight="700">
-          {t("auth.resetPassword")}
-        </Text>
-        <Text opacity={0.75} lineHeight={22}>
-          {t("auth.resetHint")}
-        </Text>
-      </YStack>
+    <KeyboardScreen centerIfShort padding={theme.spacing.xl}>
+      <VStack style={{ gap: theme.spacing.xl }}>
+        <VStack style={{ gap: theme.spacing.sm }}>
+          <Text weight="bold" style={{ fontSize: 28, lineHeight: 32 }}>
+            {t("auth.resetPassword")}
+          </Text>
+          <Text muted>{t("auth.resetHint")}</Text>
+        </VStack>
 
-      <YStack gap="$4">
+        <VStack style={{ gap: theme.spacing.lg }}>
         <Controller
           control={form.control}
           name="email"
@@ -94,28 +79,25 @@ export default function ForgotPasswordScreen() {
         />
 
         {errorMessage ? (
-          <Text color="$accent2" fontSize={13}>
+          <Text variant="caption" color={theme.colors.accent2}>
             {errorMessage}
           </Text>
         ) : null}
 
-        <Button
-          backgroundColor="$accent"
-          color="$background"
-          borderRadius="$6"
-          height={48}
-          disabled={isBusy}
-          onPress={onSubmit}
-        >
-          {isBusy ? t("common.loading") : t("auth.sendLink")}
+        <Button isLoading={isBusy} onPress={onSubmit}>
+          {t("auth.sendLink")}
         </Button>
 
         <Link href="/(auth)/sign-in" asChild>
-          <Text opacity={0.8} textAlign="center" textDecorationLine="underline">
+          <Text
+            muted
+            style={{ textAlign: "center", textDecorationLine: "underline" }}
+          >
             {t("common.back")}
           </Text>
         </Link>
-      </YStack>
-    </YStack>
+      </VStack>
+      </VStack>
+    </KeyboardScreen>
   );
 }

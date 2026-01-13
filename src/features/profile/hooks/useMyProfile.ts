@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useAppDispatch } from "../../../shared/hooks/useAppDispatch";
 import { useAppSelector } from "../../../shared/hooks/useAppSelector";
+import i18n from "../../../shared/i18n/i18n";
 import {
-  getClientProfile,
-  getMyUserRow,
-  getTrainerProfile,
-} from "../api/profileApi";
+  useGetClientProfileQuery,
+  useGetMyUserRowQuery,
+  useGetTrainerProfileQuery,
+} from "../api/profileApiSlice";
 import { profileActions } from "../store/profileSlice";
 import type { ClientProfile, TrainerProfile, UserRow } from "../types/profile";
 
@@ -26,38 +27,72 @@ export function useMyProfile(): UseMyProfileResult {
   const clientProfile = useAppSelector((s) => s.profile.clientProfile);
   const trainerProfile = useAppSelector((s) => s.profile.trainerProfile);
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const userId = auth.userId;
 
-  const refetch = useCallback(async () => {
-    if (!auth.userId) return;
+  const {
+    data: meData,
+    isLoading: isMeLoading,
+    isFetching: isMeFetching,
+    error: meError,
+    refetch: refetchMe,
+  } = useGetMyUserRowQuery(userId!, { skip: !userId });
 
-    setIsLoading(true);
-    setError(null);
+  const role = meData?.role;
 
-    try {
-      const user = await getMyUserRow(auth.userId);
-      dispatch(profileActions.setMe(user));
+  const {
+    data: trainerData,
+    isLoading: isTrainerLoading,
+    isFetching: isTrainerFetching,
+    error: trainerError,
+    refetch: refetchTrainer,
+  } = useGetTrainerProfileQuery(userId!, { skip: !userId || role !== "trainer" });
 
-      if (user.role === "trainer") {
-        const tp = await getTrainerProfile(auth.userId);
-        dispatch(profileActions.setTrainerProfile(tp));
-        dispatch(profileActions.setClientProfile(null));
-      } else {
-        const cp = await getClientProfile(auth.userId);
-        dispatch(profileActions.setClientProfile(cp));
-        dispatch(profileActions.setTrainerProfile(null));
-      }
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to load profile");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [auth.userId, dispatch]);
+  const {
+    data: clientData,
+    isLoading: isClientLoading,
+    isFetching: isClientFetching,
+    error: clientError,
+    refetch: refetchClient,
+  } = useGetClientProfileQuery(userId!, { skip: !userId || role !== "client" });
 
   useEffect(() => {
-    void refetch();
-  }, [refetch]);
+    dispatch(profileActions.setMe(meData ?? null));
+  }, [dispatch, meData]);
+
+  useEffect(() => {
+    if (!role) return;
+    if (role === "trainer") {
+      dispatch(profileActions.setTrainerProfile(trainerData ?? null));
+      dispatch(profileActions.setClientProfile(null));
+    } else {
+      dispatch(profileActions.setClientProfile(clientData ?? null));
+      dispatch(profileActions.setTrainerProfile(null));
+    }
+  }, [clientData, dispatch, role, trainerData]);
+
+  const error = useMemo(() => {
+    const err = (meError ?? trainerError ?? clientError) as any;
+    if (!err) return null;
+    if (typeof err?.message === "string") return err.message;
+    if (typeof err?.error === "string") return err.error;
+    return i18n.t("profile.errors.loadFailed");
+  }, [clientError, meError, trainerError]);
+
+  const isLoading =
+    isMeLoading ||
+    isTrainerLoading ||
+    isClientLoading ||
+    isMeFetching ||
+    isTrainerFetching ||
+    isClientFetching;
+
+  const refetch = useCallback(async () => {
+    if (!userId) return;
+    const tasks: Promise<any>[] = [refetchMe()];
+    if (role === "trainer") tasks.push(refetchTrainer());
+    if (role === "client") tasks.push(refetchClient());
+    await Promise.all(tasks);
+  }, [refetchClient, refetchMe, refetchTrainer, role, userId]);
 
   return { isLoading, error, me, clientProfile, trainerProfile, refetch };
 }

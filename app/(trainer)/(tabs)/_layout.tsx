@@ -2,17 +2,17 @@ import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import React from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTheme } from "tamagui";
 import { useAppTranslation } from "../../../src/shared/i18n/useAppTranslation";
+import { useTheme } from "../../../src/shared/ui";
 
 export default function TrainerTabsLayout() {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const { t } = useAppTranslation();
 
-  const bg = String(theme.surface?.get() ?? "#000");
-  const border = String(theme.borderColor?.get() ?? "#000");
-  const active = String(theme.accent?.get() ?? "#000");
+  const bg = theme.colors.surface;
+  const border = theme.colors.border;
+  const active = theme.colors.accent;
   const inactive = "rgba(255,255,255,0.65)";
 
   return (

@@ -25,6 +25,12 @@
     "resetHint": "سنرسل لك رابطاً لإعادة تعيين كلمة المرور.",
     "checkEmailTitle": "تحقق من بريدك الإلكتروني",
     "checkEmailSubtitle": "إذا كان العنوان موجوداً، ستصلك التعليمات قريباً.",
+    "toasts": {
+      "magicLinkSent": "تم إرسال رابط الدخول. تحقق من بريدك الإلكتروني.",
+      "resetLinkSent": "تم إرسال رابط إعادة التعيين. تحقق من بريدك الإلكتروني.",
+      "passwordUpdated": "تم تحديث كلمة المرور.",
+      "signedOut": "تم تسجيل الخروج."
+    },
     "errors": {
       "invalidEmail": "يرجى إدخال بريد إلكتروني صحيح.",
       "passwordMin": "كلمة المرور يجب أن تكون 8 أحرف على الأقل.",
@@ -58,21 +64,34 @@
     "cancel": "إلغاء",
     "close": "إغلاق",
     "save": "حفظ",
+    "apply": "تطبيق",
+    "clear": "مسح",
     "delete": "حذف",
     "edit": "تعديل",
     "view": "عرض",
     "search": "بحث",
+    "noResults": "لا نتائج",
+    "preview": "معاينة",
     "filter": "تصفية",
     "sort": "ترتيب",
     "refresh": "تحديث",
     "next": "التالي",
     "previous": "السابق",
     "selectPlaceholder": "اختر…",
-    "optional": "اختياري"
+    "optional": "اختياري",
+    "invalidNumber": "رقم غير صالح",
+    "tryAgain": "حاول مرة أخرى",
+    "add": "إضافة",
+    "change": "تغيير",
+    "chooseFile": "اختر ملفاً",
+    "pickColor": "اختر لوناً",
+    "orEnterHex": "أو أدخل HEX"
   },
   "state": {
     "initializing": "جارٍ التهيئة…",
-    "authError": "لم نتمكن من إكمال المصادقة."
+    "authError": "لم نتمكن من إكمال المصادقة.",
+    "crashedTitle": "حدث خطأ ما",
+    "crashedSubtitle": "حاول مرة أخرى."
   },
   "onboarding": {
     "profileTitle": "إعداد ملفك",
@@ -86,23 +105,51 @@
     "roleHintClient": "اتبع خطتك وتتبّع تقدمك وتواصل مع مدرب."
   },
   "profile": {
+    "errors": {
+      "loadFailed": "تعذر تحميل الملف الشخصي.",
+      "saveFailed": "تعذر الحفظ."
+    },
     "sections": {
       "account": "الحساب",
       "basic": "المعلومات",
       "body": "القياسات",
-      "preferences": "التفضيلات"
+      "preferences": "التفضيلات",
+      "trainer": "ملف المدرب"
     },
     "fields": {
       "nationality": "الجنسية",
       "gender": "الجنس",
       "birthDate": "تاريخ الميلاد",
       "heightCm": "الطول (سم)",
+      "heightFt": "الطول (قدم)",
+      "heightIn": "الطول (إنش)",
       "weightKg": "الوزن (كغ)",
+      "weightLb": "الوزن (رطل)",
       "unitSystem": "نظام الوحدات",
       "activityLevel": "مستوى النشاط",
-      "target": "الهدف"
+      "target": "الهدف",
+      "phone": "رقم الهاتف",
+      "notes": "ملاحظات",
+      "brandName": "اسم العلامة",
+      "primaryColor": "اللون الأساسي (HEX)",
+      "secondaryColor": "اللون الثانوي (HEX)",
+      "logoUrl": "رابط الشعار",
+      "bio": "نبذة",
+      "certifications": "الشهادات",
+      "instagram": "إنستغرام",
+      "website": "الموقع"
     },
-    "placeholders": { "date": "YYYY-MM-DD" },
+    "placeholders": {
+      "date": "YYYY-MM-DD",
+      "bio": "نبذة قصيرة…",
+      "certifications": "IFBB, NASM…",
+      "notes": "ملاحظات…"
+    },
+    "certifications": {
+      "empty": "لا توجد شهادات بعد.",
+      "addLabel": "إضافة شهادة",
+      "deleteTitle": "حذف الشهادة؟"
+    },
     "gender": { "male": "ذكر", "female": "أنثى" },
     "unitSystem": {
       "metric": "متري (سم / كغ)",
@@ -127,6 +174,7 @@
       "recomp": "إعادة تركيب",
       "performance": "أداء"
     },
-    "actions": { "saveChanges": "حفظ التغييرات", "signOut": "تسجيل الخروج" }
+    "actions": { "saveChanges": "حفظ التغييرات", "signOut": "تسجيل الخروج" },
+    "toasts": { "saved": "تم حفظ الملف الشخصي." }
   }
 }

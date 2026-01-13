@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useAppDispatch } from "../../../shared/hooks/useAppDispatch";
 import { supabase } from "../../../shared/supabase/client";
 import { profileActions } from "../../profile/store/profileSlice";
-import { getUserRole } from "../api/getUserRole";
+import { useLazyGetUserRoleQuery } from "../api/authApiSlice";
 import { authActions } from "../store/authSlice";
 
 function parseUrl(url: string) {
@@ -49,6 +49,7 @@ async function handleIncomingLink(url: string) {
 
 export function useAuthBootstrap() {
   const dispatch = useAppDispatch();
+  const [getUserRole] = useLazyGetUserRoleQuery();
 
   useEffect(() => {
     let isMounted = true;
@@ -83,7 +84,7 @@ export function useAuthBootstrap() {
           })
         );
 
-        const role = await getUserRole(session.user.id);
+        const role = await getUserRole(session.user.id).unwrap();
         if (!isMounted) return;
         dispatch(authActions.setRole(role));
       } catch (e) {
@@ -123,7 +124,7 @@ export function useAuthBootstrap() {
             })
           );
 
-          const role = await getUserRole(session.user.id);
+          const role = await getUserRole(session.user.id).unwrap();
           if (!isMounted) return;
           dispatch(authActions.setRole(role));
         } catch (e) {
@@ -139,5 +140,5 @@ export function useAuthBootstrap() {
       urlSub.remove();
       sub.subscription.unsubscribe();
     };
-  }, [dispatch]);
+  }, [dispatch, getUserRole]);
 }

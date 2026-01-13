@@ -1,15 +1,16 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
-import { Button, Text, YStack } from "tamagui";
 import { z } from "zod";
 
 import { useAuthActions } from "../../src/features/auth/hooks/useAuthActions";
 import { AppInput } from "../../src/shared/components/AppInput";
 import { useAppTranslation } from "../../src/shared/i18n/useAppTranslation";
+import { appToast, Button, KeyboardScreen, Text, useTheme, VStack } from "../../src/shared/ui";
 
 export default function ResetPasswordScreen() {
   const { t } = useAppTranslation();
+  const theme = useTheme();
   const { isBusy, errorMessage, doUpdatePassword } = useAuthActions();
 
   const schema = z
@@ -30,27 +31,21 @@ export default function ResetPasswordScreen() {
 
   const onSubmit = form.handleSubmit(async (values) => {
     await doUpdatePassword(values.newPassword);
+    appToast.success(t("auth.toasts.passwordUpdated"));
     router.replace("/"); // role gate
   });
 
   return (
-    <YStack
-      flex={1}
-      backgroundColor="$background"
-      padding="$6"
-      justifyContent="center"
-      gap="$5"
-    >
-      <YStack gap="$2">
-        <Text fontSize={28} fontWeight="700">
-          {t("auth.resetPassword")}
-        </Text>
-        <Text opacity={0.75} lineHeight={22}>
-          {t("auth.saveNewPassword")}
-        </Text>
-      </YStack>
+    <KeyboardScreen centerIfShort padding={theme.spacing.xl}>
+      <VStack style={{ gap: theme.spacing.xl }}>
+        <VStack style={{ gap: theme.spacing.sm }}>
+          <Text weight="bold" style={{ fontSize: 28, lineHeight: 32 }}>
+            {t("auth.resetPassword")}
+          </Text>
+          <Text muted>{t("auth.saveNewPassword")}</Text>
+        </VStack>
 
-      <YStack gap="$4">
+        <VStack style={{ gap: theme.spacing.lg }}>
         <Controller
           control={form.control}
           name="newPassword"
@@ -60,7 +55,7 @@ export default function ResetPasswordScreen() {
               value={value}
               onChangeText={onChange}
               placeholder="••••••••"
-              secureTextEntry
+              type="password"
               autoCapitalize="none"
               error={fieldState.error?.message}
             />
@@ -76,7 +71,7 @@ export default function ResetPasswordScreen() {
               value={value}
               onChangeText={onChange}
               placeholder="••••••••"
-              secureTextEntry
+              type="password"
               autoCapitalize="none"
               error={fieldState.error?.message}
             />
@@ -84,22 +79,16 @@ export default function ResetPasswordScreen() {
         />
 
         {errorMessage ? (
-          <Text color="$accent2" fontSize={13}>
+          <Text variant="caption" color={theme.colors.accent2}>
             {errorMessage}
           </Text>
         ) : null}
 
-        <Button
-          backgroundColor="$accent"
-          color="$background"
-          borderRadius="$6"
-          height={48}
-          disabled={isBusy}
-          onPress={onSubmit}
-        >
-          {isBusy ? t("common.loading") : t("auth.saveNewPassword")}
+        <Button isLoading={isBusy} onPress={onSubmit}>
+          {t("auth.saveNewPassword")}
         </Button>
-      </YStack>
-    </YStack>
+      </VStack>
+      </VStack>
+    </KeyboardScreen>
   );
 }

@@ -1,15 +1,16 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, router } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
-import { Button, Text, XStack, YStack } from "tamagui";
 import { z } from "zod";
 
 import { useAuthActions } from "../../src/features/auth/hooks/useAuthActions";
 import { AppInput } from "../../src/shared/components/AppInput";
 import { useAppTranslation } from "../../src/shared/i18n/useAppTranslation";
+import { Button, HStack, KeyboardScreen, Text, useTheme, VStack } from "../../src/shared/ui";
 
 export default function SignUpScreen() {
   const { t } = useAppTranslation();
+  const theme = useTheme();
   const { isBusy, errorMessage, doSignUp } = useAuthActions();
 
   const schema = z
@@ -40,23 +41,16 @@ export default function SignUpScreen() {
   });
 
   return (
-    <YStack
-      flex={1}
-      backgroundColor="$background"
-      padding="$6"
-      justifyContent="center"
-      gap="$5"
-    >
-      <YStack gap="$2">
-        <Text fontSize={30} fontWeight="700">
-          {t("auth.signUp")}
-        </Text>
-        <Text opacity={0.75} lineHeight={22}>
-          {t("auth.subtitle")}
-        </Text>
-      </YStack>
+    <KeyboardScreen centerIfShort padding={theme.spacing.xl}>
+      <VStack style={{ gap: theme.spacing.xl }}>
+        <VStack style={{ gap: theme.spacing.sm }}>
+          <Text weight="bold" style={{ fontSize: 30, lineHeight: 34 }}>
+            {t("auth.signUp")}
+          </Text>
+          <Text muted>{t("auth.subtitle")}</Text>
+        </VStack>
 
-      <YStack gap="$4">
+        <VStack style={{ gap: theme.spacing.lg }}>
         <Controller
           control={form.control}
           name="email"
@@ -82,7 +76,7 @@ export default function SignUpScreen() {
               value={value}
               onChangeText={onChange}
               placeholder="••••••••"
-              secureTextEntry
+              type="password"
               autoCapitalize="none"
               error={fieldState.error?.message}
             />
@@ -98,7 +92,7 @@ export default function SignUpScreen() {
               value={value}
               onChangeText={onChange}
               placeholder="••••••••"
-              secureTextEntry
+              type="password"
               autoCapitalize="none"
               error={fieldState.error?.message}
             />
@@ -106,29 +100,27 @@ export default function SignUpScreen() {
         />
 
         {errorMessage ? (
-          <Text color="$accent2" fontSize={13}>
+          <Text variant="caption" color={theme.colors.accent2}>
             {errorMessage}
           </Text>
         ) : null}
 
-        <Button
-          backgroundColor="$accent"
-          color="$background"
-          borderRadius="$6"
-          height={48}
-          disabled={isBusy}
-          onPress={onSubmit}
-        >
-          {isBusy ? t("common.loading") : t("auth.signUp")}
+        <Button isLoading={isBusy} onPress={onSubmit}>
+          {t("auth.signUp")}
         </Button>
 
-        <XStack gap="$2" justifyContent="center">
-          <Text opacity={0.8}>{t("auth.haveAccount")}</Text>
+        <HStack gap={8} justify="center" align="center">
+          <Text muted style={{ opacity: 0.9 }}>
+            {t("auth.haveAccount")}
+          </Text>
           <Link href="/(auth)/sign-in" asChild>
-            <Text textDecorationLine="underline">{t("auth.goToSignIn")}</Text>
+            <Text style={{ textDecorationLine: "underline" }}>
+              {t("auth.goToSignIn")}
+            </Text>
           </Link>
-        </XStack>
-      </YStack>
-    </YStack>
+        </HStack>
+      </VStack>
+      </VStack>
+    </KeyboardScreen>
   );
 }

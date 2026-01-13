@@ -1,26 +1,36 @@
-﻿import { Redirect } from "expo-router";
+import { Redirect } from "expo-router";
+import React from "react";
 import { useMyProfile } from "../src/features/profile/hooks/useMyProfile";
 import { FullscreenState } from "../src/shared/components/FullscreenState";
 import { useAppSelector } from "../src/shared/hooks/useAppSelector";
 import { useAppTranslation } from "../src/shared/i18n/useAppTranslation";
+import { appToast } from "../src/shared/ui";
 
 export default function Index() {
   const { t } = useAppTranslation();
   const auth = useAppSelector((s) => s.auth);
   const { me, isLoading, error } = useMyProfile();
 
-  // load profile once authenticated
-  useMyProfile();
+  const lastAuthErrorRef = React.useRef<string | null>(null);
 
   if (auth.status === "idle" || auth.status === "loading") {
-    return <FullscreenState title={t("state.initializing")} />;
+    return <FullscreenState title={t("state.initializing")} progress={0.35} />;
   }
 
   if (auth.status === "error") {
+    const msg = auth.errorMessage ?? t("auth.errors.generic");
+    if (lastAuthErrorRef.current !== msg) {
+      lastAuthErrorRef.current = msg;
+      // show once per error message
+      appToast.error(msg);
+    }
+
     return (
-      <FullscreenState
-        title={t("state.authError")}
-        subtitle={auth.errorMessage ?? ""}
+      <Redirect
+        href={{
+          pathname: "/(auth)/sign-in",
+          params: { error: msg },
+        }}
       />
     );
   }
@@ -31,7 +41,7 @@ export default function Index() {
 
   // Authenticated: wait for profile fetch
   if (isLoading) {
-    return <FullscreenState title={t("state.initializing")} />;
+    return <FullscreenState title={t("state.initializing")} progress={0.75} />;
   }
 
   if (error) {
@@ -40,7 +50,7 @@ export default function Index() {
     );
   }
 
-  if (!me) return <FullscreenState title={t("state.initializing")} />;
+  if (!me) return <FullscreenState title={t("state.initializing")} progress={0.9} />;
 
   const hasName = Boolean(me.firstName?.trim()) && Boolean(me.lastName?.trim());
   const roleConfirmed = Boolean(me.roleConfirmed);

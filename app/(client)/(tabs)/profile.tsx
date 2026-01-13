@@ -1,23 +1,41 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { Platform } from "react-native";
-import { Card, Form, Separator, Text, XStack, YStack } from "tamagui";
+import { Platform, View } from "react-native";
 
-import { AppButton } from "../../../src/shared/components/AppButton";
 import { AppInput } from "../../../src/shared/components/AppInput";
 import { BottomSheetPicker } from "../../../src/shared/components/BottomSheetPicker";
 import { KeyboardScreen } from "../../../src/shared/components/KeyboardScreen";
 
 import { useAuthActions } from "../../../src/features/auth/hooks/useAuthActions";
 import {
-  updateMyUserRow,
-  upsertClientProfile,
-} from "../../../src/features/profile/api/profileApi";
+  useUpdateMyUserRowMutation,
+  useUpsertClientProfileMutation,
+} from "../../../src/features/profile/api/profileApiSlice";
 import { useMyProfile } from "../../../src/features/profile/hooks/useMyProfile";
+import { profileActions } from "../../../src/features/profile/store/profileSlice";
+import {
+  cmToFeetInches,
+  feetInchesToCm,
+  kgToLb,
+  lbToKg,
+  toNumberOrNull,
+  type UnitSystem,
+} from "../../../src/features/profile/utils/units";
 import { countries } from "../../../src/shared/constants/countries";
+import { useAppDispatch } from "../../../src/shared/hooks/useAppDispatch";
 import { useAppSelector } from "../../../src/shared/hooks/useAppSelector";
 import { useAppTranslation } from "../../../src/shared/i18n/useAppTranslation";
+import {
+  appToast,
+  Button,
+  Card,
+  Divider,
+  HStack,
+  Text,
+  useTheme,
+  VStack,
+} from "../../../src/shared/ui";
 
 function formatDateISO(date: Date) {
   const y = date.getFullYear();
@@ -28,35 +46,63 @@ function formatDateISO(date: Date) {
 
 export default function ClientProfileScreen() {
   const { t } = useAppTranslation();
+  const theme = useTheme();
   const { me, clientProfile, isLoading, error, refetch } = useMyProfile();
+  const dispatch = useAppDispatch();
   const auth = useAppSelector((s) => s.auth);
+  const globalUnitSystem = useAppSelector((s) => s.profile.unitSystem);
   const { isBusy: signingOut, doSignOut } = useAuthActions();
+  const [updateMyUserRow] = useUpdateMyUserRowMutation();
+  const [upsertClientProfile] = useUpsertClientProfileMutation();
 
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  const initial = useMemo(() => {
-    return {
-      firstName: me?.firstName ?? "",
-      lastName: me?.lastName ?? "",
-      nationality: clientProfile?.nationality ?? "",
-      gender: clientProfile?.gender ?? "",
-      birthDate: clientProfile?.birthDate ?? "",
-      heightCm: clientProfile?.heightCm?.toString() ?? "",
-      weightKg: clientProfile?.weightKg?.toString() ?? "",
-      unitSystem: clientProfile?.unitSystem ?? "",
-      activityLevel: clientProfile?.activityLevel ?? "",
-      target: clientProfile?.target ?? "",
-    };
-  }, [me, clientProfile]);
+  const buildFormFromProfile = React.useCallback(
+    (unitSystem: UnitSystem) => {
+      const cm = clientProfile?.heightCm ?? null;
+      const kg = clientProfile?.weightKg ?? null;
+      const ftIn = cm !== null ? cmToFeetInches(cm) : null;
+      const lb = kg !== null ? kgToLb(kg) : null;
 
-  const [form, setForm] = useState(initial);
+      return {
+        firstName: me?.firstName ?? "",
+        lastName: me?.lastName ?? "",
+        phone: clientProfile?.phone ?? "",
+        nationality: clientProfile?.nationality ?? "",
+        gender: clientProfile?.gender ?? "",
+        birthDate: clientProfile?.birthDate ?? "",
+        heightCm: cm !== null ? String(Math.round(cm)) : "",
+        weightKg: kg !== null ? String(Math.round(kg)) : "",
+        heightFt: ftIn ? String(ftIn.ft) : "",
+        heightIn: ftIn ? String(ftIn.inches) : "",
+        weightLb: lb !== null ? String(Math.round(lb)) : "",
+        unitSystem,
+        activityLevel: clientProfile?.activityLevel ?? "",
+        target: clientProfile?.target ?? "",
+        notes: clientProfile?.notes ?? "",
+      };
+    },
+    [clientProfile, me]
+  );
 
+  const [form, setForm] = useState(() => {
+    const initialUnit = ((clientProfile?.unitSystem as
+      | UnitSystem
+      | undefined) ??
+      globalUnitSystem ??
+      "metric") as UnitSystem;
+    return buildFormFromProfile(initialUnit);
+  });
+
+  // Sync from backend when profile loads/changes, but keep user's currently selected unitSystem.
   React.useEffect(() => {
-    setForm(initial);
-  }, [initial]);
+    setForm((prev) =>
+      buildFormFromProfile((prev.unitSystem as UnitSystem) || "metric")
+    );
+  }, [buildFormFromProfile]);
 
   // ----- options -----
 
@@ -134,33 +180,61 @@ export default function ClientProfileScreen() {
     setSaveError(null);
 
     try {
-      await updateMyUserRow(auth.userId, {
+      await updateMyUserRow({
         userId: auth.userId,
-        firstName: form.firstName.trim() || null,
-        lastName: form.lastName.trim() || null,
-      });
+        payload: {
+          firstName: form.firstName.trim() || null,
+          lastName: form.lastName.trim() || null,
+        },
+      }).unwrap();
 
-      const height = form.heightCm.trim() ? Number(form.heightCm.trim()) : null;
-      const weight = form.weightKg.trim() ? Number(form.weightKg.trim()) : null;
+      const unitSystem = (form.unitSystem as UnitSystem) || "metric";
+      const height =
+        unitSystem === "imperial"
+          ? (() => {
+              const ft = toNumberOrNull(form.heightFt) ?? 0;
+              const inches = toNumberOrNull(form.heightIn) ?? 0;
+              const cm = feetInchesToCm(ft, inches);
+              return Number.isFinite(cm) ? cm : null;
+            })()
+          : toNumberOrNull(form.heightCm);
+
+      const weight =
+        unitSystem === "imperial"
+          ? (() => {
+              const lb = toNumberOrNull(form.weightLb);
+              if (lb === null) return null;
+              return lbToKg(lb);
+            })()
+          : toNumberOrNull(form.weightKg);
 
       if (height !== null && Number.isNaN(height))
-        throw new Error(`${t("profile.fields.heightCm")}: invalid number`);
+        throw new Error(
+          `${t("profile.fields.heightCm")}: ${t("common.invalidNumber")}`
+        );
       if (weight !== null && Number.isNaN(weight))
-        throw new Error(`${t("profile.fields.weightKg")}: invalid number`);
+        throw new Error(
+          `${t("profile.fields.weightKg")}: ${t("common.invalidNumber")}`
+        );
 
-      await upsertClientProfile(auth.userId, {
+      await upsertClientProfile({
         userId: auth.userId,
-        nationality: form.nationality || null,
-        gender: form.gender || null,
-        birthDate: form.birthDate || null,
-        heightCm: height,
-        weightKg: weight,
-        unitSystem: form.unitSystem || null,
-        activityLevel: form.activityLevel || null,
-        target: form.target || null,
-      });
+        payload: {
+          phone: form.phone.trim() || null,
+          nationality: form.nationality || null,
+          gender: form.gender || null,
+          birthDate: form.birthDate || null,
+          heightCm: height,
+          weightKg: weight,
+          unitSystem: form.unitSystem || null,
+          activityLevel: form.activityLevel || null,
+          target: form.target || null,
+          notes: form.notes.trim() || null,
+        },
+      }).unwrap();
 
       await refetch();
+      appToast.success(t("profile.toasts.saved"));
     } catch (e: any) {
       setSaveError(e?.message ?? t("auth.errors.generic"));
     } finally {
@@ -170,6 +244,7 @@ export default function ClientProfileScreen() {
 
   const onSignOut = async () => {
     await doSignOut();
+    appToast.info(t("auth.toasts.signedOut"));
     router.replace("/");
   };
 
@@ -178,153 +253,178 @@ export default function ClientProfileScreen() {
     : new Date(1995, 0, 1);
 
   return (
-    <KeyboardScreen padding={18} bottomSpace={110}>
-      <YStack
-        gap="$4"
-        backgroundColor="$background"
-        padding="$4"
-        paddingBottom="$6"
+    <KeyboardScreen padding={12}>
+      <VStack
+        style={{
+          gap: theme.spacing.lg,
+          backgroundColor: theme.colors.background,
+        }}
       >
-        <Text fontSize={22} fontWeight="700">
+        <Text variant="title" weight="bold">
           {t("tabs.profile")}
         </Text>
 
-        {error ? <Text color="$accent2">{error}</Text> : null}
+        {error ? <Text color={theme.colors.accent2}>{error}</Text> : null}
 
         {/* Account */}
-        <Card
-          bordered
-          borderColor="$borderColor"
-          backgroundColor="$surface"
-          borderRadius="$10"
-          padding="$5"
-        >
-          <YStack gap="$2">
-            <Text fontSize={13} opacity={0.75}>
+        <Card>
+          <VStack style={{ gap: theme.spacing.sm }}>
+            <Text variant="caption" muted>
               {t("profile.sections.account")}
             </Text>
 
-            <Text fontSize={16} fontWeight="700">
+            <Text weight="bold" style={{ fontSize: 16 }}>
               {(me?.firstName ?? "") + " " + (me?.lastName ?? "")}
             </Text>
 
-            <Text opacity={0.75}>{me?.email ?? ""}</Text>
+            <Text muted>{me?.email ?? ""}</Text>
 
-            <Text opacity={0.75}>
+            <Text muted>
               {t("client.profileCardRole")}: {me?.role ?? ""}
             </Text>
-          </YStack>
+          </VStack>
         </Card>
 
         {/* Form */}
-        <Card
-          bordered
-          borderColor="$borderColor"
-          backgroundColor="$surface"
-          borderRadius="$10"
-          padding="$5"
-        >
-          <Form onSubmit={() => void onSave()}>
-            <YStack gap="$4">
-              {/* Basic info */}
-              <Text fontSize={13} opacity={0.75}>
-                {t("profile.sections.basic")}
+        <Card>
+          <VStack style={{ gap: theme.spacing.lg }}>
+            {/* Basic info */}
+            <Text variant="caption" muted>
+              {t("profile.sections.basic")}
+            </Text>
+
+            <HStack gap={theme.spacing.md}>
+              <View style={{ flex: 1 }}>
+                <AppInput
+                  label={t("auth.firstName")}
+                  value={form.firstName}
+                  onChangeText={(v) => setForm((p) => ({ ...p, firstName: v }))}
+                  placeholder="John"
+                  autoCapitalize="words"
+                />
+              </View>
+
+              <View style={{ flex: 1 }}>
+                <AppInput
+                  label={t("auth.lastName")}
+                  value={form.lastName}
+                  onChangeText={(v) => setForm((p) => ({ ...p, lastName: v }))}
+                  placeholder="Doe"
+                  autoCapitalize="words"
+                />
+              </View>
+            </HStack>
+
+            <AppInput
+              label={t("profile.fields.phone")}
+              value={form.phone}
+              onChangeText={(v) => setForm((p) => ({ ...p, phone: v }))}
+              placeholder="+1 …"
+              keyboardType="phone-pad"
+            />
+
+            <Divider opacity={0.6} />
+
+            {/* Body metrics */}
+            <Text variant="caption" muted>
+              {t("profile.sections.body")}
+            </Text>
+
+            <BottomSheetPicker
+              label={t("profile.fields.gender")}
+              title={t("profile.fields.gender")}
+              mode="single"
+              value={form.gender || null}
+              onChange={(v) => setForm((p) => ({ ...p, gender: v ?? "" }))}
+              placeholder={t("common.selectPlaceholder")}
+              options={genderOptions}
+            />
+
+            {/* Birth date */}
+            <VStack style={{ gap: theme.spacing.sm }}>
+              <Text variant="caption" style={{ opacity: 0.9 }}>
+                {t("profile.fields.birthDate")}
               </Text>
 
-              <XStack gap="$3">
-                <YStack flex={1}>
-                  <AppInput
-                    label={t("auth.firstName")}
-                    value={form.firstName}
-                    onChangeText={(v) =>
-                      setForm((p) => ({ ...p, firstName: v }))
-                    }
-                    placeholder="John"
-                    autoCapitalize="words"
-                  />
-                </YStack>
-
-                <YStack flex={1}>
-                  <AppInput
-                    label={t("auth.lastName")}
-                    value={form.lastName}
-                    onChangeText={(v) =>
-                      setForm((p) => ({ ...p, lastName: v }))
-                    }
-                    placeholder="Doe"
-                    autoCapitalize="words"
-                  />
-                </YStack>
-              </XStack>
-
-              <Separator opacity={0.4} />
-
-              {/* Body metrics */}
-              <Text fontSize={13} opacity={0.75}>
-                {t("profile.sections.body")}
-              </Text>
-
-              <BottomSheetPicker
-                label={t("profile.fields.gender")}
-                title={t("profile.fields.gender")}
-                mode="single"
-                value={form.gender || null}
-                onChange={(v) => setForm((p) => ({ ...p, gender: v ?? "" }))}
-                placeholder={t("common.selectPlaceholder")}
-                options={genderOptions}
-              />
-
-              {/* Birth date */}
-              <YStack gap="$2">
-                <Text fontSize={13} opacity={0.85}>
-                  {t("profile.fields.birthDate")}
-                </Text>
-
-                <AppButton
-                  height={50}
-                  borderRadius="$6"
-                  backgroundColor="$surface"
-                  borderColor="$borderColor"
-                  borderWidth={1}
-                  justifyContent="flex-start"
-                  onPress={() => setShowDatePicker(true)}
+              <Button
+                variant="secondary"
+                onPress={() => setShowDatePicker(true)}
+                contentStyle={{ justifyContent: "flex-start" }}
+              >
+                <Text
+                  color={
+                    form.birthDate
+                      ? theme.colors.text
+                      : "rgba(255,255,255,0.45)"
+                  }
                 >
-                  <Text
-                    color={form.birthDate ? "$color" : "rgba(255,255,255,0.45)"}
-                  >
-                    {form.birthDate || t("profile.placeholders.date")}
-                  </Text>
-                </AppButton>
+                  {form.birthDate || t("profile.placeholders.date")}
+                </Text>
+              </Button>
 
-                {showDatePicker ? (
-                  <DateTimePicker
-                    value={dateValue}
-                    mode="date"
-                    display={Platform.OS === "ios" ? "spinner" : "default"}
-                    onChange={(_, selected) => {
-                      setShowDatePicker(false);
-                      if (selected) onPickBirthDate(selected);
-                    }}
-                  />
-                ) : null}
-              </YStack>
+              {showDatePicker ? (
+                <DateTimePicker
+                  value={dateValue}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  onChange={(_, selected) => {
+                    setShowDatePicker(false);
+                    if (selected) onPickBirthDate(selected);
+                  }}
+                />
+              ) : null}
+            </VStack>
 
-              <BottomSheetPicker
-                label={t("profile.fields.nationality")}
-                title={t("profile.fields.nationality")}
-                mode="single"
-                value={form.nationality || null}
-                onChange={(v) =>
-                  setForm((p) => ({ ...p, nationality: v ?? "" }))
-                }
-                placeholder={t("common.selectPlaceholder")}
-                options={nationalityOptions}
-                searchable
-                searchPlaceholder={t("common.search")}
-              />
+            <BottomSheetPicker
+              label={t("profile.fields.nationality")}
+              title={t("profile.fields.nationality")}
+              mode="single"
+              value={form.nationality || null}
+              onChange={(v) => setForm((p) => ({ ...p, nationality: v ?? "" }))}
+              placeholder={t("common.selectPlaceholder")}
+              options={nationalityOptions}
+              searchable
+              searchPlaceholder={t("common.search")}
+            />
 
-              <XStack gap="$3">
-                <YStack flex={1}>
+            {form.unitSystem === "imperial" ? (
+              <>
+                <HStack gap={theme.spacing.md}>
+                  <View style={{ flex: 1 }}>
+                    <AppInput
+                      label={t("profile.fields.heightFt")}
+                      value={form.heightFt}
+                      onChangeText={(v) =>
+                        setForm((p) => ({ ...p, heightFt: v }))
+                      }
+                      placeholder="5"
+                      keyboardType="numeric"
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <AppInput
+                      label={t("profile.fields.heightIn")}
+                      value={form.heightIn}
+                      onChangeText={(v) =>
+                        setForm((p) => ({ ...p, heightIn: v }))
+                      }
+                      placeholder="10"
+                      keyboardType="numeric"
+                    />
+                  </View>
+                </HStack>
+
+                <AppInput
+                  label={t("profile.fields.weightLb")}
+                  value={form.weightLb}
+                  onChangeText={(v) => setForm((p) => ({ ...p, weightLb: v }))}
+                  placeholder="180"
+                  keyboardType="numeric"
+                />
+              </>
+            ) : (
+              <HStack gap={theme.spacing.md}>
+                <View style={{ flex: 1 }}>
                   <AppInput
                     label={t("profile.fields.heightCm")}
                     value={form.heightCm}
@@ -334,9 +434,9 @@ export default function ClientProfileScreen() {
                     placeholder="175"
                     keyboardType="numeric"
                   />
-                </YStack>
+                </View>
 
-                <YStack flex={1}>
+                <View style={{ flex: 1 }}>
                   <AppInput
                     label={t("profile.fields.weightKg")}
                     value={form.weightKg}
@@ -346,80 +446,118 @@ export default function ClientProfileScreen() {
                     placeholder="88"
                     keyboardType="numeric"
                   />
-                </YStack>
-              </XStack>
+                </View>
+              </HStack>
+            )}
 
-              <Separator opacity={0.4} />
+            <Divider opacity={0.6} />
 
-              {/* Preferences */}
-              <Text fontSize={13} opacity={0.75}>
-                {t("profile.sections.preferences")}
-              </Text>
+            {/* Preferences */}
+            <Text variant="caption" muted>
+              {t("profile.sections.preferences")}
+            </Text>
 
-              <BottomSheetPicker
-                label={t("profile.fields.unitSystem")}
-                title={t("profile.fields.unitSystem")}
-                mode="single"
-                value={form.unitSystem || null}
-                onChange={(v) =>
-                  setForm((p) => ({ ...p, unitSystem: v ?? "" }))
-                }
-                placeholder={t("common.selectPlaceholder")}
-                options={unitOptions}
-              />
+            <BottomSheetPicker
+              label={t("profile.fields.unitSystem")}
+              title={t("profile.fields.unitSystem")}
+              mode="single"
+              value={form.unitSystem || null}
+              onChange={(v) => {
+                const next = (v ?? "metric") as UnitSystem;
+                dispatch(profileActions.setUnitSystem(next));
 
-              <BottomSheetPicker
-                label={t("profile.fields.activityLevel")}
-                title={t("profile.fields.activityLevel")}
-                mode="single"
-                value={form.activityLevel || null}
-                onChange={(v) =>
-                  setForm((p) => ({ ...p, activityLevel: v ?? "" }))
-                }
-                placeholder={t("common.selectPlaceholder")}
-                options={activityOptions}
-                showDescriptions
-              />
+                setForm((p) => {
+                  if (next === "imperial") {
+                    const cm = toNumberOrNull(p.heightCm);
+                    const kg = toNumberOrNull(p.weightKg);
+                    const ftIn =
+                      cm !== null ? cmToFeetInches(cm) : { ft: 0, inches: 0 };
+                    const lb = kg !== null ? kgToLb(kg) : null;
+                    return {
+                      ...p,
+                      unitSystem: next,
+                      heightFt: cm !== null ? String(ftIn.ft) : "",
+                      heightIn: cm !== null ? String(ftIn.inches) : "",
+                      weightLb: lb !== null ? String(Math.round(lb)) : "",
+                    };
+                  }
 
-              <BottomSheetPicker
-                label={t("profile.fields.target")}
-                title={t("profile.fields.target")}
-                mode="single"
-                value={form.target || null}
-                onChange={(v) => setForm((p) => ({ ...p, target: v ?? "" }))}
-                placeholder={t("common.selectPlaceholder")}
-                options={targetOptions}
-              />
+                  // next === metric
+                  const ft = toNumberOrNull(p.heightFt) ?? 0;
+                  const inches = toNumberOrNull(p.heightIn) ?? 0;
+                  const lb = toNumberOrNull(p.weightLb);
+                  const cm = feetInchesToCm(ft, inches);
+                  const kg = lb !== null ? lbToKg(lb) : null;
+                  return {
+                    ...p,
+                    unitSystem: next,
+                    heightCm:
+                      p.heightFt || p.heightIn
+                        ? String(Math.round(cm))
+                        : p.heightCm,
+                    weightKg:
+                      lb !== null ? String(Math.round(kg ?? 0)) : p.weightKg,
+                  };
+                });
+              }}
+              placeholder={t("common.selectPlaceholder")}
+              options={unitOptions}
+            />
 
-              {saveError ? <Text color="$accent2">{saveError}</Text> : null}
+            <BottomSheetPicker
+              label={t("profile.fields.activityLevel")}
+              title={t("profile.fields.activityLevel")}
+              mode="single"
+              value={form.activityLevel || null}
+              onChange={(v) =>
+                setForm((p) => ({ ...p, activityLevel: v ?? "" }))
+              }
+              placeholder={t("common.selectPlaceholder")}
+              options={activityOptions}
+              showDescriptions
+            />
 
-              <Form.Trigger asChild>
-                <AppButton
-                  height={50}
-                  borderRadius="$8"
-                  backgroundColor="$accent"
-                  color="$background"
-                  isLoading={saving || isLoading}
-                >
-                  {t("profile.actions.saveChanges")}
-                </AppButton>
-              </Form.Trigger>
+            <BottomSheetPicker
+              label={t("profile.fields.target")}
+              title={t("profile.fields.target")}
+              mode="single"
+              value={form.target || null}
+              onChange={(v) => setForm((p) => ({ ...p, target: v ?? "" }))}
+              placeholder={t("common.selectPlaceholder")}
+              options={targetOptions}
+            />
 
-              <AppButton
-                height={48}
-                borderRadius="$8"
-                backgroundColor="$surface"
-                borderColor="$borderColor"
-                borderWidth={1}
-                isLoading={signingOut}
-                onPress={() => void onSignOut()}
-              >
-                {t("profile.actions.signOut")}
-              </AppButton>
-            </YStack>
-          </Form>
+            <AppInput
+              label={t("profile.fields.notes")}
+              value={form.notes}
+              onChangeText={(v) => setForm((p) => ({ ...p, notes: v }))}
+              placeholder={t("profile.placeholders.notes")}
+              multiline
+              numberOfLines={3}
+              autoGrow
+            />
+
+            {saveError ? (
+              <Text color={theme.colors.accent2}>{saveError}</Text>
+            ) : null}
+
+            <Button
+              isLoading={saving || isLoading}
+              onPress={() => void onSave()}
+            >
+              {t("profile.actions.saveChanges")}
+            </Button>
+
+            <Button
+              variant="secondary"
+              isLoading={signingOut}
+              onPress={() => void onSignOut()}
+            >
+              {t("profile.actions.signOut")}
+            </Button>
+          </VStack>
         </Card>
-      </YStack>
+      </VStack>
     </KeyboardScreen>
   );
 }

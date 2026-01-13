@@ -1,96 +1,79 @@
 import { router } from "expo-router";
-import { Button, Card, Text, YStack } from "tamagui";
+import { Pressable } from "react-native";
 
-import { updateMyUserRow } from "../../src/features/profile/api/profileApi";
+import { useUpdateMyUserRowMutation } from "../../src/features/profile/api/profileApiSlice";
 import { useAppSelector } from "../../src/shared/hooks/useAppSelector";
 import { useAppTranslation } from "../../src/shared/i18n/useAppTranslation";
+import { Button, Card, KeyboardScreen, Text, useTheme, VStack } from "../../src/shared/ui";
 
 export default function OnboardingRole() {
   const { t } = useAppTranslation();
+  const theme = useTheme();
   const auth = useAppSelector((s) => s.auth);
+  const [updateMyUserRow] = useUpdateMyUserRowMutation();
 
   const setRole = async (role: "trainer" | "client") => {
     if (!auth.userId) return;
 
-    await updateMyUserRow(auth.userId, {
-      role,
-      roleConfirmed: true,
-    });
+    await updateMyUserRow({
+      userId: auth.userId,
+      payload: { role, roleConfirmed: true },
+    }).unwrap();
 
     router.replace("/"); // role gate
   };
 
   return (
-    <YStack
-      flex={1}
-      backgroundColor="$background"
-      padding="$6"
-      justifyContent="center"
-      gap="$5"
-    >
-      <YStack gap="$2">
-        <Text fontSize={28} fontWeight="700">
-          {t("onboarding.roleTitle")}
-        </Text>
-        <Text opacity={0.75} lineHeight={22}>
-          {t("onboarding.roleSubtitle")}
-        </Text>
-      </YStack>
+    <KeyboardScreen centerIfShort padding={theme.spacing.xl}>
+      <VStack style={{ gap: theme.spacing.xl }}>
+        <VStack style={{ gap: theme.spacing.sm }}>
+          <Text weight="bold" style={{ fontSize: 28, lineHeight: 32 }}>
+            {t("onboarding.roleTitle")}
+          </Text>
+          <Text muted>{t("onboarding.roleSubtitle")}</Text>
+        </VStack>
 
-      <Card
-        bordered
-        backgroundColor="$surface"
-        borderColor="$borderColor"
-        padding="$5"
-        borderRadius="$10"
-        onPress={() => void setRole("trainer")}
-      >
-        <YStack gap="$2">
-          <Text fontSize={18} fontWeight="700">
-            {t("onboarding.trainer")}
-          </Text>
-          <Text opacity={0.75} lineHeight={20}>
-            {t("onboarding.roleHintTrainer")}
-          </Text>
-          <Button
-            marginTop="$3"
-            backgroundColor="$accent"
-            color="$background"
-            borderRadius="$8"
-            height={44}
-          >
-            {t("onboarding.trainer")}
-          </Button>
-        </YStack>
-      </Card>
+        <Pressable onPress={() => void setRole("trainer")}>
+          <Card>
+            <VStack style={{ gap: theme.spacing.sm }}>
+              <Text weight="bold" style={{ fontSize: 18 }}>
+                {t("onboarding.trainer")}
+              </Text>
+              <Text muted style={{ lineHeight: 20 }}>
+                {t("onboarding.roleHintTrainer")}
+              </Text>
+              <Button
+                style={{ marginTop: theme.spacing.sm }}
+                height={44}
+                onPress={() => void setRole("trainer")}
+              >
+                {t("onboarding.trainer")}
+              </Button>
+            </VStack>
+          </Card>
+        </Pressable>
 
-      <Card
-        bordered
-        backgroundColor="$surface"
-        borderColor="$borderColor"
-        padding="$5"
-        borderRadius="$10"
-        onPress={() => void setRole("client")}
-      >
-        <YStack gap="$2">
-          <Text fontSize={18} fontWeight="700">
-            {t("onboarding.client")}
-          </Text>
-          <Text opacity={0.75} lineHeight={20}>
-            {t("onboarding.roleHintClient")}
-          </Text>
-          <Button
-            marginTop="$3"
-            backgroundColor="$surface2"
-            borderColor="$borderColor"
-            borderWidth={1}
-            borderRadius="$8"
-            height={44}
-          >
-            {t("onboarding.client")}
-          </Button>
-        </YStack>
-      </Card>
-    </YStack>
+        <Pressable onPress={() => void setRole("client")}>
+          <Card>
+            <VStack style={{ gap: theme.spacing.sm }}>
+              <Text weight="bold" style={{ fontSize: 18 }}>
+                {t("onboarding.client")}
+              </Text>
+              <Text muted style={{ lineHeight: 20 }}>
+                {t("onboarding.roleHintClient")}
+              </Text>
+              <Button
+                variant="secondary"
+                style={{ marginTop: theme.spacing.sm }}
+                height={44}
+                onPress={() => void setRole("client")}
+              >
+                {t("onboarding.client")}
+              </Button>
+            </VStack>
+          </Card>
+        </Pressable>
+      </VStack>
+    </KeyboardScreen>
   );
 }

@@ -27,6 +27,12 @@
     "resetHint": "We’ll email you a link to reset your password.",
     "checkEmailTitle": "Check your email",
     "checkEmailSubtitle": "If the address exists, you’ll receive instructions shortly.",
+    "toasts": {
+      "magicLinkSent": "Magic link sent. Check your email.",
+      "resetLinkSent": "Reset link sent. Check your email.",
+      "passwordUpdated": "Password updated.",
+      "signedOut": "Signed out."
+    },
     "errors": {
       "invalidEmail": "Please enter a valid email address.",
       "passwordMin": "Password must be at least 8 characters.",
@@ -63,21 +69,34 @@
     "cancel": "Cancel",
     "close": "Close",
     "save": "Save",
+    "apply": "Apply",
+    "clear": "Clear",
     "delete": "Delete",
     "edit": "Edit",
     "view": "View",
     "search": "Search",
+    "noResults": "No results",
+    "preview": "Preview",
     "filter": "Filter",
     "sort": "Sort",
     "refresh": "Refresh",
     "next": "Next",
     "previous": "Previous",
     "selectPlaceholder": "Select…",
-    "optional": "Optional"
+    "optional": "Optional",
+    "invalidNumber": "Invalid number",
+    "tryAgain": "Try again",
+    "add": "Add",
+    "change": "Change",
+    "chooseFile": "Choose file",
+    "pickColor": "Pick a color",
+    "orEnterHex": "Or enter HEX"
   },
   "state": {
     "initializing": "Initializing…",
-    "authError": "We couldn’t complete authentication."
+    "authError": "We couldn’t complete authentication.",
+    "crashedTitle": "Something went wrong",
+    "crashedSubtitle": "Please try again."
   },
   "onboarding": {
     "profileTitle": "Set up your profile",
@@ -91,24 +110,50 @@
     "roleHintClient": "Follow your plan, track progress, and connect with a coach."
   },
   "profile": {
+    "errors": {
+      "loadFailed": "Failed to load profile.",
+      "saveFailed": "Failed to save."
+    },
     "sections": {
       "account": "Account",
       "basic": "Basic info",
       "body": "Body metrics",
-      "preferences": "Preferences"
+      "preferences": "Preferences",
+      "trainer": "Trainer profile"
     },
     "fields": {
       "nationality": "Nationality",
       "gender": "Gender",
       "birthDate": "Birth date",
       "heightCm": "Height (cm)",
+      "heightFt": "Height (ft)",
+      "heightIn": "Height (in)",
       "weightKg": "Weight (kg)",
+      "weightLb": "Weight (lb)",
       "unitSystem": "Unit system",
       "activityLevel": "Activity level",
-      "target": "Target"
+      "target": "Target",
+      "phone": "Phone",
+      "notes": "Notes",
+      "brandName": "Brand name",
+      "primaryColor": "Primary color (HEX)",
+      "secondaryColor": "Secondary color (HEX)",
+      "logoUrl": "Logo URL",
+      "bio": "Bio",
+      "certifications": "Certifications",
+      "instagram": "Instagram",
+      "website": "Website"
     },
     "placeholders": {
-      "date": "YYYY-MM-DD"
+      "date": "YYYY-MM-DD",
+      "bio": "Short bio…",
+      "certifications": "IFBB, NASM…",
+      "notes": "Notes…"
+    },
+    "certifications": {
+      "empty": "No certifications yet.",
+      "addLabel": "Add certification",
+      "deleteTitle": "Remove certification?"
     },
     "gender": {
       "male": "Male",
@@ -140,6 +185,9 @@
     "actions": {
       "saveChanges": "Save changes",
       "signOut": "Sign out"
+    },
+    "toasts": {
+      "saved": "Profile saved."
     }
   }
 }

@@ -1,10 +1,12 @@
-import { Button, Text, YStack } from "tamagui";
+import React from "react";
+import { Button, ProgressBar, Text, useTheme, VStack } from "../ui";
 
 type Props = {
   title: string;
   subtitle?: string;
   actionLabel?: string;
   onActionPress?: () => void;
+  progress?: number; // 0..1
 };
 
 export function FullscreenState({
@@ -12,36 +14,41 @@ export function FullscreenState({
   subtitle,
   actionLabel,
   onActionPress,
+  progress,
 }: Props) {
+  const theme = useTheme();
   return (
-    <YStack
-      flex={1}
-      backgroundColor="$background"
-      justifyContent="center"
-      alignItems="center"
-      padding="$6"
-      gap="$3"
+    <VStack
+      style={{
+        flex: 1,
+        backgroundColor: theme.colors.background,
+        justifyContent: "center",
+        alignItems: "center",
+        padding: theme.spacing.xl,
+        gap: theme.spacing.md,
+      }}
     >
-      <Text fontSize={18} fontWeight="700" textAlign="center">
+      <Text variant="title" weight="bold" style={{ textAlign: "center", fontSize: 18 }}>
         {title}
       </Text>
 
       {subtitle ? (
-        <Text opacity={0.75} textAlign="center" lineHeight={22}>
+        <Text muted style={{ textAlign: "center" }}>
           {subtitle}
         </Text>
       ) : null}
 
+      {typeof progress === "number" ? (
+        <VStack style={{ width: "100%", maxWidth: 420, marginTop: theme.spacing.sm }}>
+          <ProgressBar progress={progress} />
+        </VStack>
+      ) : null}
+
       {actionLabel && onActionPress ? (
-        <Button
-          marginTop="$2"
-          backgroundColor="$accent"
-          color="$background"
-          onPress={onActionPress}
-        >
+        <Button onPress={onActionPress} style={{ marginTop: theme.spacing.sm }}>
           {actionLabel}
         </Button>
       ) : null}
-    </YStack>
+    </VStack>
   );
 }

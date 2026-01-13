@@ -1,12 +1,12 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
-  sendPasswordReset,
-  signInWithMagicLink,
-  signInWithPassword,
-  signOut,
-  signUpWithPassword,
-  updatePassword,
-} from "../api/authApi";
+  useSendPasswordResetMutation,
+  useSignInWithMagicLinkMutation,
+  useSignInWithPasswordMutation,
+  useSignOutMutation,
+  useSignUpWithPasswordMutation,
+  useUpdatePasswordMutation,
+} from "../api/authApiSlice";
 
 type Result = {
   isBusy: boolean;
@@ -22,52 +22,72 @@ type Result = {
 };
 
 export function useAuthActions(): Result {
-  const [isBusy, setIsBusy] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [signInPassword, signInPasswordState] = useSignInWithPasswordMutation();
+  const [signInMagic, signInMagicState] = useSignInWithMagicLinkMutation();
+  const [signUp, signUpState] = useSignUpWithPasswordMutation();
+  const [forgotPassword, forgotPasswordState] = useSendPasswordResetMutation();
+  const [updatePw, updatePwState] = useUpdatePasswordMutation();
+  const [signOut, signOutState] = useSignOutMutation();
+
+  const isBusy = useMemo(
+    () =>
+      signInPasswordState.isLoading ||
+      signInMagicState.isLoading ||
+      signUpState.isLoading ||
+      forgotPasswordState.isLoading ||
+      updatePwState.isLoading ||
+      signOutState.isLoading,
+    [
+      forgotPasswordState.isLoading,
+      signInMagicState.isLoading,
+      signInPasswordState.isLoading,
+      signOutState.isLoading,
+      signUpState.isLoading,
+      updatePwState.isLoading,
+    ]
+  );
 
   const clearError = useCallback(() => setErrorMessage(null), []);
 
   const wrap = useCallback(async (fn: () => Promise<void>) => {
-    setIsBusy(true);
     setErrorMessage(null);
     try {
       await fn();
     } catch (e) {
       setErrorMessage(e instanceof Error ? e.message : "Unknown error");
       throw e;
-    } finally {
-      setIsBusy(false);
     }
   }, []);
 
   const doSignInPassword = useCallback(
     async (email: string, password: string) =>
-      wrap(() => signInWithPassword(email, password)),
-    [wrap]
+      wrap(() => signInPassword({ email, password }).unwrap()),
+    [signInPassword, wrap]
   );
 
   const doSignInMagic = useCallback(
-    async (email: string) => wrap(() => signInWithMagicLink(email)),
-    [wrap]
+    async (email: string) => wrap(() => signInMagic({ email }).unwrap()),
+    [signInMagic, wrap]
   );
 
   const doSignUp = useCallback(
     async (email: string, password: string) =>
-      wrap(() => signUpWithPassword(email, password)),
-    [wrap]
+      wrap(() => signUp({ email, password }).unwrap()),
+    [signUp, wrap]
   );
 
   const doForgotPassword = useCallback(
-    async (email: string) => wrap(() => sendPasswordReset(email)),
-    [wrap]
+    async (email: string) => wrap(() => forgotPassword({ email }).unwrap()),
+    [forgotPassword, wrap]
   );
 
   const doUpdatePassword = useCallback(
-    async (newPassword: string) => wrap(() => updatePassword(newPassword)),
-    [wrap]
+    async (newPassword: string) => wrap(() => updatePw({ newPassword }).unwrap()),
+    [updatePw, wrap]
   );
 
-  const doSignOut = useCallback(async () => wrap(() => signOut()), [wrap]);
+  const doSignOut = useCallback(async () => wrap(() => signOut().unwrap()), [signOut, wrap]);
 
   return {
     isBusy,

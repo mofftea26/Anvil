@@ -1,5 +1,5 @@
 import * as Localization from "expo-localization";
-import i18n from "i18next";
+import i18next from "i18next";
 import { initReactI18next } from "react-i18next";
 
 import ar from "./resources/ar.json";
@@ -25,7 +25,8 @@ function detectLanguage(): AppLanguage {
 
 export const defaultLanguage: AppLanguage = detectLanguage();
 
-void i18n.use(initReactI18next).init({
+// eslint-disable-next-line import/no-named-as-default-member
+void i18next.use(initReactI18next).init({
   compatibilityJSON: "v4",
   resources: {
     en: { translation: en },
@@ -39,4 +40,4 @@ void i18n.use(initReactI18next).init({
   },
 });
 
-export default i18n;
+export default i18next;

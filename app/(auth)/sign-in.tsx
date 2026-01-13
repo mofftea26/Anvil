@@ -1,21 +1,31 @@
-﻿import { zodResolver } from "@hookform/resolvers/zod";
-import { Link, router } from "expo-router";
-import { useMemo, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Link, router, useLocalSearchParams } from "expo-router";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Button, Text, XStack, YStack } from "tamagui";
+import { Pressable } from "react-native";
 import { z } from "zod";
 
 import { useAuthActions } from "../../src/features/auth/hooks/useAuthActions";
 import { AppInput } from "../../src/shared/components/AppInput";
 import { useAppTranslation } from "../../src/shared/i18n/useAppTranslation";
+import { appToast, Button, HStack, KeyboardScreen, Text, useTheme, VStack } from "../../src/shared/ui";
 
 type Mode = "password" | "magic";
 
 export default function SignInScreen() {
   const { t } = useAppTranslation();
+  const theme = useTheme();
+  const params = useLocalSearchParams<{ error?: string }>();
+  const redirectedError = typeof params.error === "string" ? params.error : null;
+
   const { isBusy, errorMessage, doSignInPassword, doSignInMagic, clearError } =
     useAuthActions();
   const [mode, setMode] = useState<Mode>("password");
+
+  useEffect(() => {
+    if (!redirectedError) return;
+    appToast.error(redirectedError);
+  }, [redirectedError]);
 
   const emailSchema = useMemo(
     () => z.string().email(t("auth.errors.invalidEmail")),
@@ -58,6 +68,7 @@ export default function SignInScreen() {
 
   const onMagicSubmit = magicForm.handleSubmit(async (values) => {
     await doSignInMagic(values.email.trim());
+    appToast.success(t("auth.toasts.magicLinkSent"));
     router.push({
       pathname: "/(auth)/forgot-password",
       params: { mode: "magic" },
@@ -71,51 +82,65 @@ export default function SignInScreen() {
   };
 
   return (
-    <YStack
-      flex={1}
-      backgroundColor="$background"
-      justifyContent="center"
-      gap="$5"
-      padding="$6"
-    >
-      <YStack gap="$2">
-        <Text fontSize={30} fontWeight="700">
-          {t("auth.title")}
-        </Text>
-        <Text opacity={0.75} lineHeight={22}>
-          {t("auth.subtitle")}
-        </Text>
-      </YStack>
+    <KeyboardScreen centerIfShort padding={theme.spacing.xl}>
+      <VStack style={{ gap: theme.spacing.xl }}>
+        <VStack style={{ gap: theme.spacing.sm }}>
+          <Text
+            weight="bold"
+            style={{ fontSize: 30, lineHeight: 34 }}
+          >
+            {t("auth.title")}
+          </Text>
+          <Text muted>{t("auth.subtitle")}</Text>
+        </VStack>
 
-      <XStack
-        backgroundColor="$surface"
-        borderWidth={1}
-        borderColor="$borderColor"
-        borderRadius="$8"
-        padding="$1"
-        gap="$1"
-      >
-        <Button
-          flex={1}
-          borderRadius="$7"
-          backgroundColor={mode === "password" ? "$surface2" : "transparent"}
-          onPress={() => switchMode("password")}
+        {redirectedError ? (
+          <Text variant="caption" color={theme.colors.accent2}>
+            {redirectedError}
+          </Text>
+        ) : null}
+
+        <HStack
+          style={{
+            backgroundColor: theme.colors.surface,
+            borderWidth: 1,
+            borderColor: theme.colors.border,
+            borderRadius: theme.radii.lg,
+            padding: 6,
+            gap: 6,
+          }}
         >
-          {t("auth.signIn")}
-        </Button>
+          <Pressable
+            onPress={() => switchMode("password")}
+            style={{
+              flex: 1,
+              height: 44,
+              borderRadius: theme.radii.md,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: mode === "password" ? theme.colors.surface2 : "transparent",
+            }}
+          >
+            <Text weight="semibold">{t("auth.signIn")}</Text>
+          </Pressable>
 
-        <Button
-          flex={1}
-          borderRadius="$7"
-          backgroundColor={mode === "magic" ? "$surface2" : "transparent"}
-          onPress={() => switchMode("magic")}
-        >
-          {t("auth.magicLink")}
-        </Button>
-      </XStack>
+          <Pressable
+            onPress={() => switchMode("magic")}
+            style={{
+              flex: 1,
+              height: 44,
+              borderRadius: theme.radii.md,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: mode === "magic" ? theme.colors.surface2 : "transparent",
+            }}
+          >
+            <Text weight="semibold">{t("auth.magicLink")}</Text>
+          </Pressable>
+        </HStack>
 
-      {mode === "password" ? (
-        <YStack gap="$4">
+        {mode === "password" ? (
+          <VStack style={{ gap: theme.spacing.lg }}>
           <Controller
             control={passwordForm.control}
             name="email"
@@ -149,42 +174,35 @@ export default function SignInScreen() {
           />
 
           {errorMessage ? (
-            <Text color="$accent2" fontSize={13}>
+            <Text variant="caption" color={theme.colors.accent2}>
               {errorMessage}
             </Text>
           ) : null}
 
-          <Button
-            backgroundColor="$accent"
-            color="$background"
-            borderRadius="$8"
-            height={48}
-            disabled={isBusy}
-            onPress={onPasswordSubmit}
-          >
-            {isBusy ? t("common.loading") : t("auth.signIn")}
+          <Button isLoading={isBusy} onPress={onPasswordSubmit}>
+            {t("auth.signIn")}
           </Button>
 
-          <YStack alignItems="center" gap="$2" marginTop="$1">
+          <VStack style={{ alignItems: "center", gap: 10, marginTop: 4 }}>
             <Link href="/(auth)/forgot-password" asChild>
-              <Text opacity={0.85} textDecorationLine="underline">
+              <Text style={{ opacity: 0.85, textDecorationLine: "underline" }}>
                 {t("auth.forgotPassword")}
               </Text>
             </Link>
 
-            <XStack gap="$2" alignItems="center">
-              <Text opacity={0.75}>{t("auth.noAccount")}</Text>
+            <HStack gap={8} align="center">
+              <Text muted>{t("auth.noAccount")}</Text>
               <Link href="/(auth)/sign-up" asChild>
-                <Text textDecorationLine="underline">
+                <Text style={{ textDecorationLine: "underline" }}>
                   {t("auth.goToSignUp")}
                 </Text>
               </Link>
-            </XStack>
-          </YStack>
-        </YStack>
+            </HStack>
+          </VStack>
+        </VStack>
       ) : (
-        <YStack gap="$4">
-          <Text opacity={0.75} lineHeight={22}>
+        <VStack style={{ gap: theme.spacing.lg }}>
+          <Text muted>
             {t("auth.magicHint")}
           </Text>
 
@@ -205,34 +223,28 @@ export default function SignInScreen() {
           />
 
           {errorMessage ? (
-            <Text color="$accent2" fontSize={13}>
+            <Text variant="caption" color={theme.colors.accent2}>
               {errorMessage}
             </Text>
           ) : null}
 
-          <Button
-            backgroundColor="$accent"
-            color="$background"
-            borderRadius="$8"
-            height={48}
-            disabled={isBusy}
-            onPress={onMagicSubmit}
-          >
-            {isBusy ? t("common.loading") : t("auth.sendLink")}
+          <Button isLoading={isBusy} onPress={onMagicSubmit}>
+            {t("auth.sendLink")}
           </Button>
 
-          <YStack alignItems="center" gap="$2" marginTop="$1">
-            <XStack gap="$2" alignItems="center">
-              <Text opacity={0.75}>{t("auth.noAccount")}</Text>
+          <VStack style={{ alignItems: "center", gap: 10, marginTop: 4 }}>
+            <HStack gap={8} align="center">
+              <Text muted>{t("auth.noAccount")}</Text>
               <Link href="/(auth)/sign-up" asChild>
-                <Text textDecorationLine="underline">
+                <Text style={{ textDecorationLine: "underline" }}>
                   {t("auth.goToSignUp")}
                 </Text>
               </Link>
-            </XStack>
-          </YStack>
-        </YStack>
+            </HStack>
+          </VStack>
+        </VStack>
       )}
-    </YStack>
+      </VStack>
+    </KeyboardScreen>
   );
 }

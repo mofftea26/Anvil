@@ -25,6 +25,12 @@
     "resetHint": "Nous vous enverrons un lien pour réinitialiser votre mot de passe.",
     "checkEmailTitle": "Vérifiez votre email",
     "checkEmailSubtitle": "Si l’adresse existe, vous recevrez des instructions sous peu.",
+    "toasts": {
+      "magicLinkSent": "Lien magique envoyé. Vérifiez votre email.",
+      "resetLinkSent": "Lien de réinitialisation envoyé. Vérifiez votre email.",
+      "passwordUpdated": "Mot de passe mis à jour.",
+      "signedOut": "Déconnecté."
+    },
     "errors": {
       "invalidEmail": "Veuillez saisir une adresse email valide.",
       "passwordMin": "Le mot de passe doit contenir au moins 8 caractères.",
@@ -58,21 +64,34 @@
     "cancel": "Annuler",
     "close": "Fermer",
     "save": "Enregistrer",
+    "apply": "Appliquer",
+    "clear": "Effacer",
     "delete": "Supprimer",
     "edit": "Modifier",
     "view": "Voir",
     "search": "Rechercher",
+    "noResults": "Aucun résultat",
+    "preview": "Aperçu",
     "filter": "Filtrer",
     "sort": "Trier",
     "refresh": "Actualiser",
     "next": "Suivant",
     "previous": "Précédent",
     "selectPlaceholder": "Sélectionner…",
-    "optional": "Optionnel"
+    "optional": "Optionnel",
+    "invalidNumber": "Nombre invalide",
+    "tryAgain": "Réessayer",
+    "add": "Ajouter",
+    "change": "Modifier",
+    "chooseFile": "Choisir un fichier",
+    "pickColor": "Choisir une couleur",
+    "orEnterHex": "Ou saisir le HEX"
   },
   "state": {
     "initializing": "Initialisation…",
-    "authError": "Nous n’avons pas pu finaliser l’authentification."
+    "authError": "Nous n’avons pas pu finaliser l’authentification.",
+    "crashedTitle": "Une erreur est survenue",
+    "crashedSubtitle": "Veuillez réessayer."
   },
   "onboarding": {
     "profileTitle": "Configurer votre profil",
@@ -86,23 +105,51 @@
     "roleHintClient": "Suivez votre plan, vos progrès et connectez-vous à un coach."
   },
   "profile": {
+    "errors": {
+      "loadFailed": "Impossible de charger le profil.",
+      "saveFailed": "Impossible d’enregistrer."
+    },
     "sections": {
       "account": "Compte",
       "basic": "Informations",
       "body": "Mesures",
-      "preferences": "Préférences"
+      "preferences": "Préférences",
+      "trainer": "Profil coach"
     },
     "fields": {
       "nationality": "Nationalité",
       "gender": "Genre",
       "birthDate": "Date de naissance",
       "heightCm": "Taille (cm)",
+      "heightFt": "Taille (ft)",
+      "heightIn": "Taille (in)",
       "weightKg": "Poids (kg)",
+      "weightLb": "Poids (lb)",
       "unitSystem": "Système d’unités",
       "activityLevel": "Niveau d’activité",
-      "target": "Objectif"
+      "target": "Objectif",
+      "phone": "Téléphone",
+      "notes": "Notes",
+      "brandName": "Nom de marque",
+      "primaryColor": "Couleur principale (HEX)",
+      "secondaryColor": "Couleur secondaire (HEX)",
+      "logoUrl": "URL du logo",
+      "bio": "Bio",
+      "certifications": "Certifications",
+      "instagram": "Instagram",
+      "website": "Site web"
     },
-    "placeholders": { "date": "AAAA-MM-JJ" },
+    "placeholders": {
+      "date": "AAAA-MM-JJ",
+      "bio": "Courte bio…",
+      "certifications": "IFBB, NASM…",
+      "notes": "Notes…"
+    },
+    "certifications": {
+      "empty": "Aucune certification pour le moment.",
+      "addLabel": "Ajouter une certification",
+      "deleteTitle": "Supprimer la certification ?"
+    },
     "gender": { "male": "Homme", "female": "Femme" },
     "unitSystem": {
       "metric": "Métrique (cm / kg)",
@@ -130,6 +177,9 @@
     "actions": {
       "saveChanges": "Enregistrer les modifications",
       "signOut": "Se déconnecter"
+    },
+    "toasts": {
+      "saved": "Profil enregistré."
     }
   }
 }
