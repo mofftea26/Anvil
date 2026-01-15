@@ -100,7 +100,7 @@ export default function LinkTrainerScreen() {
         </Button>
       </HStack>
 
-      {inlineError ? <Text color={theme.colors.accent2}>{inlineError}</Text> : null}
+      {inlineError ? <Text color={theme.colors.danger}>{inlineError}</Text> : null}
 
       {tab === "redeem" ? (
         <Card>

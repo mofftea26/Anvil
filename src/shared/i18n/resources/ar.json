@@ -39,7 +39,13 @@
       "missingTokens": "لم نتمكن من التحقق من الرابط. حاول مرة أخرى."
     }
   },
-  "tabs": { "dashboard": "لوحة التحكم", "profile": "الملف الشخصي", "clients": "العملاء" },
+  "tabs": {
+    "dashboard": "لوحة التحكم",
+    "profile": "الملف الشخصي",
+    "clients": "العملاء",
+    "coach": "المدرب",
+    "account": "الحساب"
+  },
   "client": {
     "dashboardTitle": "لوحة التحكم",
     "dashboardSubtitle": "ستظهر خطتك وتقدمك هنا.",
@@ -87,7 +93,8 @@
     "pickColor": "اختر لوناً",
     "orEnterHex": "أو أدخل HEX",
     "share": "مشاركة",
-    "copy": "نسخ"
+    "copy": "نسخ",
+    "areYouSure": "هل أنت متأكد؟"
   },
   "linking": {
     "clients": {
@@ -95,8 +102,13 @@
       "empty": "لا يوجد عملاء بعد.",
       "viewClient": "عرض العميل",
       "archive": "أرشفة",
+      "archived": "مؤرشف",
       "unarchive": "إلغاء الأرشفة",
-      "addClient": "إضافة عميل"
+      "addClient": "إضافة عميل",
+      "deleteClient": "حذف العميل",
+      "mustArchiveBeforeDelete": "يجب أرشفة العميل قبل الحذف.",
+      "noTarget": "لا يوجد هدف",
+      "nextCheckIn": "المتابعة"
     },
     "addClient": {
       "title": "إضافة عميل",
@@ -130,7 +142,14 @@
     "coach": {
       "title": "مدربي",
       "notLinked": "لا يوجد مدرب مرتبط بعد.",
-      "linkNow": "اربط الآن"
+      "linkNow": "اربط الآن",
+      "checkIn": "المتابعة",
+      "contact": "معلومات التواصل",
+      "pauseReason": "سبب الإيقاف (اختياري)",
+      "pause": "إيقاف مؤقت",
+      "resume": "استئناف",
+      "disconnect": "قطع الارتباط",
+      "findTrainer": "ابحث عن مدرب"
     },
     "errors": {
       "invalidInviteCode": "رمز دعوة غير صالح.",
@@ -138,7 +157,40 @@
       "inviteNotRedeemable": "لا يمكن استخدام هذا الرمز.",
       "onlyTrainers": "هذا الإجراء للمدربين فقط.",
       "roleLocked": "لا يمكن تغيير الدور بعد اختياره."
+    },
+    "clientDetails": {
+      "basicInfo": "معلومات العميل",
+      "trainerManagement": "إدارة المدرب",
+      "linkActions": "إجراءات الربط",
+      "notFound": "تعذر العثور على رابط العميل."
+    },
+    "management": {
+      "clientStatus": "حالة العميل",
+      "checkInFrequency": "وتيرة المتابعة",
+      "nextCheckInAt": "تاريخ المتابعة القادمة",
+      "coachNotes": "ملاحظات المدرب",
+      "quickStatus": "تحديث سريع",
+      "markCheckIn": "تسجيل متابعة",
+      "nextCheckInMissing": "اختر تاريخ المتابعة القادمة أولاً.",
+      "status": {
+        "active": "نشط",
+        "paused": "متوقف مؤقتاً",
+        "inactive": "غير نشط"
+      },
+      "frequency": {
+        "weekly": "أسبوعي",
+        "biweekly": "كل أسبوعين",
+        "monthly": "شهري",
+        "custom": "مخصص"
+      }
     }
+  },
+  "account": {
+    "title": "الحساب",
+    "avatar": "الصورة",
+    "changeAvatar": "تغيير الصورة",
+    "uploading": "جارٍ الرفع…",
+    "saveProfile": "حفظ"
   },
   "state": {
     "initializing": "جارٍ التهيئة…",
@@ -167,7 +219,8 @@
       "basic": "المعلومات",
       "body": "القياسات",
       "preferences": "التفضيلات",
-      "trainer": "ملف المدرب"
+      "trainer": "ملف المدرب",
+      "brandManagement": "إدارة العلامة"
     },
     "fields": {
       "nationality": "الجنسية",

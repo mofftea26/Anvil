@@ -7,6 +7,7 @@ import type {
 } from "../../profile/types/profile";
 import type {
   TrainerClientLink,
+  TrainerClientManagement,
   TrainerInvite,
   TrainerRequest,
 } from "../types/linking";
@@ -23,6 +24,7 @@ type TrainerClientWithDetails = TrainerClientLink & {
         > | null;
       })
     | null;
+  management?: TrainerClientManagement | null;
 };
 
 type CoachDetails = {
@@ -32,6 +34,7 @@ type CoachDetails = {
     "id" | "email" | "firstName" | "lastName" | "avatarUrl"
   > | null;
   trainerProfile: TrainerProfile | null;
+  management: TrainerClientManagement | null;
 };
 
 export const linkingApiSlice = api.injectEndpoints({
@@ -53,7 +56,7 @@ export const linkingApiSlice = api.injectEndpoints({
         const rows = (links as any[]) ?? [];
         const clientIds = rows.map((r) => r.clientId).filter(Boolean);
 
-        const [usersRes, profilesRes] = await Promise.all([
+        const [usersRes, profilesRes, managementRes] = await Promise.all([
           supabase
             .from("users")
             .select("id,email,firstName,lastName,avatarUrl")
@@ -72,12 +75,26 @@ export const linkingApiSlice = api.injectEndpoints({
                 ? clientIds
                 : ["00000000-0000-0000-0000-000000000000"]
             ),
+          supabase
+            .from("trainerClientManagement")
+            .select(
+              "trainerId,clientId,clientStatus,clientRelationshipStatus,clientPauseReason,checkInFrequency,nextCheckInAt,lastCheckInAt,updatedAt,coachNotes"
+            )
+            .eq("trainerId", trainerId)
+            .in(
+              "clientId",
+              clientIds.length
+                ? clientIds
+                : ["00000000-0000-0000-0000-000000000000"]
+            ),
         ]);
 
         if (usersRes.error)
           return { error: { message: usersRes.error.message } };
         if (profilesRes.error)
           return { error: { message: profilesRes.error.message } };
+        if ((managementRes as any).error)
+          return { error: { message: (managementRes as any).error.message } };
 
         const usersById = new Map<string, any>(
           ((usersRes.data as any[]) ?? []).map((u) => [u.id, u])
@@ -85,10 +102,17 @@ export const linkingApiSlice = api.injectEndpoints({
         const profilesById = new Map<string, any>(
           ((profilesRes.data as any[]) ?? []).map((p) => [p.userId, p])
         );
+        const managementByClientId = new Map<string, any>(
+          (((managementRes as any).data as any[]) ?? []).map((m) => [
+            m.clientId,
+            m,
+          ])
+        );
 
         const data: TrainerClientWithDetails[] = rows.map((r) => {
           const u = usersById.get(r.clientId) ?? null;
           const p = profilesById.get(r.clientId) ?? null;
+          const m = managementByClientId.get(r.clientId) ?? null;
           return {
             ...r,
             client: u
@@ -103,6 +127,7 @@ export const linkingApiSlice = api.injectEndpoints({
                     : null,
                 }
               : null,
+            management: (m as TrainerClientManagement) ?? null,
           } as TrainerClientWithDetails;
         });
 
@@ -127,6 +152,87 @@ export const linkingApiSlice = api.injectEndpoints({
         );
         if (error) return { error: { message: error.message } };
         return { data: data as TrainerClientLink };
+      },
+      invalidatesTags: ["TrainerClients", "Coach"],
+    }),
+
+    // ---------- Trainer: client management ----------
+    upsertTrainerClientManagement: build.mutation<
+      TrainerClientManagement,
+      {
+        clientId: string;
+        clientStatus: "active" | "paused" | "inactive";
+        checkInFrequency: "weekly" | "biweekly" | "monthly" | "custom";
+        nextCheckInAt: string | null;
+        coachNotes: string | null;
+      }
+    >({
+      async queryFn({
+        clientId,
+        clientStatus,
+        checkInFrequency,
+        nextCheckInAt,
+        coachNotes,
+      }) {
+        const { data, error } = await supabase.rpc(
+          "anvil_upsert_trainer_client_management",
+          {
+            p_client_id: clientId,
+            p_client_status: clientStatus,
+            p_check_in_frequency: checkInFrequency,
+            p_next_check_in_at: nextCheckInAt,
+            p_coach_notes: coachNotes,
+          }
+        );
+        if (error) return { error: { message: error.message } };
+        return { data: data as TrainerClientManagement };
+      },
+      invalidatesTags: ["TrainerClients", "Coach"],
+    }),
+
+    setClientStatus: build.mutation<
+      TrainerClientManagement,
+      { clientId: string; clientStatus: "active" | "paused" | "inactive" }
+    >({
+      async queryFn({ clientId, clientStatus }) {
+        const { data, error } = await supabase.rpc("anvil_set_client_status", {
+          p_client_id: clientId,
+          p_client_status: clientStatus,
+        });
+        if (error) return { error: { message: error.message } };
+        return { data: data as TrainerClientManagement };
+      },
+      invalidatesTags: ["TrainerClients", "Coach"],
+    }),
+
+    markClientCheckIn: build.mutation<
+      TrainerClientManagement,
+      { clientId: string; nextCheckInAt: string | null }
+    >({
+      async queryFn({ clientId, nextCheckInAt }) {
+        const { data, error } = await supabase.rpc(
+          "anvil_mark_client_checkin",
+          {
+            p_client_id: clientId,
+            p_next_check_in_at: nextCheckInAt,
+          }
+        );
+        if (error) return { error: { message: error.message } };
+        return { data: data as TrainerClientManagement };
+      },
+      invalidatesTags: ["TrainerClients", "Coach"],
+    }),
+
+    deleteArchivedClientLink: build.mutation<null, { clientId: string }>({
+      async queryFn({ clientId }) {
+        const { error } = await supabase.rpc(
+          "anvil_delete_archived_client_link",
+          {
+            p_client_id: clientId,
+          }
+        );
+        if (error) return { error: { message: error.message } };
+        return { data: null };
       },
       invalidatesTags: ["TrainerClients", "Coach"],
     }),
@@ -302,7 +408,7 @@ export const linkingApiSlice = api.injectEndpoints({
 
         const trainerId = (link as any).trainerId as string;
 
-        const [userRes, profileRes] = await Promise.all([
+        const [userRes, profileRes, managementRes] = await Promise.all([
           supabase
             .from("users")
             .select("id,email,firstName,lastName,avatarUrl")
@@ -315,21 +421,67 @@ export const linkingApiSlice = api.injectEndpoints({
             )
             .eq("userId", trainerId)
             .maybeSingle(),
+          supabase
+            .from("trainerClientManagement")
+            .select(
+              "trainerId,clientId,clientStatus,clientRelationshipStatus,clientPauseReason,checkInFrequency,nextCheckInAt,lastCheckInAt,updatedAt,coachNotes"
+            )
+            .eq("trainerId", trainerId)
+            .eq("clientId", clientId)
+            .maybeSingle(),
         ]);
 
         if (userRes.error) return { error: { message: userRes.error.message } };
         if (profileRes.error)
           return { error: { message: profileRes.error.message } };
+        if ((managementRes as any).error)
+          return { error: { message: (managementRes as any).error.message } };
 
         return {
           data: {
             link: link as any,
             trainer: (userRes.data as any) ?? null,
             trainerProfile: (profileRes.data as any) ?? null,
+            management: ((managementRes as any).data as any) ?? null,
           },
         };
       },
       providesTags: (_res, _err, arg) => [{ type: "Coach", id: arg.clientId }],
+    }),
+
+    // ---------- Client: relationship actions ----------
+    clientSetRelationshipStatus: build.mutation<
+      null,
+      {
+        trainerId: string;
+        status: "active" | "paused";
+        pauseReason?: string | null;
+      }
+    >({
+      async queryFn({ trainerId, status, pauseReason }) {
+        const { error } = await supabase.rpc(
+          "anvil_client_set_relationship_status",
+          {
+            p_trainer_id: trainerId,
+            p_status: status,
+            p_pause_reason: pauseReason ?? null,
+          }
+        );
+        if (error) return { error: { message: error.message } };
+        return { data: null };
+      },
+      invalidatesTags: ["Coach"],
+    }),
+
+    clientCancelTrainer: build.mutation<null, { trainerId: string }>({
+      async queryFn({ trainerId }) {
+        const { error } = await supabase.rpc("anvil_client_cancel_trainer", {
+          p_trainer_id: trainerId,
+        });
+        if (error) return { error: { message: error.message } };
+        return { data: null };
+      },
+      invalidatesTags: ["Coach"],
     }),
 
     // ---------- Trainer: create client by email (edge function) ----------
@@ -374,6 +526,10 @@ export const linkingApiSlice = api.injectEndpoints({
 export const {
   useGetTrainerClientsQuery,
   useSetTrainerClientStatusMutation,
+  useUpsertTrainerClientManagementMutation,
+  useSetClientStatusMutation,
+  useMarkClientCheckInMutation,
+  useDeleteArchivedClientLinkMutation,
   useCreateTrainerInviteMutation,
   useGetTrainerInvitesQuery,
   useRedeemInviteCodeMutation,
@@ -384,5 +540,7 @@ export const {
   useAcceptTrainerRequestMutation,
   useDeclineTrainerRequestMutation,
   useGetMyCoachQuery,
+  useClientSetRelationshipStatusMutation,
+  useClientCancelTrainerMutation,
   useCreateClientByEmailMutation,
 } = linkingApiSlice;

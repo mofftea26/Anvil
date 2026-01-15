@@ -39,7 +39,13 @@
       "missingTokens": "Impossible de valider le lien. Veuillez réessayer."
     }
   },
-  "tabs": { "dashboard": "Tableau de bord", "profile": "Profil", "clients": "Clients" },
+  "tabs": {
+    "dashboard": "Tableau de bord",
+    "profile": "Profil",
+    "clients": "Clients",
+    "coach": "Coach",
+    "account": "Compte"
+  },
   "client": {
     "dashboardTitle": "Tableau de bord",
     "dashboardSubtitle": "Votre plan et vos progrès apparaîtront ici.",
@@ -87,7 +93,8 @@
     "pickColor": "Choisir une couleur",
     "orEnterHex": "Ou saisir le HEX",
     "share": "Partager",
-    "copy": "Copier"
+    "copy": "Copier",
+    "areYouSure": "Êtes-vous sûr ?"
   },
   "linking": {
     "clients": {
@@ -95,8 +102,13 @@
       "empty": "Aucun client pour le moment.",
       "viewClient": "Voir le client",
       "archive": "Archiver",
+      "archived": "Archivé",
       "unarchive": "Désarchiver",
-      "addClient": "Ajouter un client"
+      "addClient": "Ajouter un client",
+      "deleteClient": "Supprimer le client",
+      "mustArchiveBeforeDelete": "Le client doit être archivé avant suppression.",
+      "noTarget": "Aucun objectif",
+      "nextCheckIn": "Check-in"
     },
     "addClient": {
       "title": "Ajouter un client",
@@ -130,7 +142,14 @@
     "coach": {
       "title": "Mon coach",
       "notLinked": "Aucun coach lié.",
-      "linkNow": "Lier maintenant"
+      "linkNow": "Lier maintenant",
+      "checkIn": "Check-in",
+      "contact": "Contact",
+      "pauseReason": "Raison de pause (optionnel)",
+      "pause": "Mettre en pause",
+      "resume": "Reprendre",
+      "disconnect": "Déconnecter",
+      "findTrainer": "Trouver un coach"
     },
     "errors": {
       "invalidInviteCode": "Code d’invitation invalide.",
@@ -138,7 +157,40 @@
       "inviteNotRedeemable": "Le code n’est pas utilisable.",
       "onlyTrainers": "Seuls les coachs peuvent faire cela.",
       "roleLocked": "Le rôle ne peut plus être changé."
+    },
+    "clientDetails": {
+      "basicInfo": "Infos client",
+      "trainerManagement": "Gestion coach",
+      "linkActions": "Actions du lien",
+      "notFound": "Lien client introuvable."
+    },
+    "management": {
+      "clientStatus": "Statut client",
+      "checkInFrequency": "Fréquence des check-ins",
+      "nextCheckInAt": "Date du prochain check-in",
+      "coachNotes": "Notes coach",
+      "quickStatus": "Statut rapide",
+      "markCheckIn": "Marquer le check-in",
+      "nextCheckInMissing": "Choisissez d’abord une date de check-in.",
+      "status": {
+        "active": "Actif",
+        "paused": "En pause",
+        "inactive": "Inactif"
+      },
+      "frequency": {
+        "weekly": "Hebdomadaire",
+        "biweekly": "Toutes les 2 semaines",
+        "monthly": "Mensuel",
+        "custom": "Personnalisé"
+      }
     }
+  },
+  "account": {
+    "title": "Compte",
+    "avatar": "Avatar",
+    "changeAvatar": "Changer l’avatar",
+    "uploading": "Téléversement…",
+    "saveProfile": "Enregistrer"
   },
   "state": {
     "initializing": "Initialisation…",
@@ -167,7 +219,8 @@
       "basic": "Informations",
       "body": "Mesures",
       "preferences": "Préférences",
-      "trainer": "Profil coach"
+      "trainer": "Profil coach",
+      "brandManagement": "Gestion de marque"
     },
     "fields": {
       "nationality": "Nationalité",

@@ -79,7 +79,7 @@ export default function ForgotPasswordScreen() {
         />
 
         {errorMessage ? (
-          <Text variant="caption" color={theme.colors.accent2}>
+          <Text variant="caption" color={theme.colors.danger}>
             {errorMessage}
           </Text>
         ) : null}

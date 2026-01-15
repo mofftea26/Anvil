@@ -5,7 +5,9 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  type StyleProp,
   View,
+  type ViewStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../theme";
@@ -14,6 +16,10 @@ type KeyboardScreenProps = PropsWithChildren<{
   padding?: number;
   bottomSpace?: number;
   centerIfShort?: boolean;
+  style?: StyleProp<ViewStyle>;
+  scrollStyle?: StyleProp<ViewStyle>;
+  contentContainerStyle?: StyleProp<ViewStyle>;
+  refreshControl?: React.ReactElement;
 }>;
 
 export function KeyboardScreen({
@@ -21,21 +27,32 @@ export function KeyboardScreen({
   padding = 16,
   bottomSpace,
   centerIfShort = false,
+  style,
+  scrollStyle,
+  contentContainerStyle,
+  refreshControl,
 }: KeyboardScreenProps) {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
 
-  const bottom = bottomSpace ?? Math.max(insets.bottom, 10) + 56;
+  // Tabs already reserve space for the tab bar, so avoid adding a large extra
+  // bottom padding (it causes a noticeable "dead space" at the end of scroll).
+  const bottom = bottomSpace ?? Math.max(insets.bottom, 10) + 12;
 
   return (
-    <View style={[styles.flex, { backgroundColor: theme.colors.background }]}>
+    <View style={[styles.flex, { backgroundColor: theme.colors.background }, style]}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={0}
       >
         <ScrollView
-          style={[styles.flex, { backgroundColor: theme.colors.background }]}
+          refreshControl={refreshControl}
+          style={[
+            styles.flex,
+            { backgroundColor: theme.colors.background },
+            scrollStyle,
+          ]}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode={Platform.OS === "ios" ? "on-drag" : "none"}
           showsVerticalScrollIndicator={false}
@@ -48,12 +65,15 @@ export function KeyboardScreen({
           contentContainerStyle={[
             styles.container,
             { padding, paddingBottom: bottom },
+            contentContainerStyle,
             centerIfShort ? styles.centeredContainer : null,
           ]}
         >
-          <View style={[styles.flex, centerIfShort ? styles.centeredInner : null]}>
-            {children}
-          </View>
+          {centerIfShort ? (
+            <View style={[styles.flex, styles.centeredInner]}>{children}</View>
+          ) : (
+            children
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </View>

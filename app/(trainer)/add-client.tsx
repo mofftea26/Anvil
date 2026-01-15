@@ -2,7 +2,7 @@ import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React from "react";
-import { View } from "react-native";
+import { RefreshControl, View } from "react-native";
 import QRCode from "react-native-qrcode-svg";
 
 import {
@@ -15,6 +15,7 @@ import {
 import { mapLinkingError } from "../../src/features/linking/utils/linkingErrors";
 import { useMyProfile } from "../../src/features/profile/hooks/useMyProfile";
 import { AppInput } from "../../src/shared/components/AppInput";
+import { KeyboardScreen } from "../../src/shared/components/KeyboardScreen";
 import { useAppSelector } from "../../src/shared/hooks/useAppSelector";
 import { useAppTranslation } from "../../src/shared/i18n/useAppTranslation";
 import { appToast, Button, Card, Divider, HStack, IconButton, Text, useTheme, VStack } from "../../src/shared/ui";
@@ -112,25 +113,38 @@ export default function AddClientScreen() {
     void generateInvite();
   }, [trainerId, generateInvite]);
 
-  return (
-    <VStack
-      style={{
-        flex: 1,
-        backgroundColor: theme.colors.background,
-        padding: theme.spacing.lg,
-        gap: theme.spacing.lg,
-      }}
-    >
-      <HStack align="center" justify="space-between">
-        <Text variant="title" weight="bold">
-          {t("linking.addClient.title")}
-        </Text>
-        <Button variant="secondary" height={42} onPress={() => router.back()}>
-          {t("common.close")}
-        </Button>
-      </HStack>
+  const [refreshing, setRefreshing] = React.useState(false);
+  const onRefresh = React.useCallback(async () => {
+    try {
+      setRefreshing(true);
+      await refetchInbox();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetchInbox]);
 
-      <Segmented value={tab} onChange={setTab} />
+  return (
+    <KeyboardScreen
+      padding={theme.spacing.lg}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={() => void onRefresh()}
+          tintColor={theme.colors.text}
+        />
+      }
+    >
+      <VStack style={{ backgroundColor: theme.colors.background, gap: theme.spacing.lg }}>
+        <HStack align="center" justify="space-between">
+          <Text variant="title" weight="bold">
+            {t("linking.addClient.title")}
+          </Text>
+          <Button variant="secondary" height={42} onPress={() => router.back()}>
+            {t("common.close")}
+          </Button>
+        </HStack>
+
+        <Segmented value={tab} onChange={setTab} />
 
       {tab === "invite" ? (
         <VStack style={{ gap: theme.spacing.md }}>
@@ -194,12 +208,7 @@ export default function AddClientScreen() {
 
       {tab === "requests" ? (
         <VStack style={{ gap: theme.spacing.md }}>
-          <HStack align="center" justify="space-between">
-            <Text weight="bold">{t("linking.requests.title")}</Text>
-            <Button variant="secondary" height={40} onPress={() => void refetchInbox()}>
-              {t("common.refresh")}
-            </Button>
-          </HStack>
+          <Text weight="bold">{t("linking.requests.title")}</Text>
 
           {inboxLoading ? <Text muted>{t("common.loading")}</Text> : null}
 
@@ -310,7 +319,8 @@ export default function AddClientScreen() {
           </VStack>
         </Card>
       ) : null}
-    </VStack>
+      </VStack>
+    </KeyboardScreen>
   );
 }
 

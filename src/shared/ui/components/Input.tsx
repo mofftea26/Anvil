@@ -54,7 +54,7 @@ export function Input({
           styles.field,
           {
             backgroundColor: theme.colors.surface,
-            borderColor: error ? theme.colors.accent2 : theme.colors.border,
+            borderColor: error ? theme.colors.danger : theme.colors.border,
           },
           isMultiline
             ? {
@@ -106,7 +106,7 @@ export function Input({
       </View>
 
       {error ? (
-        <Text variant="caption" color={theme.colors.accent2}>
+        <Text variant="caption" color={theme.colors.danger}>
           {error}
         </Text>
       ) : null}

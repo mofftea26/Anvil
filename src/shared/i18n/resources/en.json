@@ -44,7 +44,9 @@
   "tabs": {
     "dashboard": "Dashboard",
     "profile": "Profile",
-    "clients": "Clients"
+    "clients": "Clients",
+    "coach": "Coach",
+    "account": "Account"
   },
   "client": {
     "dashboardTitle": "Dashboard",
@@ -93,7 +95,8 @@
     "pickColor": "Pick a color",
     "orEnterHex": "Or enter HEX",
     "share": "Share",
-    "copy": "Copy"
+    "copy": "Copy",
+    "areYouSure": "Are you sure?"
   },
   "linking": {
     "clients": {
@@ -101,8 +104,13 @@
       "empty": "No clients yet.",
       "viewClient": "View client",
       "archive": "Archive",
+      "archived": "Archived",
       "unarchive": "Unarchive",
-      "addClient": "Add client"
+      "addClient": "Add client",
+      "deleteClient": "Delete client",
+      "mustArchiveBeforeDelete": "Client must be archived before deletion.",
+      "noTarget": "No target",
+      "nextCheckIn": "Check-in"
     },
     "addClient": {
       "title": "Add client",
@@ -136,7 +144,14 @@
     "coach": {
       "title": "My coach",
       "notLinked": "No coach linked yet.",
-      "linkNow": "Link now"
+      "linkNow": "Link now",
+      "checkIn": "Check-in",
+      "contact": "Contact",
+      "pauseReason": "Pause reason (optional)",
+      "pause": "Pause",
+      "resume": "Resume",
+      "disconnect": "Disconnect",
+      "findTrainer": "Find a trainer"
     },
     "errors": {
       "invalidInviteCode": "Invalid invite code.",
@@ -144,7 +159,40 @@
       "inviteNotRedeemable": "Invite is not redeemable.",
       "onlyTrainers": "Only trainers can do that.",
       "roleLocked": "Role cannot be changed once set."
+    },
+    "clientDetails": {
+      "basicInfo": "Client info",
+      "trainerManagement": "Trainer management",
+      "linkActions": "Link actions",
+      "notFound": "Client link not found."
+    },
+    "management": {
+      "clientStatus": "Client status",
+      "checkInFrequency": "Check-in frequency",
+      "nextCheckInAt": "Next check-in date",
+      "coachNotes": "Coach notes",
+      "quickStatus": "Quick status",
+      "markCheckIn": "Mark check-in",
+      "nextCheckInMissing": "Pick a next check-in date first.",
+      "status": {
+        "active": "Active",
+        "paused": "Paused",
+        "inactive": "Inactive"
+      },
+      "frequency": {
+        "weekly": "Weekly",
+        "biweekly": "Biweekly",
+        "monthly": "Monthly",
+        "custom": "Custom"
+      }
     }
+  },
+  "account": {
+    "title": "Account",
+    "avatar": "Avatar",
+    "changeAvatar": "Change avatar",
+    "uploading": "Uploading…",
+    "saveProfile": "Save profile"
   },
   "state": {
     "initializing": "Initializing…",
@@ -173,7 +221,8 @@
       "basic": "Basic info",
       "body": "Body metrics",
       "preferences": "Preferences",
-      "trainer": "Trainer profile"
+      "trainer": "Trainer profile",
+      "brandManagement": "Brand management"
     },
     "fields": {
       "nationality": "Nationality",

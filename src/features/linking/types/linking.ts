@@ -8,6 +8,19 @@ export type TrainerClientLink = {
   createdAt?: string;
 };
 
+export type TrainerClientManagement = {
+  trainerId: string;
+  clientId: string;
+  clientStatus: "active" | "paused" | "inactive";
+  clientRelationshipStatus?: "active" | "paused" | null;
+  clientPauseReason?: string | null;
+  coachNotes: string | null;
+  checkInFrequency: "weekly" | "biweekly" | "monthly" | "custom";
+  nextCheckInAt: string | null;
+  lastCheckInAt: string | null;
+  updatedAt: string;
+};
+
 export type TrainerInviteStatus = "pending" | "redeemed" | "expired" | "revoked";
 
 export type TrainerInvite = {

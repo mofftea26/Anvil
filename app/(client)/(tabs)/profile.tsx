@@ -1,7 +1,8 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
+import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { Platform, View } from "react-native";
+import { Platform, RefreshControl, View } from "react-native";
 
 import { AppInput } from "../../../src/shared/components/AppInput";
 import { BottomSheetPicker } from "../../../src/shared/components/BottomSheetPicker";
@@ -26,13 +27,17 @@ import { countries } from "../../../src/shared/constants/countries";
 import { useAppDispatch } from "../../../src/shared/hooks/useAppDispatch";
 import { useAppSelector } from "../../../src/shared/hooks/useAppSelector";
 import { useAppTranslation } from "../../../src/shared/i18n/useAppTranslation";
+import { supabase } from "../../../src/shared/supabase/client";
+import { uriToUint8ArrayJpeg } from "../../../src/shared/supabase/imageUpload";
 import {
   appToast,
   Button,
   Card,
   Divider,
   HStack,
+  ProfileAccountCard,
   Text,
+  useAppAlert,
   useTheme,
   VStack,
 } from "../../../src/shared/ui";
@@ -47,6 +52,7 @@ function formatDateISO(date: Date) {
 export default function ClientProfileScreen() {
   const { t } = useAppTranslation();
   const theme = useTheme();
+  const alert = useAppAlert();
   const { me, clientProfile, isLoading, error, refetch } = useMyProfile();
   const dispatch = useAppDispatch();
   const auth = useAppSelector((s) => s.auth);
@@ -56,9 +62,20 @@ export default function ClientProfileScreen() {
   const [upsertClientProfile] = useUpsertClientProfileMutation();
 
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const [refreshing, setRefreshing] = React.useState(false);
+  const onRefresh = React.useCallback(async () => {
+    try {
+      setRefreshing(true);
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch]);
 
   const buildFormFromProfile = React.useCallback(
     (unitSystem: UnitSystem) => {
@@ -70,6 +87,7 @@ export default function ClientProfileScreen() {
       return {
         firstName: me?.firstName ?? "",
         lastName: me?.lastName ?? "",
+        avatarUrl: me?.avatarUrl ?? "",
         phone: clientProfile?.phone ?? "",
         nationality: clientProfile?.nationality ?? "",
         gender: clientProfile?.gender ?? "",
@@ -173,6 +191,56 @@ export default function ClientProfileScreen() {
     setForm((p) => ({ ...p, birthDate: formatDateISO(date) }));
   };
 
+  const pickAndUploadAvatar = async () => {
+    if (!auth.userId) return;
+    try {
+      setUploading(true);
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) return;
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"] as ImagePicker.MediaType[],
+        allowsEditing: true,
+        quality: 0.9,
+      });
+
+      if (result.canceled) return;
+      const uri = result.assets?.[0]?.uri;
+      if (!uri) return;
+
+      const { bytes, contentType } = await uriToUint8ArrayJpeg(uri);
+      // IMPORTANT: no "avatars/" prefix inside the "avatars" bucket.
+      const path = `${auth.userId}/avatar.jpg`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, bytes, { upsert: true, contentType });
+
+      if (uploadError) {
+        // Helps debug RLS 403 vs network errors.
+        console.log("UPLOAD ERROR FULL:", uploadError);
+        appToast.error(uploadError.message);
+        return;
+      }
+
+      const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+      const publicUrl = data.publicUrl;
+
+      await updateMyUserRow({
+        userId: auth.userId,
+        payload: { avatarUrl: publicUrl },
+      }).unwrap();
+
+      setForm((p) => ({ ...p, avatarUrl: publicUrl }));
+      await refetch();
+      appToast.success(t("profile.toasts.saved"));
+    } catch (e: any) {
+      appToast.error(e?.message ?? t("auth.errors.generic"));
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const onSave = async () => {
     if (!auth.userId || !me) return;
 
@@ -185,6 +253,7 @@ export default function ClientProfileScreen() {
         payload: {
           firstName: form.firstName.trim() || null,
           lastName: form.lastName.trim() || null,
+          avatarUrl: form.avatarUrl || null,
         },
       }).unwrap();
 
@@ -248,12 +317,46 @@ export default function ClientProfileScreen() {
     router.replace("/");
   };
 
+  const onPressSave = () => {
+    alert.confirm({
+      title: t("common.save"),
+      message: t("common.areYouSure"),
+      confirmText: t("common.save"),
+      cancelText: t("common.cancel"),
+      onConfirm: async () => {
+        await onSave();
+      },
+    });
+  };
+
+  const onPressSignOut = () => {
+    alert.confirm({
+      title: t("profile.actions.signOut"),
+      message: t("common.areYouSure"),
+      confirmText: t("profile.actions.signOut"),
+      cancelText: t("common.cancel"),
+      destructive: true,
+      onConfirm: async () => {
+        await onSignOut();
+      },
+    });
+  };
+
   const dateValue = form.birthDate
     ? new Date(form.birthDate)
     : new Date(1995, 0, 1);
 
   return (
-    <KeyboardScreen padding={12}>
+    <KeyboardScreen
+      padding={12}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={() => void onRefresh()}
+          tintColor={theme.colors.text}
+        />
+      }
+    >
       <VStack
         style={{
           gap: theme.spacing.lg,
@@ -264,26 +367,18 @@ export default function ClientProfileScreen() {
           {t("tabs.profile")}
         </Text>
 
-        {error ? <Text color={theme.colors.accent2}>{error}</Text> : null}
+        {error ? <Text color={theme.colors.danger}>{error}</Text> : null}
 
-        {/* Account */}
-        <Card>
-          <VStack style={{ gap: theme.spacing.sm }}>
-            <Text variant="caption" muted>
-              {t("profile.sections.account")}
-            </Text>
-
-            <Text weight="bold" style={{ fontSize: 16 }}>
-              {(me?.firstName ?? "") + " " + (me?.lastName ?? "")}
-            </Text>
-
-            <Text muted>{me?.email ?? ""}</Text>
-
-            <Text muted>
-              {t("client.profileCardRole")}: {me?.role ?? ""}
-            </Text>
-          </VStack>
-        </Card>
+        <ProfileAccountCard
+          title={t("profile.sections.account")}
+          firstName={form.firstName}
+          lastName={form.lastName}
+          email={me?.email ?? ""}
+          avatarUrl={form.avatarUrl}
+          seed={auth.userId || me?.email || "seed"}
+          onPressAvatar={() => void pickAndUploadAvatar()}
+          disabled={uploading}
+        />
 
         {/* Form */}
         <Card>
@@ -538,20 +633,17 @@ export default function ClientProfileScreen() {
             />
 
             {saveError ? (
-              <Text color={theme.colors.accent2}>{saveError}</Text>
+              <Text color={theme.colors.danger}>{saveError}</Text>
             ) : null}
 
-            <Button
-              isLoading={saving || isLoading}
-              onPress={() => void onSave()}
-            >
+            <Button isLoading={saving || isLoading} onPress={onPressSave}>
               {t("profile.actions.saveChanges")}
             </Button>
 
             <Button
               variant="secondary"
               isLoading={signingOut}
-              onPress={() => void onSignOut()}
+              onPress={onPressSignOut}
             >
               {t("profile.actions.signOut")}
             </Button>

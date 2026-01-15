@@ -57,6 +57,20 @@ export default function ClientTabsLayout() {
       />
 
       <Tabs.Screen
+        name="coach"
+        options={{
+          title: t("tabs.coach"),
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? "barbell" : "barbell-outline"}
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
         name="profile"
         options={{
           title: t("tabs.profile"),

@@ -95,7 +95,7 @@ export default function SignInScreen() {
         </VStack>
 
         {redirectedError ? (
-          <Text variant="caption" color={theme.colors.accent2}>
+          <Text variant="caption" color={theme.colors.danger}>
             {redirectedError}
           </Text>
         ) : null}
@@ -174,7 +174,7 @@ export default function SignInScreen() {
           />
 
           {errorMessage ? (
-            <Text variant="caption" color={theme.colors.accent2}>
+            <Text variant="caption" color={theme.colors.danger}>
               {errorMessage}
             </Text>
           ) : null}
@@ -223,7 +223,7 @@ export default function SignInScreen() {
           />
 
           {errorMessage ? (
-            <Text variant="caption" color={theme.colors.accent2}>
+            <Text variant="caption" color={theme.colors.danger}>
               {errorMessage}
             </Text>
           ) : null}
