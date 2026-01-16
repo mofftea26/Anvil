@@ -49,6 +49,8 @@ export function ProfileAccountCard({
   avatarUrl,
   seed,
   onPressAvatar,
+  onPressClear,
+  clearLabel,
   disabled,
 }: {
   title: string;
@@ -58,6 +60,8 @@ export function ProfileAccountCard({
   avatarUrl?: string | null;
   seed: string;
   onPressAvatar: () => void;
+  onPressClear?: () => void;
+  clearLabel?: string;
   disabled?: boolean;
 }) {
   const theme = useTheme();
@@ -68,9 +72,30 @@ export function ProfileAccountCard({
   return (
     <Card>
       <VStack style={{ gap: theme.spacing.sm }}>
-        <Text variant="caption" muted>
-          {title}
-        </Text>
+        <HStack align="center" justify="space-between">
+          <Text variant="caption" muted>
+            {title}
+          </Text>
+
+          {hasImage && onPressClear ? (
+            <Pressable
+              onPress={onPressClear}
+              disabled={disabled}
+              style={({ pressed }) => ({
+                opacity: disabled ? 0.5 : pressed ? 0.8 : 1,
+                paddingHorizontal: 6,
+                paddingVertical: 4,
+                borderRadius: 10,
+              })}
+            >
+              <Text variant="caption" style={{ opacity: 0.9 }}>
+                {clearLabel ?? "Clear"}
+              </Text>
+            </Pressable>
+          ) : (
+            <View />
+          )}
+        </HStack>
 
         <HStack align="center" gap={12}>
           <Pressable

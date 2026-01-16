@@ -94,6 +94,11 @@
     "chooseFile": "Choose file",
     "pickColor": "Pick a color",
     "orEnterHex": "Or enter HEX",
+    "enterHex": "Enter HEX",
+    "palette": "Palette",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "yesterday": "Yesterday",
     "share": "Share",
     "copy": "Copy",
     "areYouSure": "Are you sure?"
@@ -287,6 +292,7 @@
     },
     "actions": {
       "saveChanges": "Save changes",
+      "clearPhoto": "Clear photo",
       "signOut": "Sign out"
     },
     "toasts": {

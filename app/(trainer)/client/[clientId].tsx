@@ -1,5 +1,5 @@
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
@@ -15,12 +15,25 @@ import {
   useUpsertTrainerClientManagementMutation,
 } from "../../../src/features/linking/api/linkingApiSlice";
 import { useGetClientProfileQuery } from "../../../src/features/profile/api/profileApiSlice";
-import { BottomSheetPicker } from "../../../src/shared/components/BottomSheetPicker";
 import { AppInput } from "../../../src/shared/components/AppInput";
+import { BottomSheetPicker } from "../../../src/shared/components/BottomSheetPicker";
 import { KeyboardScreen } from "../../../src/shared/components/KeyboardScreen";
 import { useAppSelector } from "../../../src/shared/hooks/useAppSelector";
 import { useAppTranslation } from "../../../src/shared/i18n/useAppTranslation";
-import { appToast, Button, Card, Divider, HStack, Text, useAppAlert, useTheme, VStack } from "../../../src/shared/ui";
+import {
+  appToast,
+  Button,
+  Card,
+  Divider,
+  HStack,
+  LoadingSpinner,
+  StickyHeader,
+  Text,
+  useAppAlert,
+  useStickyHeaderHeight,
+  useTheme,
+  VStack,
+} from "../../../src/shared/ui";
 
 function hexToRgba(hex: string, alpha: number): string {
   const h = hex.replace("#", "").trim();
@@ -33,7 +46,10 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${finalA})`;
 }
 
-function getInitials(firstName: string | null | undefined, lastName: string | null | undefined): string | null {
+function getInitials(
+  firstName: string | null | undefined,
+  lastName: string | null | undefined
+): string | null {
   const a = (firstName ?? "").trim();
   const b = (lastName ?? "").trim();
   const s = `${a} ${b}`.trim();
@@ -54,7 +70,15 @@ function hashStringToInt(input: string): number {
 }
 
 function pickAvatarBg(seed: string): string {
-  const palette = ["#7C3AED", "#38BDF8", "#22C55E", "#F97316", "#F43F5E", "#A855F7", "#06B6D4"];
+  const palette = [
+    "#7C3AED",
+    "#38BDF8",
+    "#22C55E",
+    "#F97316",
+    "#F43F5E",
+    "#A855F7",
+    "#06B6D4",
+  ];
   const idx = hashStringToInt(seed) % palette.length;
   return palette[idx];
 }
@@ -62,7 +86,11 @@ function pickAvatarBg(seed: string): string {
 function formatDatePretty(iso: string) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
-  return new Intl.DateTimeFormat(undefined, { year: "numeric", month: "short", day: "2-digit" }).format(d);
+  return new Intl.DateTimeFormat(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  }).format(d);
 }
 
 export default function TrainerClientDetailsScreen() {
@@ -102,10 +130,12 @@ export default function TrainerClientDetailsScreen() {
     refetch: refetchProfile,
   } = useGetClientProfileQuery(clientId, { skip: !clientId });
 
-  const [upsertManagement, upsertState] = useUpsertTrainerClientManagementMutation();
+  const [upsertManagement, upsertState] =
+    useUpsertTrainerClientManagementMutation();
   const [setClientStatus, setClientStatusState] = useSetClientStatusMutation();
   const [markCheckIn, markCheckInState] = useMarkClientCheckInMutation();
-  const [setLinkStatus, setLinkStatusState] = useSetTrainerClientStatusMutation();
+  const [setLinkStatus, setLinkStatusState] =
+    useSetTrainerClientStatusMutation();
   const [deleteLink, deleteState] = useDeleteArchivedClientLinkMutation();
 
   const [showDatePicker, setShowDatePicker] = React.useState(false);
@@ -172,7 +202,9 @@ export default function TrainerClientDetailsScreen() {
         clientStatus: managementForm.clientStatus,
         checkInFrequency: managementForm.checkInFrequency,
         nextCheckInAt: managementForm.nextCheckInAt,
-        coachNotes: managementForm.coachNotes.trim() ? managementForm.coachNotes.trim() : null,
+        coachNotes: managementForm.coachNotes.trim()
+          ? managementForm.coachNotes.trim()
+          : null,
       }).unwrap();
       appToast.success(t("profile.toasts.saved"));
       await refreshAll();
@@ -190,6 +222,7 @@ export default function TrainerClientDetailsScreen() {
       appToast.success(t("profile.toasts.saved"));
       await refreshAll();
     } catch (e: any) {
+      console.log(e.message);
       appToast.error(e?.message ?? t("auth.errors.generic"));
     }
   };
@@ -253,7 +286,7 @@ export default function TrainerClientDetailsScreen() {
       <LinearGradient
         colors={[
           hexToRgba(brandA, 0.45),
-          hexToRgba(brandB, 0.30),
+          hexToRgba(brandB, 0.3),
           "rgba(0,0,0,0.00)",
         ]}
         start={{ x: 0, y: 0 }}
@@ -261,8 +294,22 @@ export default function TrainerClientDetailsScreen() {
         style={{ position: "absolute", left: 0, top: 0, right: 0, bottom: 0 }}
       />
 
+      <StickyHeader
+        title={fullName}
+        leftButton={{
+          label: "",
+          onPress: () => router.back(),
+          variant: "ghost",
+          icon: (
+            <Ionicons name="chevron-back" size={22} color={theme.colors.text} />
+          ),
+        }}
+        backgroundColor={theme.colors.background}
+      />
+
       <KeyboardScreen
-        padding={theme.spacing.lg}
+        bottomSpace={12}
+        headerHeight={useStickyHeaderHeight()}
         style={{ backgroundColor: "transparent" }}
         scrollStyle={{ backgroundColor: "transparent" }}
         refreshControl={
@@ -274,28 +321,16 @@ export default function TrainerClientDetailsScreen() {
         }
       >
         <VStack style={{ gap: theme.spacing.lg }}>
-          <HStack align="center" gap={10}>
-            <Ionicons
-              name="chevron-back"
-              size={22}
-              color={theme.colors.text}
-              onPress={() => router.back()}
-            />
-            <Text variant="title" weight="bold" numberOfLines={1} style={{ flex: 1 }}>
-              {fullName}
+          {linksError ? (
+            <Text color={theme.colors.danger}>
+              {(linksError as any)?.message ?? t("auth.errors.generic")}
             </Text>
-          </HStack>
-
-        {linksError ? (
-          <Text color={theme.colors.danger}>
-            {(linksError as any)?.message ?? t("auth.errors.generic")}
-          </Text>
-        ) : null}
-        {profileError ? (
-          <Text color={theme.colors.danger}>
-            {(profileError as any)?.message ?? t("auth.errors.generic")}
-          </Text>
-        ) : null}
+          ) : null}
+          {profileError ? (
+            <Text color={theme.colors.danger}>
+              {(profileError as any)?.message ?? t("auth.errors.generic")}
+            </Text>
+          ) : null}
 
           <Card padded={false} style={{ overflow: "hidden" }}>
             <View style={{ position: "relative" }}>
@@ -307,7 +342,13 @@ export default function TrainerClientDetailsScreen() {
                 ]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                style={{ position: "absolute", left: 0, top: 0, right: 0, bottom: 0 }}
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  top: 0,
+                  right: 0,
+                  bottom: 0,
+                }}
               />
 
               <VStack style={{ gap: 12, padding: 14 }}>
@@ -316,8 +357,12 @@ export default function TrainerClientDetailsScreen() {
                     {(() => {
                       const avatarUrl = clientUser?.avatarUrl ?? "";
                       const hasImage = Boolean(avatarUrl);
-                      const initials = getInitials(clientUser?.firstName, clientUser?.lastName);
-                      const seed = clientUser?.id || clientUser?.email || clientId;
+                      const initials = getInitials(
+                        clientUser?.firstName,
+                        clientUser?.lastName
+                      );
+                      const seed =
+                        clientUser?.id || clientUser?.email || clientId;
                       const bg = pickAvatarBg(seed);
 
                       return (
@@ -329,7 +374,9 @@ export default function TrainerClientDetailsScreen() {
                             overflow: "hidden",
                             alignItems: "center",
                             justifyContent: "center",
-                            backgroundColor: hasImage ? "rgba(255,255,255,0.10)" : bg,
+                            backgroundColor: hasImage
+                              ? "rgba(255,255,255,0.10)"
+                              : bg,
                             borderWidth: 1,
                             borderColor: "rgba(255,255,255,0.14)",
                           }}
@@ -341,7 +388,10 @@ export default function TrainerClientDetailsScreen() {
                               contentFit="cover"
                             />
                           ) : initials ? (
-                            <Text weight="bold" style={{ color: "white", fontSize: 14 }}>
+                            <Text
+                              weight="bold"
+                              style={{ color: "white", fontSize: 14 }}
+                            >
                               {initials}
                             </Text>
                           ) : (
@@ -352,7 +402,11 @@ export default function TrainerClientDetailsScreen() {
                     })()}
 
                     <VStack style={{ flex: 1 }}>
-                      <Text weight="bold" style={{ fontSize: 18 }} numberOfLines={1}>
+                      <Text
+                        weight="bold"
+                        style={{ fontSize: 18 }}
+                        numberOfLines={1}
+                      >
                         {fullName}
                       </Text>
                       <Text muted numberOfLines={1}>
@@ -374,7 +428,9 @@ export default function TrainerClientDetailsScreen() {
                     <Text variant="caption">
                       {isArchived
                         ? t("linking.clients.archived")
-                        : t(`linking.management.status.${managementForm.clientStatus}`)}
+                        : t(
+                            `linking.management.status.${managementForm.clientStatus}`
+                          )}
                     </Text>
                   </View>
                 </HStack>
@@ -391,203 +447,210 @@ export default function TrainerClientDetailsScreen() {
             </View>
           </Card>
 
-        {(linksLoading || profileLoading) && !clientProfile ? (
-          <Text muted>{t("common.loading")}</Text>
-        ) : null}
+          {(linksLoading || profileLoading) && !clientProfile ? (
+            <LoadingSpinner />
+          ) : null}
 
-        <Card>
-          <VStack style={{ gap: 12 }}>
-            <Text weight="bold">{t("linking.clientDetails.basicInfo")}</Text>
-            <Divider opacity={0.6} />
-            {renderField(t("profile.fields.phone"), clientProfile?.phone ?? "—")}
-            {renderField(
-              t("profile.fields.nationality"),
-              clientProfile?.nationality ?? "—"
-            )}
-            {renderField(t("profile.fields.gender"), clientProfile?.gender ?? "—")}
-            {renderField(
-              t("profile.fields.birthDate"),
-              clientProfile?.birthDate ?? "—"
-            )}
-            {renderField(
-              t("profile.fields.target"),
-              clientProfile?.target ?? t("linking.clients.noTarget")
-            )}
-            {renderField(
-              t("profile.fields.activityLevel"),
-              clientProfile?.activityLevel ?? "—"
-            )}
-            {renderField(
-              t("profile.fields.unitSystem"),
-              clientProfile?.unitSystem ?? "—"
-            )}
-            {renderField(t("profile.fields.notes"), clientProfile?.notes ?? "—")}
-          </VStack>
-        </Card>
+          <Card>
+            <VStack style={{ gap: 12 }}>
+              <Text weight="bold">{t("linking.clientDetails.basicInfo")}</Text>
+              <Divider opacity={0.6} />
+              {renderField(
+                t("profile.fields.phone"),
+                clientProfile?.phone ?? "—"
+              )}
+              {renderField(
+                t("profile.fields.nationality"),
+                clientProfile?.nationality ?? "—"
+              )}
+              {renderField(
+                t("profile.fields.gender"),
+                clientProfile?.gender ?? "—"
+              )}
+              {renderField(
+                t("profile.fields.birthDate"),
+                clientProfile?.birthDate ?? "—"
+              )}
+              {renderField(
+                t("profile.fields.target"),
+                clientProfile?.target ?? t("linking.clients.noTarget")
+              )}
+              {renderField(
+                t("profile.fields.activityLevel"),
+                clientProfile?.activityLevel ?? "—"
+              )}
+              {renderField(
+                t("profile.fields.unitSystem"),
+                clientProfile?.unitSystem ?? "—"
+              )}
+              {renderField(
+                t("profile.fields.notes"),
+                clientProfile?.notes ?? "—"
+              )}
+            </VStack>
+          </Card>
 
-        <Card>
-          <VStack style={{ gap: theme.spacing.md }}>
-            <Text weight="bold">{t("linking.clientDetails.trainerManagement")}</Text>
+          <Card>
+            <VStack style={{ gap: theme.spacing.md }}>
+              <Text weight="bold">
+                {t("linking.clientDetails.trainerManagement")}
+              </Text>
 
-            <BottomSheetPicker
-              label={t("linking.management.clientStatus")}
-              value={managementForm.clientStatus}
-              onChange={(v) =>
-                setManagementForm((prev) => ({
-                  ...prev,
-                  clientStatus: (v ?? "active") as any,
-                }))
-              }
-              options={statusOptions}
-            />
-
-            <BottomSheetPicker
-              label={t("linking.management.checkInFrequency")}
-              value={managementForm.checkInFrequency}
-              onChange={(v) =>
-                setManagementForm((prev) => ({
-                  ...prev,
-                  checkInFrequency: (v ?? "weekly") as any,
-                }))
-              }
-              options={freqOptions}
-            />
-
-            <Card background="surface2">
-              <VStack style={{ gap: 10 }}>
-                <Text variant="caption" style={{ opacity: 0.9 }}>
-                  {t("linking.management.nextCheckInAt")}
-                </Text>
-                <HStack align="center" justify="space-between">
-                  <Text>
-                    {managementForm.nextCheckInAt
-                      ? formatDatePretty(managementForm.nextCheckInAt)
-                      : "—"}
-                  </Text>
-                  <Button
-                    variant="secondary"
-                    height={40}
-                    onPress={() => setShowDatePicker(true)}
-                  >
-                    {t("common.change")}
-                  </Button>
-                </HStack>
-              </VStack>
-            </Card>
-
-            {showDatePicker ? (
-              <DateTimePicker
-                value={
-                  managementForm.nextCheckInAt
-                    ? new Date(managementForm.nextCheckInAt)
-                    : new Date()
-                }
-                mode="date"
-                display={Platform.OS === "ios" ? "spinner" : "default"}
-                onChange={(_event, date) => {
-                  if (Platform.OS !== "ios") setShowDatePicker(false);
-                  if (!date) return;
+              <BottomSheetPicker
+                label={t("linking.management.clientStatus")}
+                value={managementForm.clientStatus}
+                onChange={(v) =>
                   setManagementForm((prev) => ({
                     ...prev,
-                    nextCheckInAt: date.toISOString(),
-                  }));
-                }}
-              />
-            ) : null}
-
-            <AppInput
-              label={t("linking.management.coachNotes")}
-              value={managementForm.coachNotes}
-              onChangeText={(v) =>
-                setManagementForm((prev) => ({ ...prev, coachNotes: v }))
-              }
-              placeholder={t("profile.placeholders.notes")}
-              multiline
-              autoGrow
-            />
-
-            {/* actions */}
-            <HStack gap={10}>
-              <Button
-                fullWidth
-                height={40}
-                style={{ flex: 1 }}
-                isLoading={upsertState.isLoading}
-                onPress={() => void saveManagement()}
-              >
-                {t("common.save")}
-              </Button>
-              <Button
-                variant="secondary"
-                fullWidth
-                height={40}
-                style={{ flex: 1 }}
-                isLoading={setClientStatusState.isLoading}
-                onPress={() => void quickSetStatus()}
-              >
-                {t("linking.management.quickStatus")}
-              </Button>
-            </HStack>
-
-            <Button
-              variant="secondary"
-              height={40}
-              isLoading={markCheckInState.isLoading}
-              onPress={() => void markNextCheckIn()}
-            >
-              {t("linking.management.markCheckIn")}
-            </Button>
-          </VStack>
-        </Card>
-
-        <Card>
-          <VStack style={{ gap: 10 }}>
-            <Text weight="bold">{t("linking.clientDetails.linkActions")}</Text>
-            <Button
-              isLoading={setLinkStatusState.isLoading}
-              height={40}
-              onPress={() => void toggleArchive()}
-            >
-              {isArchived
-                ? t("linking.clients.unarchive")
-                : t("linking.clients.archive")}
-            </Button>
-            {isArchived ? (
-              <Button
-                variant="secondary"
-                height={40}
-                isLoading={deleteState.isLoading}
-                onPress={() =>
-                  alert.confirm({
-                    title: t("linking.clients.deleteClient"),
-                    message: t("common.areYouSure"),
-                    confirmText: t("common.delete"),
-                    cancelText: t("common.cancel"),
-                    destructive: true,
-                    onConfirm: async () => {
-                      await doDelete();
-                    },
-                  })
+                    clientStatus: (v ?? "active") as any,
+                  }))
                 }
-              >
-                {t("linking.clients.deleteClient")}
-              </Button>
-            ) : null}
-            {!link && !linksLoading ? (
-              <Text muted>{t("linking.clientDetails.notFound")}</Text>
-            ) : null}
-          </VStack>
-        </Card>
+                options={statusOptions}
+              />
 
-        {(linksLoading || profileLoading) &&
-        (upsertState.isLoading ||
-          setClientStatusState.isLoading ||
-          markCheckInState.isLoading) ? (
-          <Text muted>{t("common.loading")}</Text>
-        ) : null}
+              <BottomSheetPicker
+                label={t("linking.management.checkInFrequency")}
+                value={managementForm.checkInFrequency}
+                onChange={(v) =>
+                  setManagementForm((prev) => ({
+                    ...prev,
+                    checkInFrequency: (v ?? "weekly") as any,
+                  }))
+                }
+                options={freqOptions}
+              />
+
+              <Card background="surface2">
+                <VStack style={{ gap: 10 }}>
+                  <Text variant="caption" style={{ opacity: 0.9 }}>
+                    {t("linking.management.nextCheckInAt")}
+                  </Text>
+                  <HStack align="center" justify="space-between">
+                    <Text>
+                      {managementForm.nextCheckInAt
+                        ? formatDatePretty(managementForm.nextCheckInAt)
+                        : "—"}
+                    </Text>
+                    <Button
+                      variant="icon"
+                      height={40}
+                      onPress={() => setShowDatePicker(true)}
+                      left={
+                        <Ionicons
+                          name="calendar-outline"
+                          size={24}
+                          color={theme.colors.accent}
+                        />
+                      }
+                    ></Button>
+                  </HStack>
+                </VStack>
+              </Card>
+
+              {showDatePicker ? (
+                <DateTimePicker
+                  value={
+                    managementForm.nextCheckInAt
+                      ? new Date(managementForm.nextCheckInAt)
+                      : new Date()
+                  }
+                  mode="date"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  onChange={(_event, date) => {
+                    if (Platform.OS !== "ios") setShowDatePicker(false);
+                    if (!date) return;
+                    setManagementForm((prev) => ({
+                      ...prev,
+                      nextCheckInAt: date.toISOString(),
+                    }));
+                  }}
+                />
+              ) : null}
+
+              <AppInput
+                label={t("linking.management.coachNotes")}
+                value={managementForm.coachNotes}
+                onChangeText={(v) =>
+                  setManagementForm((prev) => ({ ...prev, coachNotes: v }))
+                }
+                placeholder={t("profile.placeholders.notes")}
+                multiline
+                autoGrow
+              />
+
+              {/* actions */}
+              <HStack gap={10}>
+                <Button
+                  fullWidth
+                  height={40}
+                  style={{ flex: 1 }}
+                  isLoading={upsertState.isLoading}
+                  onPress={() => void saveManagement()}
+                >
+                  {t("common.save")}
+                </Button>
+              </HStack>
+
+              <Button
+                variant="secondary"
+                height={40}
+                isLoading={markCheckInState.isLoading}
+                onPress={() => void markNextCheckIn()}
+              >
+                {t("linking.management.markCheckIn")}
+              </Button>
+            </VStack>
+          </Card>
+
+          <Card>
+            <VStack style={{ gap: 10 }}>
+              <Text weight="bold">
+                {t("linking.clientDetails.linkActions")}
+              </Text>
+              <Button
+                isLoading={setLinkStatusState.isLoading}
+                height={40}
+                onPress={() => void toggleArchive()}
+              >
+                {isArchived
+                  ? t("linking.clients.unarchive")
+                  : t("linking.clients.archive")}
+              </Button>
+              {isArchived ? (
+                <Button
+                  variant="secondary"
+                  height={40}
+                  isLoading={deleteState.isLoading}
+                  onPress={() =>
+                    alert.confirm({
+                      title: t("linking.clients.deleteClient"),
+                      message: t("common.areYouSure"),
+                      confirmText: t("common.delete"),
+                      cancelText: t("common.cancel"),
+                      destructive: true,
+                      onConfirm: async () => {
+                        await doDelete();
+                      },
+                    })
+                  }
+                >
+                  {t("linking.clients.deleteClient")}
+                </Button>
+              ) : null}
+              {!link && !linksLoading ? (
+                <Text muted>{t("linking.clientDetails.notFound")}</Text>
+              ) : null}
+            </VStack>
+          </Card>
+
+          {(linksLoading || profileLoading) &&
+          (upsertState.isLoading ||
+            setClientStatusState.isLoading ||
+            markCheckInState.isLoading) ? (
+            <LoadingSpinner />
+          ) : null}
         </VStack>
       </KeyboardScreen>
     </View>
   );
 }
-

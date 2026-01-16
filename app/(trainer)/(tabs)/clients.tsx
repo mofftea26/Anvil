@@ -5,18 +5,54 @@ import { router } from "expo-router";
 import React from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
 
-import { useGetTrainerClientsQuery, useSetTrainerClientStatusMutation } from "../../../src/features/linking/api/linkingApiSlice";
+import {
+  useGetTrainerClientsQuery,
+  useSetTrainerClientStatusMutation,
+} from "../../../src/features/linking/api/linkingApiSlice";
 import { useAppSelector } from "../../../src/shared/hooks/useAppSelector";
 import { useAppTranslation } from "../../../src/shared/i18n/useAppTranslation";
-import { appToast, Button, Card, HStack, Text, useTheme, VStack } from "../../../src/shared/ui";
+import {
+  appToast,
+  Button,
+  Card,
+  HStack,
+  LoadingSpinner,
+  StickyHeader,
+  Text,
+  useTheme,
+  VStack,
+} from "../../../src/shared/ui";
 
-function formatWeekdayShort(iso: string): string {
+function formatCheckIn(iso: string, t: (k: string) => string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
-  return new Intl.DateTimeFormat(undefined, { weekday: "short" }).format(d);
+
+  const now = new Date();
+  const startOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  );
+  const startOfTarget = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diffDays = Math.round(
+    (startOfTarget.getTime() - startOfToday.getTime()) / 86400000
+  );
+
+  if (diffDays === 0) return t("common.today");
+  if (diffDays === 1) return t("common.tomorrow");
+  if (diffDays === -1) return t("common.yesterday");
+
+  return new Intl.DateTimeFormat(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  }).format(d);
 }
 
-function getInitials(firstName: string | null | undefined, lastName: string | null | undefined): string | null {
+function getInitials(
+  firstName: string | null | undefined,
+  lastName: string | null | undefined
+): string | null {
   const a = (firstName ?? "").trim();
   const b = (lastName ?? "").trim();
   const s = `${a} ${b}`.trim();
@@ -37,7 +73,15 @@ function hashStringToInt(input: string): number {
 }
 
 function pickAvatarBg(seed: string): string {
-  const palette = ["#7C3AED", "#38BDF8", "#22C55E", "#F97316", "#F43F5E", "#A855F7", "#06B6D4"];
+  const palette = [
+    "#7C3AED",
+    "#38BDF8",
+    "#22C55E",
+    "#F97316",
+    "#F43F5E",
+    "#A855F7",
+    "#06B6D4",
+  ];
   const idx = hashStringToInt(seed) % palette.length;
   return palette[idx];
 }
@@ -66,6 +110,20 @@ export default function TrainerClientsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <StickyHeader
+        title={t("linking.clients.title")}
+        rightButton={{
+          onPress: () => router.push("/(trainer)/add-client"),
+          variant: "icon",
+          icon: (
+            <Ionicons
+              name="add-circle-outline"
+              size={22}
+              color={theme.colors.text}
+            />
+          ),
+        }}
+      />
       <ScrollView
         refreshControl={
           <RefreshControl
@@ -75,25 +133,12 @@ export default function TrainerClientsScreen() {
           />
         }
         contentContainerStyle={{
-          padding: theme.spacing.lg,
+          paddingHorizontal: theme.spacing.lg,
           paddingBottom: theme.spacing.lg,
           gap: theme.spacing.lg,
         }}
         showsVerticalScrollIndicator={false}
       >
-        <HStack align="center" justify="space-between">
-          <Text variant="title" weight="bold">
-            {t("linking.clients.title")}
-          </Text>
-          <Button
-            variant="secondary"
-            height={42}
-            onPress={() => router.push("/(trainer)/add-client")}
-          >
-            + {t("linking.clients.addClient")}
-          </Button>
-        </HStack>
-
         {error ? (
           <Text color={theme.colors.danger}>
             {(error as any)?.message ?? t("auth.errors.generic")}
@@ -101,7 +146,7 @@ export default function TrainerClientsScreen() {
         ) : null}
 
         {isLoading ? (
-          <Text muted>{t("common.loading")}</Text>
+          <LoadingSpinner />
         ) : !data?.length ? (
           <Card>
             <VStack style={{ gap: theme.spacing.sm }}>
@@ -128,7 +173,9 @@ export default function TrainerClientsScreen() {
                 : t("linking.clients.noTarget");
 
               const nextCheckIn = row.management?.nextCheckInAt ?? null;
-              const checkInText = nextCheckIn ? formatWeekdayShort(nextCheckIn) : "—";
+              const checkInText = nextCheckIn
+                ? formatCheckIn(nextCheckIn, t)
+                : "—";
 
               const statusPill = isArchived
                 ? {
@@ -138,7 +185,11 @@ export default function TrainerClientsScreen() {
                     text: theme.colors.text,
                   }
                 : {
-                    label: t(`linking.management.status.${row.management?.clientStatus ?? "active"}`),
+                    label: t(
+                      `linking.management.status.${
+                        row.management?.clientStatus ?? "active"
+                      }`
+                    ),
                     bg: "rgba(255,255,255,0.10)",
                     border: "rgba(255,255,255,0.16)",
                     text: theme.colors.text,
@@ -174,8 +225,12 @@ export default function TrainerClientsScreen() {
                           {(() => {
                             const avatarUrl = c?.avatarUrl ?? "";
                             const hasImage = Boolean(avatarUrl);
-                            const initials = getInitials(c?.firstName, c?.lastName);
-                            const seed = c?.id || c?.email || row.clientId || row.id;
+                            const initials = getInitials(
+                              c?.firstName,
+                              c?.lastName
+                            );
+                            const seed =
+                              c?.id || c?.email || row.clientId || row.id;
                             const bg = pickAvatarBg(seed);
 
                             return (
@@ -187,7 +242,9 @@ export default function TrainerClientsScreen() {
                                   alignItems: "center",
                                   justifyContent: "center",
                                   overflow: "hidden",
-                                  backgroundColor: hasImage ? "rgba(255,255,255,0.10)" : bg,
+                                  backgroundColor: hasImage
+                                    ? "rgba(255,255,255,0.10)"
+                                    : bg,
                                   borderWidth: 1,
                                   borderColor: "rgba(255,255,255,0.14)",
                                 }}
@@ -199,17 +256,28 @@ export default function TrainerClientsScreen() {
                                     contentFit="cover"
                                   />
                                 ) : initials ? (
-                                  <Text weight="bold" style={{ color: "white", fontSize: 14 }}>
+                                  <Text
+                                    weight="bold"
+                                    style={{ color: "white", fontSize: 14 }}
+                                  >
                                     {initials}
                                   </Text>
                                 ) : (
-                                  <Ionicons name="person" size={20} color="white" />
+                                  <Ionicons
+                                    name="person"
+                                    size={20}
+                                    color="white"
+                                  />
                                 )}
                               </View>
                             );
                           })()}
                           <VStack style={{ flex: 1 }}>
-                            <Text weight="bold" numberOfLines={1} style={{ fontSize: 16 }}>
+                            <Text
+                              weight="bold"
+                              numberOfLines={1}
+                              style={{ fontSize: 16 }}
+                            >
                               {name}
                             </Text>
                           </VStack>
@@ -225,7 +293,10 @@ export default function TrainerClientsScreen() {
                             borderColor: statusPill.border,
                           }}
                         >
-                          <Text variant="caption" style={{ color: statusPill.text }}>
+                          <Text
+                            variant="caption"
+                            style={{ color: statusPill.text }}
+                          >
                             {statusPill.label}
                           </Text>
                         </View>
@@ -295,7 +366,9 @@ export default function TrainerClientsScreen() {
                               }).unwrap();
                               await refetch();
                             } catch (e: any) {
-                              appToast.error(e?.message ?? t("auth.errors.generic"));
+                              appToast.error(
+                                e?.message ?? t("auth.errors.generic")
+                              );
                             }
                           }}
                         >
@@ -311,9 +384,7 @@ export default function TrainerClientsScreen() {
             })}
           </VStack>
         )}
-
       </ScrollView>
     </View>
   );
 }
-

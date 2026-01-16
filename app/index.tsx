@@ -13,17 +13,24 @@ export default function Index() {
 
   const lastAuthErrorRef = React.useRef<string | null>(null);
 
+  // Show error toast in useEffect to avoid state update during render
+  React.useEffect(() => {
+    if (auth.status === "error") {
+      const msg = auth.errorMessage ?? t("auth.errors.generic");
+      if (lastAuthErrorRef.current !== msg) {
+        lastAuthErrorRef.current = msg;
+        // show once per error message
+        appToast.error(msg);
+      }
+    }
+  }, [auth.status, auth.errorMessage, t]);
+
   if (auth.status === "idle" || auth.status === "loading") {
     return <FullscreenState title={t("state.initializing")} progress={0.35} />;
   }
 
   if (auth.status === "error") {
     const msg = auth.errorMessage ?? t("auth.errors.generic");
-    if (lastAuthErrorRef.current !== msg) {
-      lastAuthErrorRef.current = msg;
-      // show once per error message
-      appToast.error(msg);
-    }
 
     return (
       <Redirect
@@ -50,7 +57,8 @@ export default function Index() {
     );
   }
 
-  if (!me) return <FullscreenState title={t("state.initializing")} progress={0.9} />;
+  if (!me)
+    return <FullscreenState title={t("state.initializing")} progress={0.9} />;
 
   const hasName = Boolean(me.firstName?.trim()) && Boolean(me.lastName?.trim());
   const roleConfirmed = Boolean(me.roleConfirmed);

@@ -15,12 +15,15 @@ import { useAppSelector } from "../../../src/shared/hooks/useAppSelector";
 import { useAppTranslation } from "../../../src/shared/i18n/useAppTranslation";
 import {
   appToast,
-  useAppAlert,
   Button,
   Card,
   Chip,
   HStack,
+  LoadingSpinner,
+  StickyHeader,
   Text,
+  useAppAlert,
+  useStickyHeaderHeight,
   useTheme,
   VStack,
 } from "../../../src/shared/ui";
@@ -28,7 +31,10 @@ import {
 function formatShortDate(iso: string) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
-  return new Intl.DateTimeFormat(undefined, { month: "short", day: "2-digit" }).format(d);
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "2-digit",
+  }).format(d);
 }
 
 function parseCerts(raw: string | null | undefined): string[] {
@@ -101,7 +107,8 @@ export default function ClientCoachScreen() {
     { skip: !clientId }
   );
 
-  const [setRelStatus, setRelStatusState] = useClientSetRelationshipStatusMutation();
+  const [setRelStatus, setRelStatusState] =
+    useClientSetRelationshipStatusMutation();
   const [cancelTrainer, cancelTrainerState] = useClientCancelTrainerMutation();
 
   const [refreshing, setRefreshing] = React.useState(false);
@@ -117,10 +124,13 @@ export default function ClientCoachScreen() {
 
   const coachName =
     data?.trainer?.firstName || data?.trainer?.lastName
-      ? `${data?.trainer?.firstName ?? ""} ${data?.trainer?.lastName ?? ""}`.trim()
+      ? `${data?.trainer?.firstName ?? ""} ${
+          data?.trainer?.lastName ?? ""
+        }`.trim()
       : data?.trainer?.email ?? "—";
 
-  const relationshipStatus = data?.management?.clientRelationshipStatus ?? "active";
+  const relationshipStatus =
+    data?.management?.clientRelationshipStatus ?? "active";
   const nextCheckIn = data?.management?.nextCheckInAt ?? null;
   const certs = React.useMemo(
     () => parseCerts(data?.trainerProfile?.certifications),
@@ -174,10 +184,10 @@ export default function ClientCoachScreen() {
   const brandB = secondary && isHexColor(secondary) ? secondary : "#38BDF8";
 
   const pageGradient = [
-    hexToRgba(brandA, 0.50),
+    hexToRgba(brandA, 0.5),
     hexToRgba(brandB, 0.35),
     "rgba(0,0,0,0.00)",
-  ];
+  ] as const;
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -188,11 +198,13 @@ export default function ClientCoachScreen() {
         style={{ position: "absolute", left: 0, top: 0, right: 0, bottom: 0 }}
       />
 
+      <StickyHeader title={t("linking.coach.title")} />
+
       <KeyboardScreen
-        padding={theme.spacing.lg}
+        bottomSpace={12}
+        headerHeight={useStickyHeaderHeight()}
         style={{ backgroundColor: "transparent" }}
         scrollStyle={{ backgroundColor: "transparent" }}
-        contentContainerStyle={{ gap: theme.spacing.lg }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -201,19 +213,13 @@ export default function ClientCoachScreen() {
           />
         }
       >
-        <HStack align="center" justify="space-between">
-          <Text variant="title" weight="bold">
-            {t("linking.coach.title")}
-          </Text>
-        </HStack>
-
         {error ? (
           <Text color={theme.colors.danger}>
             {(error as any)?.message ?? t("auth.errors.generic")}
           </Text>
         ) : null}
 
-        {isLoading ? <Text muted>{t("common.loading")}</Text> : null}
+        {isLoading ? <LoadingSpinner /> : null}
 
         {!isLoading && !data ? (
           <Card>
@@ -245,7 +251,13 @@ export default function ClientCoachScreen() {
                   ]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
-                  style={{ position: "absolute", left: 0, top: 0, right: 0, bottom: 0 }}
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    top: 0,
+                    right: 0,
+                    bottom: 0,
+                  }}
                 />
 
                 <VStack style={{ gap: 12, padding: 14 }}>
@@ -258,7 +270,8 @@ export default function ClientCoachScreen() {
                           data.trainer?.firstName ?? "",
                           data.trainer?.lastName ?? ""
                         );
-                        const seed = data.trainer?.id || data.trainer?.email || "seed";
+                        const seed =
+                          data.trainer?.id || data.trainer?.email || "seed";
                         const bg = pickAvatarBg(seed);
                         const hasImage = Boolean(avatarUrl);
 
@@ -271,7 +284,9 @@ export default function ClientCoachScreen() {
                               overflow: "hidden",
                               alignItems: "center",
                               justifyContent: "center",
-                              backgroundColor: hasImage ? theme.colors.surface2 : bg,
+                              backgroundColor: hasImage
+                                ? theme.colors.surface2
+                                : bg,
                               borderWidth: 1,
                               borderColor: "rgba(255,255,255,0.14)",
                             }}
@@ -283,7 +298,10 @@ export default function ClientCoachScreen() {
                                 contentFit="cover"
                               />
                             ) : initials ? (
-                              <Text weight="bold" style={{ color: "white", fontSize: 14 }}>
+                              <Text
+                                weight="bold"
+                                style={{ color: "white", fontSize: 14 }}
+                              >
                                 {initials}
                               </Text>
                             ) : (
@@ -441,7 +459,13 @@ export default function ClientCoachScreen() {
               <VStack style={{ gap: 10 }}>
                 <Text weight="bold">{t("profile.fields.certifications")}</Text>
                 {certs.length ? (
-                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      flexWrap: "wrap",
+                      gap: 10,
+                    }}
+                  >
                     {certs.map((c) => (
                       <Chip key={c} label={c} />
                     ))}
@@ -457,4 +481,3 @@ export default function ClientCoachScreen() {
     </View>
   );
 }
-

@@ -4,7 +4,7 @@ import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { RefreshControl, View } from "react-native";
+import { Pressable, RefreshControl, View } from "react-native";
 
 import { useAuthActions } from "../../../src/features/auth/hooks/useAuthActions";
 import {
@@ -27,8 +27,10 @@ import {
   Divider,
   HStack,
   ProfileAccountCard,
+  StickyHeader,
   Text,
   useAppAlert,
+  useStickyHeaderHeight,
   useTheme,
   VStack,
 } from "../../../src/shared/ui";
@@ -70,6 +72,7 @@ export default function TrainerProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [clearingAvatar, setClearingAvatar] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [certModalOpen, setCertModalOpen] = useState(false);
   const [certDraft, setCertDraft] = useState("");
@@ -153,6 +156,24 @@ export default function TrainerProfileScreen() {
       appToast.error(e?.message ?? t("auth.errors.generic"));
     } finally {
       setUploadingAvatar(false);
+    }
+  };
+
+  const clearAvatar = async () => {
+    if (!auth.userId) return;
+    try {
+      setClearingAvatar(true);
+      await updateMyUserRow({
+        userId: auth.userId,
+        payload: { avatarUrl: null },
+      }).unwrap();
+      setForm((p) => ({ ...p, avatarUrl: "" }));
+      await refetch();
+      appToast.success(t("profile.toasts.saved"));
+    } catch (e: any) {
+      appToast.error(e?.message ?? t("auth.errors.generic"));
+    } finally {
+      setClearingAvatar(false);
     }
   };
 
@@ -292,6 +313,7 @@ export default function TrainerProfileScreen() {
 
   const brandA = theme.colors.accent;
   const brandB = theme.colors.accent2;
+  const headerHeight = useStickyHeaderHeight();
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -306,8 +328,14 @@ export default function TrainerProfileScreen() {
         style={{ position: "absolute", left: 0, top: 0, right: 0, bottom: 0 }}
       />
 
+      <StickyHeader
+        title={t("tabs.profile")}
+        backgroundColor={theme.colors.background}
+      />
+
       <KeyboardScreen
-        padding={12}
+        bottomSpace={12}
+        headerHeight={headerHeight}
         style={{ backgroundColor: "transparent" }}
         scrollStyle={{ backgroundColor: "transparent" }}
         refreshControl={
@@ -319,10 +347,6 @@ export default function TrainerProfileScreen() {
         }
       >
         <VStack style={{ gap: theme.spacing.lg }}>
-          <Text variant="title" weight="bold">
-            {t("tabs.profile")}
-          </Text>
-
           {error ? <Text color={theme.colors.danger}>{error}</Text> : null}
 
           <ProfileAccountCard
@@ -333,7 +357,20 @@ export default function TrainerProfileScreen() {
             avatarUrl={form.avatarUrl}
             seed={auth.userId || me?.email || "seed"}
             onPressAvatar={() => void pickAndUploadAvatar()}
-            disabled={uploadingAvatar}
+            onPressClear={() =>
+              alert.confirm({
+                title: t("profile.actions.clearPhoto"),
+                message: t("common.areYouSure"),
+                confirmText: t("common.clear"),
+                cancelText: t("common.cancel"),
+                destructive: true,
+                onConfirm: async () => {
+                  await clearAvatar();
+                },
+              })
+            }
+            clearLabel={t("profile.actions.clearPhoto")}
+            disabled={uploadingAvatar || clearingAvatar}
           />
 
           {/* Trainer */}
@@ -405,7 +442,11 @@ export default function TrainerProfileScreen() {
 
                 {form.certifications.length ? (
                   <View
-                    style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}
+                    style={{
+                      flexDirection: "row",
+                      flexWrap: "wrap",
+                      gap: 10,
+                    }}
                   >
                     {form.certifications.map((c) => (
                       <Chip
@@ -503,10 +544,6 @@ export default function TrainerProfileScreen() {
               {saveError ? (
                 <Text color={theme.colors.danger}>{saveError}</Text>
               ) : null}
-
-              <Button isLoading={saving || isLoading} onPress={onPressSave}>
-                {t("common.save")}
-              </Button>
             </VStack>
           </Card>
 
@@ -563,120 +600,166 @@ export default function TrainerProfileScreen() {
                 </View>
               </HStack>
 
-              <HStack gap={theme.spacing.md} align="center">
-                <View
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 12,
-                    borderWidth: 1,
-                    borderColor: theme.colors.border,
-                    backgroundColor:
-                      form.primaryColor.trim() && isHexColor(form.primaryColor)
-                        ? form.primaryColor.trim()
-                        : theme.colors.surface2,
-                  }}
-                />
-                <View
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 12,
-                    borderWidth: 1,
-                    borderColor: theme.colors.border,
-                    backgroundColor:
-                      form.secondaryColor.trim() &&
-                      isHexColor(form.secondaryColor)
-                        ? form.secondaryColor.trim()
-                        : theme.colors.surface2,
-                  }}
-                />
-                <View style={{ flex: 1, justifyContent: "center" }}>
-                  <Text variant="caption" muted>
-                    {t("common.preview")}
-                  </Text>
-                </View>
-              </HStack>
-
               <Divider opacity={0.6} />
 
-              <Card background="surface2">
-                <VStack style={{ gap: 10 }}>
-                  <Text variant="caption" style={{ opacity: 0.9 }}>
-                    {t("profile.fields.logoUrl")}
-                  </Text>
+              <HStack align="center" justify="space-between">
+                <Text variant="caption" style={{ opacity: 0.9 }}>
+                  {t("profile.fields.logoUrl")}
+                </Text>
+                {form.logoUrl ? (
+                  <Pressable
+                    onPress={() => setForm((p) => ({ ...p, logoUrl: "" }))}
+                    style={({ pressed }) => ({
+                      opacity: pressed ? 0.8 : 1,
+                      paddingHorizontal: 6,
+                      paddingVertical: 4,
+                      borderRadius: 10,
+                    })}
+                  >
+                    <Text variant="caption" style={{ opacity: 0.9 }}>
+                      {t("common.clear")}
+                    </Text>
+                  </Pressable>
+                ) : (
+                  <View />
+                )}
+              </HStack>
 
-                  <HStack align="center" justify="space-between" gap={12}>
+              <Card
+                padded={false}
+                background="surface2"
+                style={{ overflow: "hidden" }}
+              >
+                <View style={{ height: 170 }}>
+                  {form.logoUrl ? (
+                    <Image
+                      source={{ uri: form.logoUrl }}
+                      style={{
+                        position: "absolute",
+                        left: 0,
+                        top: 0,
+                        right: 0,
+                        bottom: 0,
+                      }}
+                      contentFit="cover"
+                    />
+                  ) : (
+                    <LinearGradient
+                      colors={[
+                        hexToRgba(brandA, 0.18),
+                        hexToRgba(brandB, 0.1),
+                        "rgba(255,255,255,0.00)",
+                      ]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={{
+                        position: "absolute",
+                        left: 0,
+                        top: 0,
+                        right: 0,
+                        bottom: 0,
+                      }}
+                    />
+                  )}
+
+                  <Pressable
+                    onPress={() => void pickAndUploadBrandLogo()}
+                    style={{
+                      flex: 1,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      padding: 14,
+                    }}
+                  >
+                    {!form.logoUrl ? (
+                      <VStack style={{ gap: 8, alignItems: "center" }}>
+                        <Ionicons
+                          name="cloud-upload-outline"
+                          size={24}
+                          color={theme.colors.textMuted}
+                        />
+                        <Text muted>{t("common.change")}</Text>
+                      </VStack>
+                    ) : null}
+                  </Pressable>
+
+                  {uploadingLogo ? (
                     <View
                       style={{
-                        width: 56,
-                        height: 56,
-                        borderRadius: 16,
-                        overflow: "hidden",
-                        borderWidth: 1,
-                        borderColor: theme.colors.border,
-                        backgroundColor: theme.colors.surface,
+                        position: "absolute",
+                        left: 0,
+                        top: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: "rgba(0,0,0,0.35)",
                         alignItems: "center",
                         justifyContent: "center",
                       }}
+                      pointerEvents="none"
                     >
-                      {form.logoUrl ? (
-                        <Image
-                          source={{ uri: form.logoUrl }}
-                          style={{ width: "100%", height: "100%" }}
-                          contentFit="cover"
-                        />
-                      ) : (
-                        <Ionicons
-                          name="image-outline"
-                          size={20}
-                          color={theme.colors.textMuted}
-                        />
-                      )}
+                      <Text weight="bold" style={{ color: "white" }}>
+                        {t("account.uploading")}
+                      </Text>
                     </View>
-
-                    <VStack style={{ flex: 1, gap: 6 }}>
-                      <Text weight="bold" numberOfLines={1}>
-                        {form.brandName?.trim() ||
-                          t("profile.fields.brandName")}
-                      </Text>
-                      <Text muted numberOfLines={1}>
-                        {form.logoUrl ? form.logoUrl : t("common.chooseFile")}
-                      </Text>
-                    </VStack>
-
-                    <Button
-                      variant="secondary"
-                      height={42}
-                      isLoading={uploadingLogo}
-                      onPress={() => void pickAndUploadBrandLogo()}
-                      left={
-                        <Ionicons
-                          name="cloud-upload-outline"
-                          size={18}
-                          color={theme.colors.text}
-                        />
-                      }
-                    >
-                      {uploadingLogo
-                        ? t("account.uploading")
-                        : t("common.change")}
-                    </Button>
-                  </HStack>
-
-                  {form.logoUrl ? (
-                    <Button
-                      variant="ghost"
-                      height={40}
-                      onPress={() => setForm((p) => ({ ...p, logoUrl: "" }))}
-                    >
-                      {t("common.clear")}
-                    </Button>
                   ) : null}
-                </VStack>
+
+                  {/* Edit icon */}
+                  <Pressable
+                    onPress={() => void pickAndUploadBrandLogo()}
+                    style={({ pressed }) => ({
+                      position: "absolute",
+                      right: 10,
+                      top: 10,
+                      width: 34,
+                      height: 34,
+                      borderRadius: 17,
+                      backgroundColor: "rgba(0,0,0,0.45)",
+                      borderWidth: 1,
+                      borderColor: "rgba(255,255,255,0.14)",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      opacity: pressed ? 0.85 : 1,
+                    })}
+                  >
+                    <Ionicons name="pencil" size={16} color="white" />
+                  </Pressable>
+
+                  {/* Brand name overlay */}
+                  <View
+                    style={{
+                      position: "absolute",
+                      left: 12,
+                      bottom: 12,
+                      right: 12,
+                      paddingVertical: 8,
+                      paddingHorizontal: 10,
+                      borderRadius: 14,
+                      backgroundColor: "rgba(0,0,0,0.35)",
+                      borderWidth: 1,
+                      borderColor: "rgba(255,255,255,0.10)",
+                    }}
+                    pointerEvents="none"
+                  >
+                    <Text
+                      weight="bold"
+                      numberOfLines={1}
+                      style={{ color: "white" }}
+                    >
+                      {form.brandName?.trim() || t("profile.fields.brandName")}
+                    </Text>
+                  </View>
+                </View>
               </Card>
             </VStack>
           </Card>
+
+          {saveError ? (
+            <Text color={theme.colors.danger}>{saveError}</Text>
+          ) : null}
+
+          <Button isLoading={saving || isLoading} onPress={onPressSave}>
+            {t("common.save")}
+          </Button>
 
           <Button
             variant="secondary"

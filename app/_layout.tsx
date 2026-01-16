@@ -16,7 +16,12 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { AuthBootstrap } from "../src/features/auth/components/AuthBootstrap";
 import { AppErrorBoundary } from "../src/shared/components/AppErrorBoundary";
 import { applyRtlIfNeeded } from "../src/shared/i18n/rtl";
-import { AppAlertProvider, darkTheme, ThemeProvider, ToastProvider } from "../src/shared/ui";
+import {
+  AppAlertProvider,
+  darkTheme,
+  ThemeProvider,
+  ToastProvider,
+} from "../src/shared/ui";
 import { store } from "../src/store/store";
 applyRtlIfNeeded(defaultLanguage);
 
@@ -37,7 +42,7 @@ export default function RootLayout() {
             <AuthBootstrap />
             <SafeAreaProvider>
               <SafeAreaView
-                edges={["top"]}
+                edges={["top", "bottom"]}
                 style={{
                   flex: 1,
                   backgroundColor: darkTheme.colors.background,

@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
   FlatList,
@@ -176,7 +177,12 @@ export function BottomSheetPicker(props: BottomSheetPickerProps) {
         </Text>
       </Pressable>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={close}>
+      <Modal
+        visible={open}
+        transparent
+        animationType="fade"
+        onRequestClose={close}
+      >
         <View style={styles.modalRoot}>
           <Pressable style={styles.overlay} onPress={close} />
 
@@ -191,13 +197,26 @@ export function BottomSheetPicker(props: BottomSheetPickerProps) {
           >
             <View style={styles.header}>
               <Text weight="bold">{title ?? label ?? ""}</Text>
-              <Button variant="secondary" onPress={close} height={40}>
-                {t("common.close")}
-              </Button>
+              <Button
+                variant="icon"
+                onPress={close}
+                height={40}
+                left={
+                  <Ionicons
+                    name="close-sharp"
+                    size={24}
+                    color={theme.colors.accent}
+                  />
+                }
+              ></Button>
             </View>
 
             {searchable ? (
-              <Card padded={false} background="surface2" style={styles.searchWrap}>
+              <Card
+                padded={false}
+                background="surface2"
+                style={styles.searchWrap}
+              >
                 <TextInput
                   value={query}
                   onChangeText={setQuery}
@@ -358,4 +377,3 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 });
-

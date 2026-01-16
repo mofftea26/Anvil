@@ -1,13 +1,19 @@
 import React from "react";
-import { RefreshControl, ScrollView } from "react-native";
+import { RefreshControl, ScrollView, View } from "react-native";
 
 import { useMyProfile } from "../../../src/features/profile/hooks/useMyProfile";
 import { useAppTranslation } from "../../../src/shared/i18n/useAppTranslation";
-import { Text, useTheme } from "../../../src/shared/ui";
+import {
+  StickyHeader,
+  Text,
+  useStickyHeaderHeight,
+  useTheme,
+} from "../../../src/shared/ui";
 
 export default function ClientDashboard() {
   const { t } = useAppTranslation();
   const theme = useTheme();
+  const headerHeight = useStickyHeaderHeight();
   // Dashboard stays lightweight; "My Coach" lives in its dedicated tab.
   const { refetch } = useMyProfile();
 
@@ -22,25 +28,26 @@ export default function ClientDashboard() {
   }, [refetch]);
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: theme.colors.background }}
-      contentContainerStyle={{
-        padding: theme.spacing.xl,
-        paddingBottom: theme.spacing.lg,
-        gap: theme.spacing.lg,
-      }}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={() => void onRefresh()}
-          tintColor={theme.colors.text}
-        />
-      }
-    >
-      <Text variant="title" weight="bold">
-        {t("client.dashboardTitle")}
-      </Text>
-      <Text muted>{t("client.dashboardSubtitle")}</Text>
-    </ScrollView>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <StickyHeader title={t("client.dashboardTitle")} />
+      <ScrollView
+        style={{ flex: 1, backgroundColor: theme.colors.background }}
+        contentContainerStyle={{
+          padding: theme.spacing.xl,
+          paddingTop: theme.spacing.xl,
+          paddingBottom: theme.spacing.lg,
+          gap: theme.spacing.lg,
+        }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void onRefresh()}
+            tintColor={theme.colors.text}
+          />
+        }
+      >
+        <Text muted>{t("client.dashboardSubtitle")}</Text>
+      </ScrollView>
+    </View>
   );
 }

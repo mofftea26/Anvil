@@ -10,7 +10,19 @@ import { AppInput } from "../../src/shared/components/AppInput";
 import { KeyboardScreen } from "../../src/shared/components/KeyboardScreen";
 import { useAppSelector } from "../../src/shared/hooks/useAppSelector";
 import { useAppTranslation } from "../../src/shared/i18n/useAppTranslation";
-import { appToast, Button, Card, Divider, HStack, Text, useTheme, VStack } from "../../src/shared/ui";
+import {
+  appToast,
+  Button,
+  Card,
+  Divider,
+  HStack,
+  LoadingSpinner,
+  StickyHeader,
+  Text,
+  useStickyHeaderHeight,
+  useTheme,
+  VStack,
+} from "../../src/shared/ui";
 
 export default function FindTrainerScreen() {
   const { t } = useAppTranslation();
@@ -38,100 +50,102 @@ export default function FindTrainerScreen() {
   }, [refetch]);
 
   return (
-    <KeyboardScreen
-      padding={theme.spacing.lg}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={() => void onRefresh()}
-          tintColor={theme.colors.text}
-        />
-      }
-    >
-      <VStack style={{ gap: theme.spacing.lg }}>
-        <HStack align="center" justify="space-between">
-          <Text variant="title" weight="bold">
-            {t("linking.coach.findTrainer")}
-          </Text>
-          <Button variant="secondary" height={42} onPress={() => router.back()}>
-            {t("common.close")}
-          </Button>
-        </HStack>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <StickyHeader
+        title={t("linking.coach.findTrainer")}
+        showBackButton
+        rightButton={{
+          label: t("common.close"),
+          onPress: () => router.back(),
+          variant: "secondary",
+        }}
+      />
+      <KeyboardScreen
+        bottomSpace={12}
+        headerHeight={useStickyHeaderHeight()}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void onRefresh()}
+            tintColor={theme.colors.text}
+          />
+        }
+      >
+        <VStack style={{ gap: theme.spacing.lg }}>
+          {error ? (
+            <Text color={theme.colors.danger}>
+              {(error as any)?.message ?? t("auth.errors.generic")}
+            </Text>
+          ) : null}
 
-        {error ? (
-          <Text color={theme.colors.danger}>
-            {(error as any)?.message ?? t("auth.errors.generic")}
-          </Text>
-        ) : null}
+          <Card>
+            <VStack style={{ gap: theme.spacing.md }}>
+              <AppInput
+                label={t("linking.client.trainerEmail")}
+                value={trainerEmail}
+                onChangeText={setTrainerEmail}
+                placeholder="trainer@email.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+              <AppInput
+                label={t("linking.client.message")}
+                value={message}
+                onChangeText={setMessage}
+                multiline
+                autoGrow
+              />
+              <Button
+                isLoading={createReqState.isLoading}
+                onPress={async () => {
+                  try {
+                    await createReq({
+                      trainerEmail: trainerEmail.trim(),
+                      message: message.trim() || null,
+                    }).unwrap();
+                    appToast.success(t("linking.client.sendRequest"));
+                    setMessage("");
+                    await refetch();
+                  } catch (e: any) {
+                    appToast.error(e?.message ?? t("auth.errors.generic"));
+                  }
+                }}
+              >
+                {t("linking.client.sendRequest")}
+              </Button>
+            </VStack>
+          </Card>
 
-        <Card>
-          <VStack style={{ gap: theme.spacing.md }}>
-            <AppInput
-              label={t("linking.client.trainerEmail")}
-              value={trainerEmail}
-              onChangeText={setTrainerEmail}
-              placeholder="trainer@email.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-            <AppInput
-              label={t("linking.client.message")}
-              value={message}
-              onChangeText={setMessage}
-              multiline
-              autoGrow
-            />
-            <Button
-              isLoading={createReqState.isLoading}
-              onPress={async () => {
-                try {
-                  await createReq({
-                    trainerEmail: trainerEmail.trim(),
-                    message: message.trim() || null,
-                  }).unwrap();
-                  appToast.success(t("linking.client.sendRequest"));
-                  setMessage("");
-                  await refetch();
-                } catch (e: any) {
-                  appToast.error(e?.message ?? t("auth.errors.generic"));
-                }
-              }}
-            >
-              {t("linking.client.sendRequest")}
-            </Button>
-          </VStack>
-        </Card>
+          <Card>
+            <VStack style={{ gap: 10 }}>
+              <Text weight="bold">{t("linking.requests.title")}</Text>
+              <Divider opacity={0.6} />
 
-        <Card>
-          <VStack style={{ gap: 10 }}>
-            <Text weight="bold">{t("linking.requests.title")}</Text>
-            <Divider opacity={0.6} />
+              {isLoading ? <LoadingSpinner /> : null}
 
-            {isLoading ? <Text muted>{t("common.loading")}</Text> : null}
+              {!isLoading && (!data?.length || data.length === 0) ? (
+                <Text muted>{t("linking.requests.empty")}</Text>
+              ) : (
+                <VStack style={{ gap: 10 }}>
+                  {data?.map((r) => (
+                    <Card key={r.id} background="surface2">
+                      <VStack style={{ gap: 6 }}>
+                        <HStack align="center" justify="space-between">
+                          <Text weight="bold">{r.trainerEmail}</Text>
+                          <Text muted>{r.status}</Text>
+                        </HStack>
+                        {r.message ? <Text muted>{r.message}</Text> : null}
+                      </VStack>
+                    </Card>
+                  ))}
+                </VStack>
+              )}
+            </VStack>
+          </Card>
 
-            {!isLoading && (!data?.length || data.length === 0) ? (
-              <Text muted>{t("linking.requests.empty")}</Text>
-            ) : (
-              <VStack style={{ gap: 10 }}>
-                {data?.map((r) => (
-                  <Card key={r.id} background="surface2">
-                    <VStack style={{ gap: 6 }}>
-                      <HStack align="center" justify="space-between">
-                        <Text weight="bold">{r.trainerEmail}</Text>
-                        <Text muted>{r.status}</Text>
-                      </HStack>
-                      {r.message ? <Text muted>{r.message}</Text> : null}
-                    </VStack>
-                  </Card>
-                ))}
-              </VStack>
-            )}
-          </VStack>
-        </Card>
-
-        <View style={{ height: 10 }} />
-      </VStack>
-    </KeyboardScreen>
+          <View style={{ height: 10 }} />
+        </VStack>
+      </KeyboardScreen>
+    </View>
   );
 }
-

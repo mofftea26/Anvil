@@ -23,8 +23,8 @@ export default function ClientTabsLayout() {
           backgroundColor: bg,
           borderTopColor: border,
           borderTopWidth: 1,
-          height: 64 + insets.bottom,
-          paddingBottom: Math.max(insets.bottom, 10),
+          height: 74,
+          paddingBottom: 10,
           paddingTop: 10,
         },
         tabBarLabelStyle: {

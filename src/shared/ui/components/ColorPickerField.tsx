@@ -2,6 +2,7 @@ import React from "react";
 import {
   Modal,
   Pressable,
+  ScrollView,
   StyleSheet,
   TextInput,
   View,
@@ -11,7 +12,7 @@ import { useTheme } from "../theme";
 import { Button } from "./Button";
 import { Card } from "./Card";
 import { Divider } from "./Divider";
-import { HStack, VStack } from "../layout/Stack";
+import { HStack } from "../layout/Stack";
 import { Text } from "./Text";
 
 function isHexColor(v: string) {
@@ -31,6 +32,7 @@ export function ColorPickerField({ label, value, onChange, presets }: Props) {
   const theme = useTheme();
   const [open, setOpen] = React.useState(false);
   const [draft, setDraft] = React.useState(value);
+  const scrollRef = React.useRef<ScrollView>(null);
 
   React.useEffect(() => {
     setDraft(value);
@@ -38,20 +40,59 @@ export function ColorPickerField({ label, value, onChange, presets }: Props) {
 
   const palette = React.useMemo(
     () =>
-      presets ?? [
-        theme.colors.accent,
-        theme.colors.accent2,
-        "#FFFFFF",
-        "#0B0D10",
-        "#11151B",
-        "#161C24",
-        "#FF4D4D",
-        "#22C55E",
-        "#3B82F6",
-        "#F59E0B",
-        "#A855F7",
-        "#EC4899",
-      ],
+      Array.from(
+        new Set(
+          (presets ?? [
+            // Brand-first
+            theme.colors.accent,
+            theme.colors.accent2,
+
+            // Neutrals (dark UI friendly)
+            "#FFFFFF",
+            "#0B0D10",
+            "#0F172A",
+            "#111827",
+            "#1F2937",
+            "#334155",
+            "#64748B",
+            "#94A3B8",
+
+            // Trending modern accents (Tailwind-ish)
+            "#6366F1", // indigo
+            "#4F46E5",
+            "#8B5CF6", // violet
+            "#7C3AED",
+            "#A855F7", // purple
+            "#D946EF", // fuchsia
+            "#EC4899", // pink
+            "#F43F5E", // rose
+            "#EF4444", // red
+            "#F97316", // orange
+            "#FB923C",
+            "#F59E0B", // amber
+            "#FDE047", // yellow
+            "#A3E635", // lime
+            "#22C55E", // green
+            "#10B981", // emerald
+            "#14B8A6", // teal
+            "#06B6D4", // cyan
+            "#22D3EE",
+            "#38BDF8", // sky
+            "#3B82F6", // blue
+            "#2563EB",
+
+            // “Appy” neon pops
+            "#00D1FF",
+            "#00FFA3",
+            "#7AFF00",
+            "#FF3D00",
+            "#FF2D55",
+            "#FFB000",
+          ])
+            .map((c) => String(c ?? "").trim().toUpperCase())
+            .filter(Boolean)
+        )
+      ),
     [presets, theme.colors]
   );
 
@@ -98,22 +139,72 @@ export function ColorPickerField({ label, value, onChange, presets }: Props) {
           <View style={[styles.sheet, { backgroundColor: theme.colors.surface }]}>
             <HStack align="center" justify="space-between">
               <Text weight="bold">{label}</Text>
-              <Button variant="secondary" height={40} onPress={() => setOpen(false)}>
-                {t("common.close")}
-              </Button>
+              <HStack gap={10}>
+                <Button
+                  variant="secondary"
+                  height={40}
+                  onPress={() => {
+                    setDraft(value);
+                    setOpen(false);
+                  }}
+                >
+                  {t("common.cancel")}
+                </Button>
+                <Button
+                  height={40}
+                  disabled={!isHexColor(draft)}
+                  onPress={() => {
+                    if (!isHexColor(draft)) return;
+                    onChange(draft.trim());
+                    setOpen(false);
+                  }}
+                >
+                  {t("common.apply")}
+                </Button>
+              </HStack>
             </HStack>
 
             <Divider opacity={0.7} />
 
-            <VStack style={{ gap: 10 }}>
+            <ScrollView
+              ref={scrollRef}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ gap: 12, paddingBottom: 6 }}
+              showsVerticalScrollIndicator={false}
+            >
               <Text variant="caption" muted>
-                {t("common.pickColor")}
+                {t("common.enterHex")}
+              </Text>
+
+              <Card
+                padded={false}
+                background="surface2"
+                style={{ paddingHorizontal: 14, height: 48, justifyContent: "center" }}
+              >
+                <TextInput
+                  value={draft}
+                  onChangeText={setDraft}
+                  autoCapitalize="none"
+                  placeholder="#A3FF12"
+                  placeholderTextColor="rgba(255,255,255,0.45)"
+                  onFocus={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+                  style={{
+                    color: theme.colors.text,
+                    fontFamily: theme.typography.fontFamilyRegular,
+                  }}
+                />
+              </Card>
+
+              <Divider opacity={0.7} />
+
+              <Text variant="caption" muted>
+                {t("common.palette")}
               </Text>
 
               <View style={styles.grid}>
-                {palette.map((c) => (
+                {palette.map((c, idx) => (
                   <Pressable
-                    key={c}
+                    key={`${c}-${idx}`}
                     onPress={() => {
                       onChange(c);
                       setOpen(false);
@@ -129,50 +220,7 @@ export function ColorPickerField({ label, value, onChange, presets }: Props) {
                   />
                 ))}
               </View>
-
-              <Text variant="caption" muted style={{ marginTop: 6 }}>
-                {t("common.orEnterHex")}
-              </Text>
-
-              <Card padded={false} background="surface2" style={{ paddingHorizontal: 14, height: 48, justifyContent: "center" }}>
-                <TextInput
-                  value={draft}
-                  onChangeText={setDraft}
-                  autoCapitalize="none"
-                  placeholder="#A3FF12"
-                  placeholderTextColor="rgba(255,255,255,0.45)"
-                  style={{
-                    color: theme.colors.text,
-                    fontFamily: theme.typography.fontFamilyRegular,
-                  }}
-                />
-              </Card>
-
-              <HStack gap={10}>
-                <Button
-                  variant="secondary"
-                  fullWidth
-                  style={{ flex: 1 }}
-                  onPress={() => {
-                    setDraft(value);
-                    setOpen(false);
-                  }}
-                >
-                  {t("common.cancel")}
-                </Button>
-                <Button
-                  fullWidth
-                  style={{ flex: 1 }}
-                  onPress={() => {
-                    if (!isHexColor(draft)) return;
-                    onChange(draft.trim());
-                    setOpen(false);
-                  }}
-                >
-                  {t("common.apply")}
-                </Button>
-              </HStack>
-            </VStack>
+            </ScrollView>
           </View>
         </View>
       </Modal>

@@ -1,5 +1,6 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as ImagePicker from "expo-image-picker";
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { Platform, RefreshControl, View } from "react-native";
@@ -33,11 +34,12 @@ import {
   appToast,
   Button,
   Card,
-  Divider,
   HStack,
   ProfileAccountCard,
+  StickyHeader,
   Text,
   useAppAlert,
+  useStickyHeaderHeight,
   useTheme,
   VStack,
 } from "../../../src/shared/ui";
@@ -47,6 +49,17 @@ function formatDateISO(date: Date) {
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
+}
+
+function hexToRgba(hex: string, alpha: number): string {
+  const h = hex.replace("#", "").trim();
+  const hasAlpha = h.length === 8;
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  const a = hasAlpha ? parseInt(h.slice(6, 8), 16) / 255 : 1;
+  const finalA = Math.max(0, Math.min(1, alpha * a));
+  return `rgba(${r},${g},${b},${finalA})`;
 }
 
 export default function ClientProfileScreen() {
@@ -63,6 +76,7 @@ export default function ClientProfileScreen() {
 
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [clearingAvatar, setClearingAvatar] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -241,6 +255,24 @@ export default function ClientProfileScreen() {
     }
   };
 
+  const clearAvatar = async () => {
+    if (!auth.userId) return;
+    try {
+      setClearingAvatar(true);
+      await updateMyUserRow({
+        userId: auth.userId,
+        payload: { avatarUrl: null },
+      }).unwrap();
+      setForm((p) => ({ ...p, avatarUrl: "" }));
+      await refetch();
+      appToast.success(t("profile.toasts.saved"));
+    } catch (e: any) {
+      appToast.error(e?.message ?? t("auth.errors.generic"));
+    } finally {
+      setClearingAvatar(false);
+    }
+  };
+
   const onSave = async () => {
     if (!auth.userId || !me) return;
 
@@ -346,310 +378,347 @@ export default function ClientProfileScreen() {
     ? new Date(form.birthDate)
     : new Date(1995, 0, 1);
 
+  const brandA = theme.colors.accent;
+  const brandB = theme.colors.accent2;
+  const headerHeight = useStickyHeaderHeight();
+
   return (
-    <KeyboardScreen
-      padding={12}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={() => void onRefresh()}
-          tintColor={theme.colors.text}
-        />
-      }
-    >
-      <VStack
-        style={{
-          gap: theme.spacing.lg,
-          backgroundColor: theme.colors.background,
-        }}
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <LinearGradient
+        colors={[
+          hexToRgba(brandA, 0.45),
+          hexToRgba(brandB, 0.3),
+          "rgba(0,0,0,0.00)",
+        ]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{ position: "absolute", left: 0, top: 0, right: 0, bottom: 0 }}
+      />
+
+      <StickyHeader title={t("tabs.profile")} />
+
+      <KeyboardScreen
+        padding={12}
+        bottomSpace={12}
+        headerHeight={headerHeight}
+        style={{ backgroundColor: "transparent" }}
+        scrollStyle={{ backgroundColor: "transparent" }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void onRefresh()}
+            tintColor={theme.colors.text}
+          />
+        }
       >
-        <Text variant="title" weight="bold">
-          {t("tabs.profile")}
-        </Text>
+        <VStack style={{ gap: theme.spacing.lg }}>
+          {error ? <Text color={theme.colors.danger}>{error}</Text> : null}
 
-        {error ? <Text color={theme.colors.danger}>{error}</Text> : null}
+          <ProfileAccountCard
+            title={t("profile.sections.account")}
+            firstName={form.firstName}
+            lastName={form.lastName}
+            email={me?.email ?? ""}
+            avatarUrl={form.avatarUrl}
+            seed={auth.userId || me?.email || "seed"}
+            onPressAvatar={() => void pickAndUploadAvatar()}
+            onPressClear={() =>
+              alert.confirm({
+                title: t("profile.actions.clearPhoto"),
+                message: t("common.areYouSure"),
+                confirmText: t("common.clear"),
+                cancelText: t("common.cancel"),
+                destructive: true,
+                onConfirm: async () => {
+                  await clearAvatar();
+                },
+              })
+            }
+            clearLabel={t("profile.actions.clearPhoto")}
+            disabled={uploading || clearingAvatar}
+          />
 
-        <ProfileAccountCard
-          title={t("profile.sections.account")}
-          firstName={form.firstName}
-          lastName={form.lastName}
-          email={me?.email ?? ""}
-          avatarUrl={form.avatarUrl}
-          seed={auth.userId || me?.email || "seed"}
-          onPressAvatar={() => void pickAndUploadAvatar()}
-          disabled={uploading}
-        />
-
-        {/* Form */}
-        <Card>
-          <VStack style={{ gap: theme.spacing.lg }}>
-            {/* Basic info */}
-            <Text variant="caption" muted>
-              {t("profile.sections.basic")}
-            </Text>
-
-            <HStack gap={theme.spacing.md}>
-              <View style={{ flex: 1 }}>
-                <AppInput
-                  label={t("auth.firstName")}
-                  value={form.firstName}
-                  onChangeText={(v) => setForm((p) => ({ ...p, firstName: v }))}
-                  placeholder="John"
-                  autoCapitalize="words"
-                />
-              </View>
-
-              <View style={{ flex: 1 }}>
-                <AppInput
-                  label={t("auth.lastName")}
-                  value={form.lastName}
-                  onChangeText={(v) => setForm((p) => ({ ...p, lastName: v }))}
-                  placeholder="Doe"
-                  autoCapitalize="words"
-                />
-              </View>
-            </HStack>
-
-            <AppInput
-              label={t("profile.fields.phone")}
-              value={form.phone}
-              onChangeText={(v) => setForm((p) => ({ ...p, phone: v }))}
-              placeholder="+1 …"
-              keyboardType="phone-pad"
-            />
-
-            <Divider opacity={0.6} />
-
-            {/* Body metrics */}
-            <Text variant="caption" muted>
-              {t("profile.sections.body")}
-            </Text>
-
-            <BottomSheetPicker
-              label={t("profile.fields.gender")}
-              title={t("profile.fields.gender")}
-              mode="single"
-              value={form.gender || null}
-              onChange={(v) => setForm((p) => ({ ...p, gender: v ?? "" }))}
-              placeholder={t("common.selectPlaceholder")}
-              options={genderOptions}
-            />
-
-            {/* Birth date */}
-            <VStack style={{ gap: theme.spacing.sm }}>
-              <Text variant="caption" style={{ opacity: 0.9 }}>
-                {t("profile.fields.birthDate")}
+          {/* Client info */}
+          <Card>
+            <VStack style={{ gap: theme.spacing.lg }}>
+              <Text variant="caption" muted>
+                {t("profile.sections.basic")}
               </Text>
 
-              <Button
-                variant="secondary"
-                onPress={() => setShowDatePicker(true)}
-                contentStyle={{ justifyContent: "flex-start" }}
-              >
-                <Text
-                  color={
-                    form.birthDate
-                      ? theme.colors.text
-                      : "rgba(255,255,255,0.45)"
-                  }
-                >
-                  {form.birthDate || t("profile.placeholders.date")}
+              <HStack gap={theme.spacing.md}>
+                <View style={{ flex: 1 }}>
+                  <AppInput
+                    label={t("auth.firstName")}
+                    value={form.firstName}
+                    onChangeText={(v) =>
+                      setForm((p) => ({ ...p, firstName: v }))
+                    }
+                    placeholder="John"
+                    autoCapitalize="words"
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <AppInput
+                    label={t("auth.lastName")}
+                    value={form.lastName}
+                    onChangeText={(v) =>
+                      setForm((p) => ({ ...p, lastName: v }))
+                    }
+                    placeholder="Doe"
+                    autoCapitalize="words"
+                  />
+                </View>
+              </HStack>
+
+              <AppInput
+                label={t("profile.fields.phone")}
+                value={form.phone}
+                onChangeText={(v) => setForm((p) => ({ ...p, phone: v }))}
+                placeholder="+961 …"
+                keyboardType="phone-pad"
+              />
+
+              <BottomSheetPicker
+                label={t("profile.fields.gender")}
+                title={t("profile.fields.gender")}
+                mode="single"
+                value={form.gender || null}
+                onChange={(v) => setForm((p) => ({ ...p, gender: v ?? "" }))}
+                placeholder={t("common.selectPlaceholder")}
+                options={genderOptions}
+              />
+
+              {/* Birth date */}
+              <VStack style={{ gap: theme.spacing.sm }}>
+                <Text variant="caption" style={{ opacity: 0.9 }}>
+                  {t("profile.fields.birthDate")}
                 </Text>
-              </Button>
 
-              {showDatePicker ? (
-                <DateTimePicker
-                  value={dateValue}
-                  mode="date"
-                  display={Platform.OS === "ios" ? "spinner" : "default"}
-                  onChange={(_, selected) => {
-                    setShowDatePicker(false);
-                    if (selected) onPickBirthDate(selected);
-                  }}
-                />
-              ) : null}
+                <Button
+                  variant="secondary"
+                  onPress={() => setShowDatePicker(true)}
+                  contentStyle={{ justifyContent: "flex-start" }}
+                >
+                  <Text
+                    color={
+                      form.birthDate
+                        ? theme.colors.text
+                        : "rgba(255,255,255,0.45)"
+                    }
+                  >
+                    {form.birthDate || t("profile.placeholders.date")}
+                  </Text>
+                </Button>
+
+                {showDatePicker ? (
+                  <DateTimePicker
+                    value={dateValue}
+                    mode="date"
+                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                    onChange={(_, selected) => {
+                      setShowDatePicker(false);
+                      if (selected) onPickBirthDate(selected);
+                    }}
+                  />
+                ) : null}
+              </VStack>
+
+              <BottomSheetPicker
+                label={t("profile.fields.nationality")}
+                title={t("profile.fields.nationality")}
+                mode="single"
+                value={form.nationality || null}
+                onChange={(v) =>
+                  setForm((p) => ({ ...p, nationality: v ?? "" }))
+                }
+                placeholder={t("common.selectPlaceholder")}
+                options={nationalityOptions}
+                searchable
+                searchPlaceholder={t("common.search")}
+              />
             </VStack>
+          </Card>
 
-            <BottomSheetPicker
-              label={t("profile.fields.nationality")}
-              title={t("profile.fields.nationality")}
-              mode="single"
-              value={form.nationality || null}
-              onChange={(v) => setForm((p) => ({ ...p, nationality: v ?? "" }))}
-              placeholder={t("common.selectPlaceholder")}
-              options={nationalityOptions}
-              searchable
-              searchPlaceholder={t("common.search")}
-            />
+          {/* Body metrics */}
+          <Card>
+            <VStack style={{ gap: theme.spacing.lg }}>
+              <Text variant="caption" muted>
+                {t("profile.sections.body")}
+              </Text>
 
-            {form.unitSystem === "imperial" ? (
-              <>
+              {form.unitSystem === "imperial" ? (
+                <>
+                  <HStack gap={theme.spacing.md}>
+                    <View style={{ flex: 1 }}>
+                      <AppInput
+                        label={t("profile.fields.heightFt")}
+                        value={form.heightFt}
+                        onChangeText={(v) =>
+                          setForm((p) => ({ ...p, heightFt: v }))
+                        }
+                        placeholder="5"
+                        keyboardType="numeric"
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <AppInput
+                        label={t("profile.fields.heightIn")}
+                        value={form.heightIn}
+                        onChangeText={(v) =>
+                          setForm((p) => ({ ...p, heightIn: v }))
+                        }
+                        placeholder="10"
+                        keyboardType="numeric"
+                      />
+                    </View>
+                  </HStack>
+
+                  <AppInput
+                    label={t("profile.fields.weightLb")}
+                    value={form.weightLb}
+                    onChangeText={(v) =>
+                      setForm((p) => ({ ...p, weightLb: v }))
+                    }
+                    placeholder="180"
+                    keyboardType="numeric"
+                  />
+                </>
+              ) : (
                 <HStack gap={theme.spacing.md}>
                   <View style={{ flex: 1 }}>
                     <AppInput
-                      label={t("profile.fields.heightFt")}
-                      value={form.heightFt}
+                      label={t("profile.fields.heightCm")}
+                      value={form.heightCm}
                       onChangeText={(v) =>
-                        setForm((p) => ({ ...p, heightFt: v }))
+                        setForm((p) => ({ ...p, heightCm: v }))
                       }
-                      placeholder="5"
+                      placeholder="175"
                       keyboardType="numeric"
                     />
                   </View>
+
                   <View style={{ flex: 1 }}>
                     <AppInput
-                      label={t("profile.fields.heightIn")}
-                      value={form.heightIn}
+                      label={t("profile.fields.weightKg")}
+                      value={form.weightKg}
                       onChangeText={(v) =>
-                        setForm((p) => ({ ...p, heightIn: v }))
+                        setForm((p) => ({ ...p, weightKg: v }))
                       }
-                      placeholder="10"
+                      placeholder="88"
                       keyboardType="numeric"
                     />
                   </View>
                 </HStack>
+              )}
+            </VStack>
+          </Card>
 
-                <AppInput
-                  label={t("profile.fields.weightLb")}
-                  value={form.weightLb}
-                  onChangeText={(v) => setForm((p) => ({ ...p, weightLb: v }))}
-                  placeholder="180"
-                  keyboardType="numeric"
-                />
-              </>
-            ) : (
-              <HStack gap={theme.spacing.md}>
-                <View style={{ flex: 1 }}>
-                  <AppInput
-                    label={t("profile.fields.heightCm")}
-                    value={form.heightCm}
-                    onChangeText={(v) =>
-                      setForm((p) => ({ ...p, heightCm: v }))
+          {/* Preferences */}
+          <Card>
+            <VStack style={{ gap: theme.spacing.lg }}>
+              <Text variant="caption" muted>
+                {t("profile.sections.preferences")}
+              </Text>
+
+              <BottomSheetPicker
+                label={t("profile.fields.unitSystem")}
+                title={t("profile.fields.unitSystem")}
+                mode="single"
+                value={form.unitSystem || null}
+                onChange={(v) => {
+                  const next = (v ?? "metric") as UnitSystem;
+                  dispatch(profileActions.setUnitSystem(next));
+
+                  setForm((p) => {
+                    if (next === "imperial") {
+                      const cm = toNumberOrNull(p.heightCm);
+                      const kg = toNumberOrNull(p.weightKg);
+                      const ftIn =
+                        cm !== null ? cmToFeetInches(cm) : { ft: 0, inches: 0 };
+                      const lb = kg !== null ? kgToLb(kg) : null;
+                      return {
+                        ...p,
+                        unitSystem: next,
+                        heightFt: cm !== null ? String(ftIn.ft) : "",
+                        heightIn: cm !== null ? String(ftIn.inches) : "",
+                        weightLb: lb !== null ? String(Math.round(lb)) : "",
+                      };
                     }
-                    placeholder="175"
-                    keyboardType="numeric"
-                  />
-                </View>
 
-                <View style={{ flex: 1 }}>
-                  <AppInput
-                    label={t("profile.fields.weightKg")}
-                    value={form.weightKg}
-                    onChangeText={(v) =>
-                      setForm((p) => ({ ...p, weightKg: v }))
-                    }
-                    placeholder="88"
-                    keyboardType="numeric"
-                  />
-                </View>
-              </HStack>
-            )}
-
-            <Divider opacity={0.6} />
-
-            {/* Preferences */}
-            <Text variant="caption" muted>
-              {t("profile.sections.preferences")}
-            </Text>
-
-            <BottomSheetPicker
-              label={t("profile.fields.unitSystem")}
-              title={t("profile.fields.unitSystem")}
-              mode="single"
-              value={form.unitSystem || null}
-              onChange={(v) => {
-                const next = (v ?? "metric") as UnitSystem;
-                dispatch(profileActions.setUnitSystem(next));
-
-                setForm((p) => {
-                  if (next === "imperial") {
-                    const cm = toNumberOrNull(p.heightCm);
-                    const kg = toNumberOrNull(p.weightKg);
-                    const ftIn =
-                      cm !== null ? cmToFeetInches(cm) : { ft: 0, inches: 0 };
-                    const lb = kg !== null ? kgToLb(kg) : null;
+                    // next === metric
+                    const ft = toNumberOrNull(p.heightFt) ?? 0;
+                    const inches = toNumberOrNull(p.heightIn) ?? 0;
+                    const lb = toNumberOrNull(p.weightLb);
+                    const cm = feetInchesToCm(ft, inches);
+                    const kg = lb !== null ? lbToKg(lb) : null;
                     return {
                       ...p,
                       unitSystem: next,
-                      heightFt: cm !== null ? String(ftIn.ft) : "",
-                      heightIn: cm !== null ? String(ftIn.inches) : "",
-                      weightLb: lb !== null ? String(Math.round(lb)) : "",
+                      heightCm:
+                        p.heightFt || p.heightIn
+                          ? String(Math.round(cm))
+                          : p.heightCm,
+                      weightKg:
+                        lb !== null ? String(Math.round(kg ?? 0)) : p.weightKg,
                     };
-                  }
+                  });
+                }}
+                placeholder={t("common.selectPlaceholder")}
+                options={unitOptions}
+              />
 
-                  // next === metric
-                  const ft = toNumberOrNull(p.heightFt) ?? 0;
-                  const inches = toNumberOrNull(p.heightIn) ?? 0;
-                  const lb = toNumberOrNull(p.weightLb);
-                  const cm = feetInchesToCm(ft, inches);
-                  const kg = lb !== null ? lbToKg(lb) : null;
-                  return {
-                    ...p,
-                    unitSystem: next,
-                    heightCm:
-                      p.heightFt || p.heightIn
-                        ? String(Math.round(cm))
-                        : p.heightCm,
-                    weightKg:
-                      lb !== null ? String(Math.round(kg ?? 0)) : p.weightKg,
-                  };
-                });
-              }}
-              placeholder={t("common.selectPlaceholder")}
-              options={unitOptions}
-            />
+              <BottomSheetPicker
+                label={t("profile.fields.activityLevel")}
+                title={t("profile.fields.activityLevel")}
+                mode="single"
+                value={form.activityLevel || null}
+                onChange={(v) =>
+                  setForm((p) => ({ ...p, activityLevel: v ?? "" }))
+                }
+                placeholder={t("common.selectPlaceholder")}
+                options={activityOptions}
+                showDescriptions
+              />
 
-            <BottomSheetPicker
-              label={t("profile.fields.activityLevel")}
-              title={t("profile.fields.activityLevel")}
-              mode="single"
-              value={form.activityLevel || null}
-              onChange={(v) =>
-                setForm((p) => ({ ...p, activityLevel: v ?? "" }))
-              }
-              placeholder={t("common.selectPlaceholder")}
-              options={activityOptions}
-              showDescriptions
-            />
+              <BottomSheetPicker
+                label={t("profile.fields.target")}
+                title={t("profile.fields.target")}
+                mode="single"
+                value={form.target || null}
+                onChange={(v) => setForm((p) => ({ ...p, target: v ?? "" }))}
+                placeholder={t("common.selectPlaceholder")}
+                options={targetOptions}
+              />
 
-            <BottomSheetPicker
-              label={t("profile.fields.target")}
-              title={t("profile.fields.target")}
-              mode="single"
-              value={form.target || null}
-              onChange={(v) => setForm((p) => ({ ...p, target: v ?? "" }))}
-              placeholder={t("common.selectPlaceholder")}
-              options={targetOptions}
-            />
+              <AppInput
+                label={t("profile.fields.notes")}
+                value={form.notes}
+                onChangeText={(v) => setForm((p) => ({ ...p, notes: v }))}
+                placeholder={t("profile.placeholders.notes")}
+                multiline
+                numberOfLines={3}
+                autoGrow
+              />
+            </VStack>
+          </Card>
 
-            <AppInput
-              label={t("profile.fields.notes")}
-              value={form.notes}
-              onChangeText={(v) => setForm((p) => ({ ...p, notes: v }))}
-              placeholder={t("profile.placeholders.notes")}
-              multiline
-              numberOfLines={3}
-              autoGrow
-            />
+          {saveError ? (
+            <Text color={theme.colors.danger}>{saveError}</Text>
+          ) : null}
 
-            {saveError ? (
-              <Text color={theme.colors.danger}>{saveError}</Text>
-            ) : null}
+          <Button isLoading={saving || isLoading} onPress={onPressSave}>
+            {t("common.save")}
+          </Button>
 
-            <Button isLoading={saving || isLoading} onPress={onPressSave}>
-              {t("profile.actions.saveChanges")}
-            </Button>
-
-            <Button
-              variant="secondary"
-              isLoading={signingOut}
-              onPress={onPressSignOut}
-            >
-              {t("profile.actions.signOut")}
-            </Button>
-          </VStack>
-        </Card>
-      </VStack>
-    </KeyboardScreen>
+          <Button
+            variant="secondary"
+            isLoading={signingOut}
+            onPress={onPressSignOut}
+          >
+            {t("profile.actions.signOut")}
+          </Button>
+        </VStack>
+      </KeyboardScreen>
+    </View>
   );
 }

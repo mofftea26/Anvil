@@ -92,6 +92,11 @@
     "chooseFile": "اختر ملفاً",
     "pickColor": "اختر لوناً",
     "orEnterHex": "أو أدخل HEX",
+    "enterHex": "أدخل HEX",
+    "palette": "لوحة الألوان",
+    "today": "اليوم",
+    "tomorrow": "غدًا",
+    "yesterday": "أمس",
     "share": "مشاركة",
     "copy": "نسخ",
     "areYouSure": "هل أنت متأكد؟"
@@ -280,7 +285,7 @@
       "recomp": "إعادة تركيب",
       "performance": "أداء"
     },
-    "actions": { "saveChanges": "حفظ التغييرات", "signOut": "تسجيل الخروج" },
+    "actions": { "saveChanges": "حفظ التغييرات", "clearPhoto": "إزالة الصورة", "signOut": "تسجيل الخروج" },
     "toasts": { "saved": "تم حفظ الملف الشخصي." }
   }
 }
