@@ -83,18 +83,20 @@ export function StickyHeader({
             </Button>
           )}
         </View>
-        <Text
-          variant="body"
-          weight="semibold"
-          numberOfLines={1}
-          style={{
-            flex: 1,
-            textAlign: "left",
-            fontSize: 18,
-          }}
-        >
-          {title}
-        </Text>
+        {!showBackButton && (
+          <Text
+            variant="body"
+            weight="semibold"
+            numberOfLines={1}
+            style={{
+              flex: 1,
+              textAlign: "left",
+              fontSize: 18,
+            }}
+          >
+            {title}
+          </Text>
+        )}
         {rightButton && (
           <Button
             variant={rightButton.variant ?? "secondary"}

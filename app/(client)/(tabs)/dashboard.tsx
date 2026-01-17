@@ -4,10 +4,10 @@ import { RefreshControl, ScrollView, View } from "react-native";
 import { useMyProfile } from "../../../src/features/profile/hooks/useMyProfile";
 import { useAppTranslation } from "../../../src/shared/i18n/useAppTranslation";
 import {
-  StickyHeader,
-  Text,
-  useStickyHeaderHeight,
-  useTheme,
+    StickyHeader,
+    Text,
+    useStickyHeaderHeight,
+    useTheme,
 } from "../../../src/shared/ui";
 
 export default function ClientDashboard() {

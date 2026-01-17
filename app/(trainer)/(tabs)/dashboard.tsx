@@ -2,11 +2,11 @@ import React from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
 import { useAppTranslation } from "../../../src/shared/i18n/useAppTranslation";
 import {
-  StickyHeader,
-  Text,
-  useStickyHeaderHeight,
-  useTheme,
-  VStack,
+    StickyHeader,
+    Text,
+    useStickyHeaderHeight,
+    useTheme,
+    VStack,
 } from "../../../src/shared/ui";
 
 export default function TrainerDashboard() {
