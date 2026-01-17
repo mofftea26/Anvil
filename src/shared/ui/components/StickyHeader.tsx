@@ -83,7 +83,7 @@ export function StickyHeader({
             </Button>
           )}
         </View>
-        {!showBackButton && (
+        {showBackButton && (
           <Text
             variant="body"
             weight="semibold"
