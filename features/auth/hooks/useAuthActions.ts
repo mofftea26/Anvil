@@ -50,7 +50,7 @@ export function useAuthActions(): Result {
 
   const clearError = useCallback(() => setErrorMessage(null), []);
 
-  const wrap = useCallback(async (fn: () => Promise<void>) => {
+  const wrap = useCallback(async (fn: () => Promise<unknown>) => {
     setErrorMessage(null);
     try {
       await fn();

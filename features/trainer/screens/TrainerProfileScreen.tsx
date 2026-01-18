@@ -2,14 +2,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
-import { Pressable, RefreshControl, View } from "react-native";
+import { ColorValue, Pressable, RefreshControl, View } from "react-native";
 
-import { TrainerProfileDetailsCard } from "@/features/trainer/components/TrainerProfileDetailsCard";
 import { useTrainerProfile } from "@/features/trainer/hooks/useTrainerProfile";
+import { AppInput } from "@/shared/components/AppInput";
 import { KeyboardScreen } from "@/shared/components/KeyboardScreen";
 import {
   Button,
   Card,
+  Chip,
   ColorPickerField,
   Divider,
   HStack,
@@ -61,7 +62,7 @@ export default function TrainerProfileScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <LinearGradient
-        colors={headerGradient}
+        colors={headerGradient as [ColorValue, ColorValue, ...ColorValue[]]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{ position: "absolute", left: 0, top: 0, right: 0, bottom: 0 }}
@@ -101,24 +102,141 @@ export default function TrainerProfileScreen() {
             disabled={uploadingAvatar || clearingAvatar}
           />
 
-          <TrainerProfileDetailsCard
-            form={form}
-            saveError={saveError}
-            updateField={updateField}
-            certModalOpen={certModalOpen}
-            certDraft={certDraft}
-            setCertDraft={setCertDraft}
-            onStartAddCert={onStartAddCert}
-            onRemoveCert={onRemoveCert}
-            onCancelAddCert={onCancelAddCert}
-            onAddCert={onAddCert}
-            t={t}
-            theme={theme}
-          />
+          <Card>
+            <VStack style={{ gap: theme.spacing.lg }}>
+              <Text variant="caption" muted>
+                {t("profile.sections.trainer")}
+              </Text>
+
+              <HStack gap={theme.spacing.md}>
+                <View style={{ flex: 1 }}>
+                  <AppInput
+                    label={t("auth.firstName")}
+                    value={form.firstName}
+                    onChangeText={(v) => updateField("firstName", v)}
+                    placeholder="John"
+                    autoCapitalize="words"
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <AppInput
+                    label={t("auth.lastName")}
+                    value={form.lastName}
+                    onChangeText={(v) => updateField("lastName", v)}
+                    placeholder="Doe"
+                    autoCapitalize="words"
+                  />
+                </View>
+              </HStack>
+
+              <AppInput
+                label={t("profile.fields.phone")}
+                value={form.phone}
+                onChangeText={(v) => updateField("phone", v)}
+                placeholder="+961 …"
+                keyboardType="phone-pad"
+              />
+
+              <AppInput
+                label={t("profile.fields.bio")}
+                value={form.bio}
+                onChangeText={(v) => updateField("bio", v)}
+                placeholder={t("profile.placeholders.bio")}
+                multiline
+                numberOfLines={3}
+                autoGrow
+              />
+
+              <VStack style={{ gap: theme.spacing.sm }}>
+                <HStack align="center" justify="space-between">
+                  <Text variant="caption" style={{ opacity: 0.9 }}>
+                    {t("profile.fields.certifications")}
+                  </Text>
+                  <Button variant="secondary" height={40} onPress={onStartAddCert}>
+                    + {t("common.add")}
+                  </Button>
+                </HStack>
+
+                {form.certifications.length ? (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      flexWrap: "wrap",
+                      gap: 10,
+                    }}
+                  >
+                    {form.certifications.map((cert) => (
+                      <Chip
+                        key={cert}
+                        label={cert}
+                        onPress={() => onRemoveCert(cert)}
+                      />
+                    ))}
+                  </View>
+                ) : (
+                  <Text muted>{t("profile.certifications.empty")}</Text>
+                )}
+
+                {certModalOpen ? (
+                  <View
+                    style={{
+                      borderWidth: 1,
+                      borderColor: theme.colors.border,
+                      borderRadius: theme.radii.lg,
+                      backgroundColor: theme.colors.surface,
+                      padding: 12,
+                      gap: 10,
+                    }}
+                  >
+                    <AppInput
+                      label={t("profile.certifications.addLabel")}
+                      value={certDraft}
+                      onChangeText={setCertDraft}
+                      placeholder={t("profile.placeholders.certifications")}
+                      autoCapitalize="words"
+                    />
+                    <HStack gap={10}>
+                      <Button
+                        variant="secondary"
+                        fullWidth
+                        style={{ flex: 1 }}
+                        onPress={onCancelAddCert}
+                      >
+                        {t("common.cancel")}
+                      </Button>
+                      <Button fullWidth style={{ flex: 1 }} onPress={onAddCert}>
+                        {t("common.add")}
+                      </Button>
+                    </HStack>
+                  </View>
+                ) : null}
+              </VStack>
+
+              <AppInput
+                label={t("profile.fields.instagram")}
+                value={form.instagram}
+                onChangeText={(v) => updateField("instagram", v)}
+                placeholder="@yourhandle"
+                autoCapitalize="none"
+              />
+
+              <AppInput
+                label={t("profile.fields.website")}
+                value={form.website}
+                onChangeText={(v) => updateField("website", v)}
+                placeholder="https://…"
+                autoCapitalize="none"
+              />
+
+              {saveError ? (
+                <Text color={theme.colors.danger}>{saveError}</Text>
+              ) : null}
+            </VStack>
+          </Card>
 
           <Card padded={false} style={{ overflow: "hidden" }}>
             <LinearGradient
-              colors={brandCardGradient}
+              colors={brandCardGradient as [ColorValue, ColorValue, ...ColorValue[]]  }
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={{
@@ -199,7 +317,7 @@ export default function TrainerProfileScreen() {
                     />
                   ) : (
                     <LinearGradient
-                      colors={logoPlaceholderGradient}
+                      colors={logoPlaceholderGradient as [ColorValue, ColorValue, ...ColorValue[]]}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
                       style={{

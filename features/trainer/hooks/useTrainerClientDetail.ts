@@ -312,18 +312,17 @@ export const useTrainerClientDetail = () => {
     refreshing,
     onRefresh,
     saveManagement,
-    quickSetStatus,
     markNextCheckIn,
     toggleArchive,
     onDeletePress,
     headerGradient,
     avatar,
     upsertState,
-    setClientStatusState,
-    markCheckInState,
     setLinkStatusState,
+    markCheckInState,
     deleteState,
   };
 };
 
 export { formatDatePretty };
+

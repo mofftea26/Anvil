@@ -15,7 +15,7 @@ import { supabase } from "@/shared/supabase/client";
 import { uriToUint8ArrayJpeg } from "@/shared/supabase/imageUpload";
 import { appToast, useAppAlert, useStickyHeaderHeight, useTheme } from "@/shared/ui";
 
-export type TrainerProfileForm = {
+type TrainerProfileForm = {
   firstName: string;
   lastName: string;
   avatarUrl: string;
