@@ -43,6 +43,7 @@
   },
   "tabs": {
     "dashboard": "Dashboard",
+    "library": "Library",
     "profile": "Profile",
     "clients": "Clients",
     "coach": "Coach",

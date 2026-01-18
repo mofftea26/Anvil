@@ -45,6 +45,8 @@ export function Button({
     if (isIcon) return "transparent";
     if (variant === "primary") return theme.colors.accent;
     if (variant === "secondary") return theme.colors.surface;
+    if (variant === "ghost") return "transparent";
+    if (variant === "icon") return "transparent";
     return "transparent";
   })();
 

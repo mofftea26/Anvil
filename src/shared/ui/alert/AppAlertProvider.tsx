@@ -9,6 +9,7 @@ import {
 import { useTheme } from "../theme";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
+import { Input } from "../components/Input";
 import { Text } from "../components/Text";
 import { VStack, HStack } from "../layout/Stack";
 
@@ -25,6 +26,16 @@ export type AppAlertOptions = {
   dismissable?: boolean;
 };
 
+export type AppAlertPromptOptions = {
+  title: string;
+  message?: string;
+  label: string;
+  placeholder?: string;
+  confirmText?: string;
+  cancelText?: string;
+  onConfirm: (value: string) => void;
+};
+
 type AppAlertContextValue = {
   show: (opts: AppAlertOptions) => void;
   hide: () => void;
@@ -36,6 +47,7 @@ type AppAlertContextValue = {
     destructive?: boolean;
     onConfirm: () => void | Promise<void>;
   }) => void;
+  prompt: (opts: AppAlertPromptOptions) => void;
 };
 
 const AppAlertContext = React.createContext<AppAlertContextValue | null>(null);
@@ -50,14 +62,18 @@ export function AppAlertProvider({ children }: { children: React.ReactNode }) {
   const theme = useTheme();
   const [open, setOpen] = React.useState(false);
   const [opts, setOpts] = React.useState<AppAlertOptions>({});
+  const [promptOpts, setPromptOpts] = React.useState<AppAlertPromptOptions | null>(null);
+  const [promptValue, setPromptValue] = React.useState("");
 
   const hide = React.useCallback(() => {
     setOpen(false);
-    // keep content for closing animation safety (Modal is instant on RN)
     setOpts({});
+    setPromptOpts(null);
+    setPromptValue("");
   }, []);
 
   const show = React.useCallback((next: AppAlertOptions) => {
+    setPromptOpts(null);
     setOpts(next);
     setOpen(true);
   }, []);
@@ -84,9 +100,19 @@ export function AppAlertProvider({ children }: { children: React.ReactNode }) {
     [hide, show]
   );
 
+  const prompt = React.useCallback<AppAlertContextValue["prompt"]>(
+    (next) => {
+      setOpts({});
+      setPromptOpts(next);
+      setPromptValue("");
+      setOpen(true);
+    },
+    []
+  );
+
   const value = React.useMemo<AppAlertContextValue>(
-    () => ({ show, hide, confirm }),
-    [show, hide, confirm]
+    () => ({ show, hide, confirm, prompt }),
+    [show, hide, confirm, prompt]
   );
 
   const buttons = opts.buttons?.length
@@ -99,6 +125,9 @@ export function AppAlertProvider({ children }: { children: React.ReactNode }) {
     backgroundColor: theme.colors.surface,
   };
 
+  const isPrompt = promptOpts != null;
+  const dismissable = isPrompt ? true : opts.dismissable;
+
   return (
     <AppAlertContext.Provider value={value}>
       {children}
@@ -107,14 +136,14 @@ export function AppAlertProvider({ children }: { children: React.ReactNode }) {
         transparent
         visible={open}
         animationType="fade"
-        onRequestClose={() => (opts.dismissable ? hide() : undefined)}
+        onRequestClose={() => (dismissable ? hide() : undefined)}
       >
         <Pressable
           style={[
             styles.backdrop,
             { backgroundColor: "rgba(0,0,0,0.62)" },
           ]}
-          onPress={() => (opts.dismissable ? hide() : undefined)}
+          onPress={() => (dismissable ? hide() : undefined)}
         >
           <Pressable
             onPress={() => {}}
@@ -122,47 +151,94 @@ export function AppAlertProvider({ children }: { children: React.ReactNode }) {
           >
             <Card padded style={cardStyle}>
               <VStack style={{ gap: 12 }}>
-                {opts.title ? (
-                  <Text weight="bold" style={{ fontSize: 18 }}>
-                    {opts.title}
-                  </Text>
-                ) : null}
-
-                {opts.message ? (
-                  <Text muted style={{ lineHeight: 20 }}>
-                    {opts.message}
-                  </Text>
-                ) : null}
-
-                <HStack gap={10} style={{ marginTop: 4 }}>
-                  {buttons.map((b, idx) => {
-                    const variant =
-                      b.variant === "destructive"
-                        ? "secondary"
-                        : b.variant ?? "primary";
-
-                    const destructiveText =
-                      b.variant === "destructive"
-                        ? { color: theme.colors.danger }
-                        : null;
-
-                    return (
+                {isPrompt ? (
+                  <>
+                    {promptOpts.title ? (
+                      <Text weight="bold" style={{ fontSize: 18 }}>
+                        {promptOpts.title}
+                      </Text>
+                    ) : null}
+                    {promptOpts.message ? (
+                      <Text muted style={{ lineHeight: 20 }}>
+                        {promptOpts.message}
+                      </Text>
+                    ) : null}
+                    <Input
+                      label={promptOpts.label}
+                      value={promptValue}
+                      onChangeText={setPromptValue}
+                      placeholder={promptOpts.placeholder}
+                      autoCapitalize="words"
+                    />
+                    <HStack gap={10} style={{ marginTop: 4 }}>
                       <Button
-                        key={`${b.text}-${idx}`}
-                        variant={variant}
+                        variant="secondary"
                         fullWidth
                         style={{ flex: 1 }}
-                        textStyle={destructiveText as any}
+                        onPress={hide}
+                      >
+                        {promptOpts.cancelText ?? "Cancel"}
+                      </Button>
+                      <Button
+                        variant="primary"
+                        fullWidth
+                        style={{ flex: 1 }}
                         onPress={() => {
-                          if (b.onPress) b.onPress();
-                          else hide();
+                          const trimmed = promptValue.trim();
+                          if (!trimmed) return;
+                          hide();
+                          promptOpts.onConfirm(trimmed);
                         }}
                       >
-                        {b.text}
+                        {promptOpts.confirmText ?? "OK"}
                       </Button>
-                    );
-                  })}
-                </HStack>
+                    </HStack>
+                  </>
+                ) : (
+                  <>
+                    {opts.title ? (
+                      <Text weight="bold" style={{ fontSize: 18 }}>
+                        {opts.title}
+                      </Text>
+                    ) : null}
+
+                    {opts.message ? (
+                      <Text muted style={{ lineHeight: 20 }}>
+                        {opts.message}
+                      </Text>
+                    ) : null}
+
+                    <HStack gap={10} style={{ marginTop: 4 }}>
+                      {buttons.map((b, idx) => {
+                        const variant =
+                          b.variant === "destructive"
+                            ? "secondary"
+                            : b.variant ?? "primary";
+
+                        const destructiveText =
+                          b.variant === "destructive"
+                            ? { color: theme.colors.danger }
+                            : null;
+
+                        return (
+                          <Button
+                            key={`${b.text}-${idx}`}
+                            variant={variant as "primary" | "secondary" | "ghost"}
+                            fullWidth
+                            style={{ flex: 1 }}
+                            textStyle={destructiveText as any}
+                            onPress={() => {
+                              if (b.onPress) b.onPress();
+                              else hide();
+                            }}
+                          >
+                            {b.text}
+                          </Button>
+                        );
+                      })}
+                    </HStack>
+                  </>
+                )}
               </VStack>
             </Card>
           </Pressable>

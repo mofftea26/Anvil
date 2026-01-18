@@ -6,9 +6,10 @@ import { Text } from "./Text";
 
 type Props = PressableProps & {
   label: string;
+  isActive: boolean;
 };
 
-export function Chip({ label, style, ...props }: Props) {
+export function Chip({ label, style, isActive, ...props }: Props) {
   const theme = useTheme();
 
   return (
@@ -16,7 +17,7 @@ export function Chip({ label, style, ...props }: Props) {
       style={({ pressed }) => [
         styles.base,
         {
-          backgroundColor: theme.colors.surface2,
+          backgroundColor: isActive ? theme.colors.accent : theme.colors.surface2,
           borderColor: theme.colors.border,
           opacity: pressed ? 0.85 : 1,
         },

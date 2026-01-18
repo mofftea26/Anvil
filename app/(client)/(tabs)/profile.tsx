@@ -222,13 +222,12 @@ export default function ClientProfileScreen() {
       const uri = result.assets?.[0]?.uri;
       if (!uri) return;
 
-      const { bytes, contentType } = await uriToUint8ArrayJpeg(uri);
-      // IMPORTANT: no "avatars/" prefix inside the "avatars" bucket.
+      const { arrayBuffer, contentType } = await uriToUint8ArrayJpeg(uri);
       const path = `${auth.userId}/avatar.jpg`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(path, bytes, { upsert: true, contentType });
+        .upload(path, arrayBuffer, { upsert: true, contentType });
 
       if (uploadError) {
         // Helps debug RLS 403 vs network errors.
@@ -346,7 +345,7 @@ export default function ClientProfileScreen() {
   const onSignOut = async () => {
     await doSignOut();
     appToast.info(t("auth.toasts.signedOut"));
-    router.replace("/");
+    router.replace("/" as any);
   };
 
   const onPressSave = () => {

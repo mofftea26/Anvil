@@ -296,15 +296,7 @@ export default function TrainerClientDetailsScreen() {
 
       <StickyHeader
         title={fullName}
-        leftButton={{
-          label: "",
-          onPress: () => router.back(),
-          variant: "ghost",
-          icon: (
-            <Ionicons name="chevron-back" size={22} color={theme.colors.text} />
-          ),
-        }}
-        backgroundColor={theme.colors.background}
+        showBackButton={true}
       />
 
       <KeyboardScreen

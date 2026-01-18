@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React from "react";
-import { Pressable, View } from "react-native";
+import { ActivityIndicator, Pressable, View } from "react-native";
 import { HStack, VStack } from "../layout/Stack";
 import { useTheme } from "../theme";
 import { Card } from "./Card";
@@ -52,6 +52,10 @@ export function ProfileAccountCard({
   onPressClear,
   clearLabel,
   disabled,
+
+  // NEW:
+  isUploading,
+  uploadLabel,
 }: {
   title: string;
   firstName: string;
@@ -63,11 +67,17 @@ export function ProfileAccountCard({
   onPressClear?: () => void;
   clearLabel?: string;
   disabled?: boolean;
+
+  // NEW:
+  isUploading?: boolean;
+  uploadLabel?: string;
 }) {
   const theme = useTheme();
   const initials = getInitials(firstName, lastName);
   const bg = pickAvatarBg(seed);
   const hasImage = Boolean(avatarUrl);
+
+  const isBusy = Boolean(disabled || isUploading);
 
   return (
     <Card>
@@ -80,9 +90,9 @@ export function ProfileAccountCard({
           {hasImage && onPressClear ? (
             <Pressable
               onPress={onPressClear}
-              disabled={disabled}
+              disabled={isBusy}
               style={({ pressed }) => ({
-                opacity: disabled ? 0.5 : pressed ? 0.8 : 1,
+                opacity: isBusy ? 0.5 : pressed ? 0.8 : 1,
                 paddingHorizontal: 6,
                 paddingVertical: 4,
                 borderRadius: 10,
@@ -101,7 +111,7 @@ export function ProfileAccountCard({
           <Pressable
             onPress={onPressAvatar}
             style={{ position: "relative" }}
-            disabled={disabled}
+            disabled={isBusy}
           >
             <View
               style={{
@@ -121,6 +131,8 @@ export function ProfileAccountCard({
                   source={{ uri: String(avatarUrl) }}
                   style={{ width: "100%", height: "100%" }}
                   contentFit="cover"
+                  cachePolicy="none"
+                  transition={250}
                 />
               ) : initials ? (
                 <Text
@@ -132,8 +144,28 @@ export function ProfileAccountCard({
               ) : (
                 <Ionicons name="person" size={26} color="white" />
               )}
+
+              {/* NEW: spinner overlay */}
+              {isUploading ? (
+                <View
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    top: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: "rgba(0,0,0,0.35)",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  pointerEvents="none"
+                >
+                  <ActivityIndicator />
+                </View>
+              ) : null}
             </View>
 
+            {/* Edit icon */}
             <View
               style={{
                 position: "absolute",
@@ -147,9 +179,14 @@ export function ProfileAccountCard({
                 borderColor: "rgba(255,255,255,0.20)",
                 alignItems: "center",
                 justifyContent: "center",
+                opacity: isBusy ? 0.6 : 1,
               }}
             >
-              <Ionicons name="create-outline" size={14} color="white" />
+              {isUploading ? (
+                <Ionicons name="cloud-upload-outline" size={14} color="white" />
+              ) : (
+                <Ionicons name="create-outline" size={14} color="white" />
+              )}
             </View>
           </Pressable>
 
@@ -157,9 +194,19 @@ export function ProfileAccountCard({
             <Text weight="bold" style={{ fontSize: 16 }}>
               {`${firstName ?? ""} ${lastName ?? ""}`.trim() || "—"}
             </Text>
-            <Text muted numberOfLines={1}>
-              {email}
-            </Text>
+
+            {/* NEW: status line */}
+            {isUploading ? (
+              <HStack align="center" gap={8} style={{ marginTop: 2 }}>
+                <Text muted numberOfLines={1}>
+                  {uploadLabel ?? "Uploading…"}
+                </Text>
+              </HStack>
+            ) : (
+              <Text muted numberOfLines={1}>
+                {email}
+              </Text>
+            )}
           </VStack>
         </HStack>
       </VStack>

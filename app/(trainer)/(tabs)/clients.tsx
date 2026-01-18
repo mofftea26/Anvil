@@ -113,7 +113,7 @@ export default function TrainerClientsScreen() {
       <StickyHeader
         title={t("linking.clients.title")}
         rightButton={{
-          onPress: () => router.push("/(trainer)/add-client"),
+          onPress: () => router.push("/(trainer)/add-client" as any),
           variant: "icon",
           icon: (
             <Ionicons
@@ -151,7 +151,7 @@ export default function TrainerClientsScreen() {
           <Card>
             <VStack style={{ gap: theme.spacing.sm }}>
               <Text weight="bold">{t("linking.clients.empty")}</Text>
-              <Button onPress={() => router.push("/(trainer)/add-client")}>
+              <Button onPress={() => router.push("/(trainer)/add-client" as any)}>
                 {t("linking.clients.addClient")}
               </Button>
             </VStack>
@@ -348,7 +348,7 @@ export default function TrainerClientsScreen() {
                           fullWidth
                           style={{ flex: 1 }}
                           onPress={() =>
-                            router.push(`/(trainer)/client/${row.clientId}`)
+                            router.push(`/(trainer)/client/${row.clientId}` as any)
                           }
                         >
                           {t("linking.clients.viewClient")}

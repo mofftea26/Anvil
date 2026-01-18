@@ -12,6 +12,7 @@ export type InputProps = {
   type?: "text" | "password";
   autoGrow?: boolean;
   containerStyle?: ViewStyle;
+  leftIcon?: React.ReactNode;
 } & Omit<TextInputProps, "onChange"> & {
     value?: string;
     onChangeText?: (text: string) => void;
@@ -26,6 +27,7 @@ export function Input({
   onChangeText,
   placeholder,
   containerStyle,
+  leftIcon,
   ...props
 }: InputProps) {
   const { t } = useAppTranslation();
@@ -66,6 +68,7 @@ export function Input({
             : null,
         ]}
       >
+        {leftIcon ? <View style={styles.leftIcon}>{leftIcon}</View> : null}
         <TextInput
           value={value}
           onChangeText={onChangeText}
@@ -126,7 +129,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     height: 50,
   },
-  input: {
+  leftIcon: {
+    width: 24,
+    height: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+    input: {
     flex: 1,
     paddingVertical: 0,
   },

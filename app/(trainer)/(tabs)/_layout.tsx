@@ -32,7 +32,7 @@ export default function TrainerTabsLayout() {
         tabBarInactiveTintColor: inactive,
       }}
     >
-      <Tabs.Screen
+ <Tabs.Screen
         name="dashboard"
         options={{
           title: t("tabs.dashboard"),
@@ -45,6 +45,22 @@ export default function TrainerTabsLayout() {
           ),
         }}
       />
+
+      {/* ✅ NEW: Library tab */}
+      <Tabs.Screen
+        name="library"
+        options={{
+          title: t("tabs.library"), // add translation key if missing
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? "layers" : "layers-outline"}
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
+
       <Tabs.Screen
         name="clients"
         options={{
@@ -58,6 +74,7 @@ export default function TrainerTabsLayout() {
           ),
         }}
       />
+
       <Tabs.Screen
         name="profile"
         options={{

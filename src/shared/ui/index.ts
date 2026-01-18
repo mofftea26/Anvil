@@ -1,5 +1,5 @@
 export { AppAlertProvider, useAppAlert } from "./alert/AppAlertProvider";
-export type { AppAlertButton, AppAlertOptions } from "./alert/AppAlertProvider";
+export type { AppAlertButton, AppAlertOptions, AppAlertPromptOptions } from "./alert/AppAlertProvider";
 export { BottomSheetPicker } from "./components/BottomSheetPicker";
 export type {
   BottomSheetOption,

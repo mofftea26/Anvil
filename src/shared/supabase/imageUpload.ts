@@ -4,7 +4,7 @@ import * as ImageManipulator from "expo-image-manipulator";
 import { toByteArray } from "base64-js";
 
 export async function uriToUint8ArrayJpeg(uri: string): Promise<{
-  bytes: Uint8Array;
+  arrayBuffer: ArrayBuffer;
   contentType: "image/jpeg";
 }> {
   const resized = await ImageManipulator.manipulateAsync(
@@ -18,6 +18,11 @@ export async function uriToUint8ArrayJpeg(uri: string): Promise<{
   });
 
   const bytes = toByteArray(base64);
-  return { bytes, contentType: "image/jpeg" };
+  // Supabase Storage in React Native expects ArrayBuffer; Uint8Array can "succeed" but upload 0 bytes.
+  const arrayBuffer = bytes.buffer.slice(
+    bytes.byteOffset,
+    bytes.byteOffset + bytes.byteLength
+  ) as ArrayBuffer;
+  return { arrayBuffer, contentType: "image/jpeg" };
 }
 

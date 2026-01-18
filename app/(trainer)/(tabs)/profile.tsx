@@ -4,8 +4,15 @@ import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { Pressable, RefreshControl, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  View
+} from "react-native";
 
+import { supabase } from "@/src/shared/supabase/client";
+import * as FileSystem from "expo-file-system/legacy";
 import { useAuthActions } from "../../../src/features/auth/hooks/useAuthActions";
 import {
   useUpdateMyUserRowMutation,
@@ -16,8 +23,6 @@ import { AppInput } from "../../../src/shared/components/AppInput";
 import { KeyboardScreen } from "../../../src/shared/components/KeyboardScreen";
 import { useAppSelector } from "../../../src/shared/hooks/useAppSelector";
 import { useAppTranslation } from "../../../src/shared/i18n/useAppTranslation";
-import { supabase } from "../../../src/shared/supabase/client";
-import { uriToUint8ArrayJpeg } from "../../../src/shared/supabase/imageUpload";
 import {
   appToast,
   Button,
@@ -34,6 +39,41 @@ import {
   useTheme,
   VStack,
 } from "../../../src/shared/ui";
+
+async function uploadImageFromUri(
+  bucket: string,
+  path: string,
+  uri: string,
+  contentType?: string
+): Promise<string> {
+  const base64 = await FileSystem.readAsStringAsync(uri, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
+
+  const binary = globalThis.atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+  const ct = contentType || "image/jpeg";
+
+  // 1) Try overwrite first
+  const { error: updateErr } = await supabase.storage.from(bucket).update(path, bytes, {
+    contentType: ct,
+    upsert: true,
+  });
+
+  // 2) If update fails (rare), fallback to upload
+  if (updateErr) {
+    const { error: uploadErr } = await supabase.storage.from(bucket).upload(path, bytes, {
+      contentType: ct,
+      upsert: true,
+    });
+    if (uploadErr) throw uploadErr;
+  }
+
+  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+  return data.publicUrl;
+}
 
 function isHexColor(v: string) {
   const s = v.trim();
@@ -74,8 +114,6 @@ export default function TrainerProfileScreen() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [clearingAvatar, setClearingAvatar] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [certModalOpen, setCertModalOpen] = useState(false);
-  const [certDraft, setCertDraft] = useState("");
   const [refreshing, setRefreshing] = React.useState(false);
 
   const onRefresh = React.useCallback(async () => {
@@ -106,15 +144,20 @@ export default function TrainerProfileScreen() {
 
   const [form, setForm] = useState(initial);
 
-  // keep form in sync when profile loads
   React.useEffect(() => {
     setForm(initial);
   }, [initial]);
 
+  /* ------------------------------------------------------------------------ */
+  /* Avatar Upload                                                            */
+  /* ------------------------------------------------------------------------ */
+
   const pickAndUploadAvatar = async () => {
     if (!auth.userId) return;
+
     try {
       setUploadingAvatar(true);
+
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) return;
 
@@ -125,33 +168,28 @@ export default function TrainerProfileScreen() {
       });
 
       if (result.canceled) return;
-      const uri = result.assets?.[0]?.uri;
+
+      const asset = result.assets?.[0];
+      const uri = asset?.uri;
       if (!uri) return;
-
-      const { bytes, contentType } = await uriToUint8ArrayJpeg(uri);
+      
       const path = `${auth.userId}/avatar.jpg`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(path, bytes, { upsert: true, contentType });
-
-      if (uploadError) {
-        console.log("UPLOAD ERROR FULL:", uploadError);
-        appToast.error(uploadError.message);
-        return;
-      }
-
-      const { data } = supabase.storage.from("avatars").getPublicUrl(path);
-      const publicUrl = data.publicUrl;
-
+      const publicUrl = await uploadImageFromUri(
+        "avatars",
+        path,
+        uri,
+        (asset as any)?.mimeType
+      );
+      
       await updateMyUserRow({
         userId: auth.userId,
         payload: { avatarUrl: publicUrl },
       }).unwrap();
-
-      setForm((p) => ({ ...p, avatarUrl: publicUrl }));
+      
+      setForm((p) => ({ ...p, avatarUrl: `${publicUrl}?v=${Date.now()}` }));
       await refetch();
       appToast.success(t("profile.toasts.saved"));
+      
     } catch (e: any) {
       appToast.error(e?.message ?? t("auth.errors.generic"));
     } finally {
@@ -177,10 +215,16 @@ export default function TrainerProfileScreen() {
     }
   };
 
+  /* ------------------------------------------------------------------------ */
+  /* Brand Logo Upload                                                        */
+  /* ------------------------------------------------------------------------ */
+
   const pickAndUploadBrandLogo = async () => {
     if (!auth.userId) return;
+
     try {
       setUploadingLogo(true);
+
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) return;
 
@@ -191,34 +235,36 @@ export default function TrainerProfileScreen() {
       });
 
       if (result.canceled) return;
-      const uri = result.assets?.[0]?.uri;
+
+      const asset = result.assets?.[0];
+      const uri = asset?.uri;
       if (!uri) return;
-
-      const { bytes, contentType } = await uriToUint8ArrayJpeg(uri);
+      
       const path = `${auth.userId}/logo.jpg`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("logos")
-        .upload(path, bytes, { upsert: true, contentType });
-
-      if (uploadError) {
-        console.log("UPLOAD ERROR FULL:", uploadError);
-        appToast.error(uploadError.message);
-        return;
-      }
-
-      const { data } = supabase.storage.from("logos").getPublicUrl(path);
-      const publicUrl = data.publicUrl;
-
-      setForm((p) => ({ ...p, logoUrl: publicUrl }));
-      // Persist immediately so the brand is available globally.
+      const publicUrl = await uploadImageFromUri(
+        "logos",
+        path,
+        uri,
+        (asset as any)?.mimeType
+      );
+      
+      setForm((p) => ({ ...p, logoUrl: `${publicUrl}?v=${Date.now()}` }));
+      
       await upsertTrainerProfile({
         userId: auth.userId,
         payload: { logoUrl: publicUrl },
       }).unwrap();
+      
       await refetch();
-      appToast.success(t("profile.toasts.saved"));
+      const { data: files, error: listErr } = await supabase.storage
+      .from("logos")
+      .list(auth.userId, { limit: 50 });
+    
+    console.log("LIST", listErr, files?.filter((f) => f.name.includes("avatar") || f.name.includes("logo")));
+          appToast.success(t("profile.toasts.saved"));
+      
     } catch (e: any) {
+      console.log("UPLOAD ERROR FULL:", e);
       appToast.error(e?.message ?? t("auth.errors.generic"));
     } finally {
       setUploadingLogo(false);
@@ -429,15 +475,27 @@ export default function TrainerProfileScreen() {
                     {t("profile.fields.certifications")}
                   </Text>
                   <Button
-                    variant="secondary"
+                    variant="icon"
                     height={40}
                     onPress={() => {
-                      setCertDraft("");
-                      setCertModalOpen(true);
+                      alert.prompt({
+                        title: t("profile.certifications.addLabel"),
+                        label: t("profile.certifications.addLabel"),
+                        placeholder: t("profile.placeholders.certifications"),
+                        confirmText: t("common.add"),
+                        cancelText: t("common.cancel"),
+                        onConfirm: (value) => {
+                          setForm((p) => ({
+                            ...p,
+                            certifications: p.certifications.includes(value)
+                              ? p.certifications
+                              : [...p.certifications, value],
+                          }));
+                        },
+                      });
                     }}
-                  >
-                    + {t("common.add")}
-                  </Button>
+                    left={<Ionicons name="add-circle-outline" size={22} color={theme.colors.text} />}
+                  />
                 </HStack>
 
                 {form.certifications.length ? (
@@ -475,54 +533,6 @@ export default function TrainerProfileScreen() {
                 ) : (
                   <Text muted>{t("profile.certifications.empty")}</Text>
                 )}
-
-                {certModalOpen ? (
-                  <View
-                    style={{
-                      borderWidth: 1,
-                      borderColor: theme.colors.border,
-                      borderRadius: theme.radii.lg,
-                      backgroundColor: theme.colors.surface,
-                      padding: 12,
-                      gap: 10,
-                    }}
-                  >
-                    <AppInput
-                      label={t("profile.certifications.addLabel")}
-                      value={certDraft}
-                      onChangeText={setCertDraft}
-                      placeholder={t("profile.placeholders.certifications")}
-                      autoCapitalize="words"
-                    />
-                    <HStack gap={10}>
-                      <Button
-                        variant="secondary"
-                        fullWidth
-                        style={{ flex: 1 }}
-                        onPress={() => setCertModalOpen(false)}
-                      >
-                        {t("common.cancel")}
-                      </Button>
-                      <Button
-                        fullWidth
-                        style={{ flex: 1 }}
-                        onPress={() => {
-                          const next = certDraft.trim();
-                          if (!next) return;
-                          setForm((p) => ({
-                            ...p,
-                            certifications: p.certifications.includes(next)
-                              ? p.certifications
-                              : [...p.certifications, next],
-                          }));
-                          setCertModalOpen(false);
-                        }}
-                      >
-                        {t("common.add")}
-                      </Button>
-                    </HStack>
-                  </View>
-                ) : null}
               </VStack>
 
               <AppInput
@@ -642,6 +652,8 @@ export default function TrainerProfileScreen() {
                         bottom: 0,
                       }}
                       contentFit="cover"
+                      cachePolicy="none"
+                      transition={1000}
                     />
                   ) : (
                     <LinearGradient
@@ -664,6 +676,8 @@ export default function TrainerProfileScreen() {
 
                   <Pressable
                     onPress={() => void pickAndUploadBrandLogo()}
+                    disabled={uploadingLogo}
+
                     style={{
                       flex: 1,
                       justifyContent: "center",
@@ -684,24 +698,27 @@ export default function TrainerProfileScreen() {
                   </Pressable>
 
                   {uploadingLogo ? (
-                    <View
-                      style={{
-                        position: "absolute",
-                        left: 0,
-                        top: 0,
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: "rgba(0,0,0,0.35)",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                      pointerEvents="none"
-                    >
-                      <Text weight="bold" style={{ color: "white" }}>
-                        {t("account.uploading")}
-                      </Text>
-                    </View>
-                  ) : null}
+  <View
+    style={{
+      position: "absolute",
+      left: 0,
+      top: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "rgba(0,0,0,0.35)",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+    }}
+    pointerEvents="none"
+  >
+    <ActivityIndicator />
+    <Text weight="bold" style={{ color: "white" }}>
+      {t("account.uploading")}
+    </Text>
+  </View>
+) : null}
+
 
                   {/* Edit icon */}
                   <Pressable

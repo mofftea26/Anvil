@@ -16,7 +16,7 @@ export function useStickyHeaderHeight(): number {
 type StickyHeaderButton = {
   label?: string;
   onPress: () => void;
-  variant?: "primary" | "secondary" | "ghost";
+  variant?: "primary" | "secondary" | "ghost" | "icon";
   isLoading?: boolean;
   icon?: React.ReactNode;
 };
