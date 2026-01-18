@@ -213,7 +213,11 @@ export const useClientCoach = () => {
   const brandB = secondary && isHexColor(secondary) ? secondary : "#38BDF8";
 
   const pageGradient = useMemo(
-    () => [hexToRgba(brandA, 0.5), hexToRgba(brandB, 0.35), "rgba(0,0,0,0.00)"],
+    (): readonly [string, string, ...string[]] => [
+      hexToRgba(brandA, 0.5),
+      hexToRgba(brandB, 0.35),
+      "rgba(0,0,0,0.00)",
+    ],
     [brandA, brandB]
   );
 

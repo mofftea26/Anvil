@@ -1,4 +1,4 @@
-import { Redirect } from "expo-router";
+import { Href, Redirect } from "expo-router";
 import React from "react";
 
 import { useIndexRouting } from "@/features/app/hooks/useIndexRouting";
@@ -19,5 +19,5 @@ export default function IndexScreen() {
     );
   }
 
-  return <Redirect href={{ pathname: decision.href, params: decision.params }} />;
+  return <Redirect href={decision.href as Href} />;
 }
