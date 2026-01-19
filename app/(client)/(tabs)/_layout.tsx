@@ -1,12 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import React from "react";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAppTranslation } from "../../../src/shared/i18n/useAppTranslation";
-import { useTheme } from "../../../src/shared/ui";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
+import { useTheme } from "@/shared/ui";
 
 export default function ClientTabsLayout() {
-  const insets = useSafeAreaInsets();
   const theme = useTheme();
   const { t } = useAppTranslation();
 

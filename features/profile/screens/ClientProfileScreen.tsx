@@ -5,17 +5,17 @@ import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { Platform, RefreshControl, View } from "react-native";
 
-import { AppInput } from "../../../src/shared/components/AppInput";
-import { BottomSheetPicker } from "../../../src/shared/components/BottomSheetPicker";
-import { KeyboardScreen } from "../../../src/shared/components/KeyboardScreen";
+import { AppInput } from "@/shared/components/AppInput";
+import { BottomSheetPicker } from "@/shared/components/BottomSheetPicker";
+import { KeyboardScreen } from "@/shared/components/KeyboardScreen";
 
-import { useAuthActions } from "../../../src/features/auth/hooks/useAuthActions";
+import { useAuthActions } from "@/features/auth/hooks/useAuthActions";
 import {
   useUpdateMyUserRowMutation,
   useUpsertClientProfileMutation,
-} from "../../../src/features/profile/api/profileApiSlice";
-import { useMyProfile } from "../../../src/features/profile/hooks/useMyProfile";
-import { profileActions } from "../../../src/features/profile/store/profileSlice";
+} from "@/features/profile/api/profileApiSlice";
+import { useMyProfile } from "@/features/profile/hooks/useMyProfile";
+import { profileActions } from "@/features/profile/store/profileSlice";
 import {
   cmToFeetInches,
   feetInchesToCm,
@@ -23,13 +23,13 @@ import {
   lbToKg,
   toNumberOrNull,
   type UnitSystem,
-} from "../../../src/features/profile/utils/units";
-import { countries } from "../../../src/shared/constants/countries";
-import { useAppDispatch } from "../../../src/shared/hooks/useAppDispatch";
-import { useAppSelector } from "../../../src/shared/hooks/useAppSelector";
-import { useAppTranslation } from "../../../src/shared/i18n/useAppTranslation";
-import { supabase } from "../../../src/shared/supabase/client";
-import { uriToUint8ArrayJpeg } from "../../../src/shared/supabase/imageUpload";
+} from "@/features/profile/utils/units";
+import { countries } from "@/shared/constants/countries";
+import { useAppDispatch } from "@/shared/hooks/useAppDispatch";
+import { useAppSelector } from "@/shared/hooks/useAppSelector";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
+import { supabase } from "@/shared/supabase/client";
+import { uriToUint8ArrayJpeg } from "@/shared/supabase/imageUpload";
 import {
   appToast,
   Button,
@@ -42,7 +42,7 @@ import {
   useStickyHeaderHeight,
   useTheme,
   VStack,
-} from "../../../src/shared/ui";
+} from "@/shared/ui";
 
 function formatDateISO(date: Date) {
   const y = date.getFullYear();
@@ -230,8 +230,6 @@ export default function ClientProfileScreen() {
         .upload(path, arrayBuffer, { upsert: true, contentType });
 
       if (uploadError) {
-        // Helps debug RLS 403 vs network errors.
-        console.log("UPLOAD ERROR FULL:", uploadError);
         appToast.error(uploadError.message);
         return;
       }
@@ -379,7 +377,7 @@ export default function ClientProfileScreen() {
 
   const brandA = theme.colors.accent;
   const brandB = theme.colors.accent2;
-  const headerHeight = useStickyHeaderHeight();
+  const headerHeight = useStickyHeaderHeight({ subtitle: true });
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -394,7 +392,7 @@ export default function ClientProfileScreen() {
         style={{ position: "absolute", left: 0, top: 0, right: 0, bottom: 0 }}
       />
 
-      <StickyHeader title={t("tabs.profile")} />
+      <StickyHeader title={t("tabs.profile")} subtitle={t("client.profileSubtitle")} />
 
       <KeyboardScreen
         padding={12}
@@ -452,7 +450,7 @@ export default function ClientProfileScreen() {
                     onChangeText={(v) =>
                       setForm((p) => ({ ...p, firstName: v }))
                     }
-                    placeholder="John"
+                    placeholder={t("common.placeholders.firstName")}
                     autoCapitalize="words"
                   />
                 </View>
@@ -463,7 +461,7 @@ export default function ClientProfileScreen() {
                     onChangeText={(v) =>
                       setForm((p) => ({ ...p, lastName: v }))
                     }
-                    placeholder="Doe"
+                    placeholder={t("common.placeholders.lastName")}
                     autoCapitalize="words"
                   />
                 </View>
@@ -473,7 +471,7 @@ export default function ClientProfileScreen() {
                 label={t("profile.fields.phone")}
                 value={form.phone}
                 onChangeText={(v) => setForm((p) => ({ ...p, phone: v }))}
-                placeholder="+961 …"
+                placeholder={t("profile.placeholders.phone")}
                 keyboardType="phone-pad"
               />
 

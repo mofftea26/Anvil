@@ -4,7 +4,7 @@ import { StyleSheet, View } from "react-native";
 import type { WorkoutSeries } from "../types";
 import { ExerciseCard } from "./ExerciseCard";
 
-import { Button, Text, useTheme } from "@/src/shared/ui";
+import { Button, Text, useTheme } from "@/shared/ui";
 
 type Props = {
   series: WorkoutSeries;

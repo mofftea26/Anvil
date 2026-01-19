@@ -5,11 +5,11 @@ import { RefreshControl, View } from "react-native";
 import {
   useCreateTrainerRequestMutation,
   useGetClientRequestsQuery,
-} from "../../src/features/linking/api/linkingApiSlice";
-import { AppInput } from "../../src/shared/components/AppInput";
-import { KeyboardScreen } from "../../src/shared/components/KeyboardScreen";
-import { useAppSelector } from "../../src/shared/hooks/useAppSelector";
-import { useAppTranslation } from "../../src/shared/i18n/useAppTranslation";
+} from "@/features/linking/api/linkingApiSlice";
+import { AppInput } from "@/shared/components/AppInput";
+import { KeyboardScreen } from "@/shared/components/KeyboardScreen";
+import { useAppSelector } from "@/shared/hooks/useAppSelector";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import {
   appToast,
   Button,
@@ -22,7 +22,7 @@ import {
   useStickyHeaderHeight,
   useTheme,
   VStack,
-} from "../../src/shared/ui";
+} from "@/shared/ui";
 
 export default function FindTrainerScreen() {
   const { t } = useAppTranslation();
@@ -84,7 +84,7 @@ export default function FindTrainerScreen() {
                 label={t("linking.client.trainerEmail")}
                 value={trainerEmail}
                 onChangeText={setTrainerEmail}
-                placeholder="trainer@email.com"
+              placeholder={t("common.placeholders.email")}
                 keyboardType="email-address"
                 autoCapitalize="none"
               />

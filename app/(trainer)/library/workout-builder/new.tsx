@@ -1,4 +1,4 @@
-import { WorkoutBuilderScreen } from "@/src/features/builder/screens/WorkoutBuilderScreen";
+import { WorkoutBuilderScreen } from "@/features/builder/screens/WorkoutBuilderScreen";
 import React from "react";
 
 export default function Screen() {

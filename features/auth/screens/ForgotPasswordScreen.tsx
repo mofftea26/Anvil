@@ -3,10 +3,10 @@ import { Link, useLocalSearchParams } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { useAuthActions } from "../../src/features/auth/hooks/useAuthActions";
-import { AppInput } from "../../src/shared/components/AppInput";
-import { useAppTranslation } from "../../src/shared/i18n/useAppTranslation";
-import { appToast, Button, KeyboardScreen, Text, useTheme, VStack } from "../../src/shared/ui";
+import { useAuthActions } from "@/features/auth/hooks/useAuthActions";
+import { AppInput } from "@/shared/components/AppInput";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
+import { appToast, Button, KeyboardScreen, Text, useTheme, VStack } from "@/shared/ui";
 
 export default function ForgotPasswordScreen() {
   const { t } = useAppTranslation();
@@ -70,7 +70,7 @@ export default function ForgotPasswordScreen() {
               label={t("auth.email")}
               value={value}
               onChangeText={onChange}
-              placeholder="name@email.com"
+              placeholder={t("common.placeholders.email")}
               keyboardType="email-address"
               autoCapitalize="none"
               error={fieldState.error?.message}

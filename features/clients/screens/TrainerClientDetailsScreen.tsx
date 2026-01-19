@@ -10,16 +10,15 @@ import {
   useDeleteArchivedClientLinkMutation,
   useGetTrainerClientsQuery,
   useMarkClientCheckInMutation,
-  useSetClientStatusMutation,
   useSetTrainerClientStatusMutation,
   useUpsertTrainerClientManagementMutation,
-} from "../../../src/features/linking/api/linkingApiSlice";
-import { useGetClientProfileQuery } from "../../../src/features/profile/api/profileApiSlice";
-import { AppInput } from "../../../src/shared/components/AppInput";
-import { BottomSheetPicker } from "../../../src/shared/components/BottomSheetPicker";
-import { KeyboardScreen } from "../../../src/shared/components/KeyboardScreen";
-import { useAppSelector } from "../../../src/shared/hooks/useAppSelector";
-import { useAppTranslation } from "../../../src/shared/i18n/useAppTranslation";
+} from "@/features/linking/api/linkingApiSlice";
+import { useGetClientProfileQuery } from "@/features/profile/api/profileApiSlice";
+import { AppInput } from "@/shared/components/AppInput";
+import { BottomSheetPicker } from "@/shared/components/BottomSheetPicker";
+import { KeyboardScreen } from "@/shared/components/KeyboardScreen";
+import { useAppSelector } from "@/shared/hooks/useAppSelector";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import {
   appToast,
   Button,
@@ -33,65 +32,14 @@ import {
   useStickyHeaderHeight,
   useTheme,
   VStack,
-} from "../../../src/shared/ui";
+} from "@/shared/ui";
 
-function hexToRgba(hex: string, alpha: number): string {
-  const h = hex.replace("#", "").trim();
-  const hasAlpha = h.length === 8;
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  const a = hasAlpha ? parseInt(h.slice(6, 8), 16) / 255 : 1;
-  const finalA = Math.max(0, Math.min(1, alpha * a));
-  return `rgba(${r},${g},${b},${finalA})`;
-}
-
-function getInitials(
-  firstName: string | null | undefined,
-  lastName: string | null | undefined
-): string | null {
-  const a = (firstName ?? "").trim();
-  const b = (lastName ?? "").trim();
-  const s = `${a} ${b}`.trim();
-  if (!s) return null;
-  const parts = s.split(/\s+/g).filter(Boolean);
-  const first = parts[0]?.[0] ?? "";
-  const second = parts.length > 1 ? parts[parts.length - 1]?.[0] ?? "" : "";
-  const initials = (first + second).toUpperCase();
-  return initials || null;
-}
-
-function hashStringToInt(input: string): number {
-  let h = 0;
-  for (let i = 0; i < input.length; i++) {
-    h = (h * 31 + input.charCodeAt(i)) | 0;
-  }
-  return Math.abs(h);
-}
-
-function pickAvatarBg(seed: string): string {
-  const palette = [
-    "#7C3AED",
-    "#38BDF8",
-    "#22C55E",
-    "#F97316",
-    "#F43F5E",
-    "#A855F7",
-    "#06B6D4",
-  ];
-  const idx = hashStringToInt(seed) % palette.length;
-  return palette[idx];
-}
-
-function formatDatePretty(iso: string) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  return new Intl.DateTimeFormat(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-  }).format(d);
-}
+import {
+  formatDatePretty,
+  getInitials,
+  hexToRgba,
+  pickAvatarBg,
+} from "../utils/clientUi";
 
 export default function TrainerClientDetailsScreen() {
   const { t } = useAppTranslation();
@@ -132,7 +80,6 @@ export default function TrainerClientDetailsScreen() {
 
   const [upsertManagement, upsertState] =
     useUpsertTrainerClientManagementMutation();
-  const [setClientStatus, setClientStatusState] = useSetClientStatusMutation();
   const [markCheckIn, markCheckInState] = useMarkClientCheckInMutation();
   const [setLinkStatus, setLinkStatusState] =
     useSetTrainerClientStatusMutation();
@@ -209,20 +156,6 @@ export default function TrainerClientDetailsScreen() {
       appToast.success(t("profile.toasts.saved"));
       await refreshAll();
     } catch (e: any) {
-      appToast.error(e?.message ?? t("auth.errors.generic"));
-    }
-  };
-
-  const quickSetStatus = async () => {
-    try {
-      await setClientStatus({
-        clientId,
-        clientStatus: managementForm.clientStatus,
-      }).unwrap();
-      appToast.success(t("profile.toasts.saved"));
-      await refreshAll();
-    } catch (e: any) {
-      console.log(e.message);
       appToast.error(e?.message ?? t("auth.errors.generic"));
     }
   };
@@ -637,7 +570,6 @@ export default function TrainerClientDetailsScreen() {
 
           {(linksLoading || profileLoading) &&
           (upsertState.isLoading ||
-            setClientStatusState.isLoading ||
             markCheckInState.isLoading) ? (
             <LoadingSpinner />
           ) : null}

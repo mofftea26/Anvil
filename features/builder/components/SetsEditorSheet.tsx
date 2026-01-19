@@ -10,12 +10,13 @@ import {
     View,
 } from "react-native";
 
-import type { SetTypeRow } from "@/src/features/library/types/setTypes";
+import type { SetTypeRow } from "@/features/library/types/setTypes";
 import type { ExerciseSet, SeriesExercise } from "../types";
 import { getSetTypeIconName } from "../utils/setTypeIcons";
 import { SetTypePickerSheet } from "./SetTypePickerSheet";
 
-import { Button, HStack, Text, useTheme } from "@/src/shared/ui";
+import { Button, HStack, Text, useTheme } from "@/shared/ui";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 
 type Props = {
   visible: boolean;
@@ -32,6 +33,7 @@ export function SetsEditorSheet({
   onClose,
   onChange,
 }: Props) {
+  const { t } = useAppTranslation();
   const theme = useTheme();
 
   const [local, setLocal] = useState<SeriesExercise | null>(exercise);
@@ -96,8 +98,8 @@ export function SetsEditorSheet({
 
   function openTempoInfo() {
     Alert.alert(
-      "Tempo Explained",
-      "Tempo is: Eccentric / Bottom Pause / Concentric / Top Pause\n\nExample 3/0/1/0:\n• 3 sec lowering\n• 0 sec pause\n• 1 sec lifting\n• 0 sec pause"
+      t("builder.setsEditor.tempoInfo.title"),
+      t("builder.setsEditor.tempoInfo.body")
     );
   }
 
@@ -126,7 +128,7 @@ export function SetsEditorSheet({
             <View style={{ flex: 1 }}>
               <Text style={styles.headerTitle}>{local.title}</Text>
               <Text style={{ opacity: 0.7, marginTop: 2 }}>
-                Sets • set types • rest • tempo
+                {t("builder.setsEditor.subtitle")}
               </Text>
             </View>
 
@@ -145,7 +147,9 @@ export function SetsEditorSheet({
             {/* Tempo */}
             <View style={[styles.block, { borderColor: theme.colors.border }]}>
               <View style={styles.blockHeader}>
-                <Text style={{ fontWeight: "900" }}>Tempo</Text>
+                <Text style={{ fontWeight: "900" }}>
+                  {t("builder.setsEditor.tempoTitle")}
+                </Text>
 
                 <Pressable onPress={openTempoInfo} style={styles.infoBtn}>
                   <Ionicons
@@ -208,7 +212,7 @@ export function SetsEditorSheet({
                       if (!local) return;
                       commit({ ...local, notes: v });
                     }}
-                    placeholder="Write coaching notes for this exercise..."
+                    placeholder={t("builder.setsEditor.notesPlaceholder")}
                     placeholderTextColor="rgba(255,255,255,0.45)"
                     multiline
                     style={[
@@ -222,7 +226,9 @@ export function SetsEditorSheet({
 
             {/* Sets */}
             <View style={styles.setsHeader}>
-              <Text style={{ fontWeight: "900", fontSize: 16 }}>Sets</Text>
+              <Text style={{ fontWeight: "900", fontSize: 16 }}>
+                {t("builder.setsEditor.setsTitle")}
+              </Text>
               <Button variant="ghost" onPress={addSet}>
                 + Add Set
               </Button>
@@ -257,7 +263,7 @@ export function SetsEditorSheet({
                         style={{ color: "white", fontWeight: "900" }}
                         numberOfLines={1}
                       >
-                        {st?.title ?? "Set Type"}
+                        {st?.title ?? t("builder.setsEditor.setTypeFallback")}
                       </Text>
                       <Ionicons
                         name="chevron-down"

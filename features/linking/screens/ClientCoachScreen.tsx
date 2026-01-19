@@ -9,10 +9,10 @@ import {
   useClientCancelTrainerMutation,
   useClientSetRelationshipStatusMutation,
   useGetMyCoachQuery,
-} from "../../../src/features/linking/api/linkingApiSlice";
-import { KeyboardScreen } from "../../../src/shared/components/KeyboardScreen";
-import { useAppSelector } from "../../../src/shared/hooks/useAppSelector";
-import { useAppTranslation } from "../../../src/shared/i18n/useAppTranslation";
+} from "@/features/linking/api/linkingApiSlice";
+import { KeyboardScreen } from "@/shared/components/KeyboardScreen";
+import { useAppSelector } from "@/shared/hooks/useAppSelector";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import {
   appToast,
   Button,
@@ -21,12 +21,13 @@ import {
   HStack,
   LoadingSpinner,
   StickyHeader,
+  TabBackgroundGradient,
   Text,
   useAppAlert,
   useStickyHeaderHeight,
   useTheme,
   VStack,
-} from "../../../src/shared/ui";
+} from "@/shared/ui";
 
 function formatShortDate(iso: string) {
   const d = new Date(iso);
@@ -183,26 +184,18 @@ export default function ClientCoachScreen() {
   const brandA = primary && isHexColor(primary) ? primary : "#7C3AED";
   const brandB = secondary && isHexColor(secondary) ? secondary : "#38BDF8";
 
-  const pageGradient = [
-    hexToRgba(brandA, 0.5),
-    hexToRgba(brandB, 0.35),
-    "rgba(0,0,0,0.00)",
-  ] as const;
-
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <LinearGradient
-        colors={pageGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={{ position: "absolute", left: 0, top: 0, right: 0, bottom: 0 }}
-      />
+      <TabBackgroundGradient />
 
-      <StickyHeader title={t("linking.coach.title")} />
+      <StickyHeader
+        title={t("linking.coach.title")}
+        subtitle={t("linking.coach.subtitle")}
+      />
 
       <KeyboardScreen
         bottomSpace={12}
-        headerHeight={useStickyHeaderHeight()}
+        headerHeight={useStickyHeaderHeight({ subtitle: true })}
         style={{ backgroundColor: "transparent" }}
         scrollStyle={{ backgroundColor: "transparent" }}
         refreshControl={
@@ -467,7 +460,7 @@ export default function ClientCoachScreen() {
                     }}
                   >
                     {certs.map((c) => (
-                      <Chip key={c} label={c} />
+                      <Chip key={c} label={c} isActive={false} />
                     ))}
                   </View>
                 ) : (

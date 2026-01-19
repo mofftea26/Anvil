@@ -1,10 +1,10 @@
+import { useMyProfile } from "@/features/profile/hooks/useMyProfile";
+import { FullscreenState } from "@/shared/components/FullscreenState";
+import { useAppSelector } from "@/shared/hooks/useAppSelector";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
+import { appToast } from "@/shared/ui";
 import { Redirect } from "expo-router";
 import React from "react";
-import { useMyProfile } from "../src/features/profile/hooks/useMyProfile";
-import { FullscreenState } from "../src/shared/components/FullscreenState";
-import { useAppSelector } from "../src/shared/hooks/useAppSelector";
-import { useAppTranslation } from "../src/shared/i18n/useAppTranslation";
-import { appToast } from "../src/shared/ui";
 
 export default function Index() {
   const { t } = useAppTranslation();

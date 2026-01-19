@@ -1,16 +1,20 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 
-import { Text, useTheme } from "@/src/shared/ui";
+import { Text, useTheme } from "@/shared/ui";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 
 export default function ProgramsScreen() {
+  const { t } = useAppTranslation();
   const theme = useTheme();
 
   return (
     <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
-      <Text style={[styles.title, { color: theme.colors.text }]}>Programs</Text>
+      <Text style={[styles.title, { color: theme.colors.text }]}>
+        {t("library.programs")}
+      </Text>
       <Text style={{ color: theme.colors.textMuted }}>
-        Coming next: list + search + drafts + sharing.
+        {t("library.programsScreen.subtitle")}
       </Text>
     </View>
   );

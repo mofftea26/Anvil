@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
-import { useSetTypesDictionary } from "@/src/features/library/hooks/useSetTypesDictionary";
-import { useAppTranslation } from "@/src/shared/i18n/useAppTranslation";
-import { StickyHeader, Text, useTheme } from "@/src/shared/ui";
+import { useSetTypesDictionary } from "@/features/library/hooks/useSetTypesDictionary";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
+import { StickyHeader, Text, useTheme } from "@/shared/ui";
 
 type TabItem = {
   key: string; // must be UNIQUE
@@ -72,7 +72,7 @@ export default function SetTypesDictionaryScreen() {
   if (isLoading) {
     return (
       <View style={[styles.center, { backgroundColor: theme.colors.background }]}>
-        <Text>Loading...</Text>
+        <Text>{t("common.loading")}</Text>
       </View>
     );
   }
@@ -80,7 +80,7 @@ export default function SetTypesDictionaryScreen() {
   if (error) {
     return (
       <View style={[styles.center, { backgroundColor: theme.colors.background }]}>
-        <Text>Error loading set types.</Text>
+        <Text>{t("library.setTypesDictionaryScreen.loadError")}</Text>
       </View>
     );
   }
@@ -154,7 +154,9 @@ export default function SetTypesDictionaryScreen() {
           ))
         ) : (
           <View style={styles.empty}>
-            <Text style={{ opacity: 0.7 }}>No items in this category.</Text>
+            <Text style={{ opacity: 0.7 }}>
+              {t("library.setTypesDictionaryScreen.empty")}
+            </Text>
           </View>
         )}
       </ScrollView>

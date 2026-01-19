@@ -8,9 +8,9 @@ import { RefreshControl, ScrollView, View } from "react-native";
 import {
   useGetTrainerClientsQuery,
   useSetTrainerClientStatusMutation,
-} from "../../../src/features/linking/api/linkingApiSlice";
-import { useAppSelector } from "../../../src/shared/hooks/useAppSelector";
-import { useAppTranslation } from "../../../src/shared/i18n/useAppTranslation";
+} from "@/features/linking/api/linkingApiSlice";
+import { useAppSelector } from "@/shared/hooks/useAppSelector";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import {
   appToast,
   Button,
@@ -18,10 +18,11 @@ import {
   HStack,
   LoadingSpinner,
   StickyHeader,
+  TabBackgroundGradient,
   Text,
   useTheme,
   VStack,
-} from "../../../src/shared/ui";
+} from "@/shared/ui";
 
 function formatCheckIn(iso: string, t: (k: string) => string): string {
   const d = new Date(iso);
@@ -110,8 +111,10 @@ export default function TrainerClientsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <TabBackgroundGradient />
       <StickyHeader
         title={t("linking.clients.title")}
+        subtitle={t("linking.clients.subtitle")}
         rightButton={{
           onPress: () => router.push("/(trainer)/add-client" as any),
           variant: "icon",
@@ -133,7 +136,7 @@ export default function TrainerClientsScreen() {
           />
         }
         contentContainerStyle={{
-          paddingHorizontal: theme.spacing.lg,
+          paddingHorizontal: theme.spacing.sm,
           paddingBottom: theme.spacing.lg,
           gap: theme.spacing.lg,
         }}

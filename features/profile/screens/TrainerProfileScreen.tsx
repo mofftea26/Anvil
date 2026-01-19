@@ -11,18 +11,22 @@ import {
   View
 } from "react-native";
 
-import { supabase } from "@/src/shared/supabase/client";
-import * as FileSystem from "expo-file-system/legacy";
-import { useAuthActions } from "../../../src/features/auth/hooks/useAuthActions";
+import { useAuthActions } from "@/features/auth/hooks/useAuthActions";
 import {
   useUpdateMyUserRowMutation,
   useUpsertTrainerProfileMutation,
-} from "../../../src/features/profile/api/profileApiSlice";
-import { useMyProfile } from "../../../src/features/profile/hooks/useMyProfile";
-import { AppInput } from "../../../src/shared/components/AppInput";
-import { KeyboardScreen } from "../../../src/shared/components/KeyboardScreen";
-import { useAppSelector } from "../../../src/shared/hooks/useAppSelector";
-import { useAppTranslation } from "../../../src/shared/i18n/useAppTranslation";
+} from "@/features/profile/api/profileApiSlice";
+import { useMyProfile } from "@/features/profile/hooks/useMyProfile";
+import {
+  hexToRgba,
+  isHexColor,
+  parseCerts,
+  uploadImageFromUri,
+} from "@/features/profile/utils/trainerProfileUtils";
+import { AppInput } from "@/shared/components/AppInput";
+import { KeyboardScreen } from "@/shared/components/KeyboardScreen";
+import { useAppSelector } from "@/shared/hooks/useAppSelector";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import {
   appToast,
   Button,
@@ -38,66 +42,7 @@ import {
   useStickyHeaderHeight,
   useTheme,
   VStack,
-} from "../../../src/shared/ui";
-
-async function uploadImageFromUri(
-  bucket: string,
-  path: string,
-  uri: string,
-  contentType?: string
-): Promise<string> {
-  const base64 = await FileSystem.readAsStringAsync(uri, {
-    encoding: FileSystem.EncodingType.Base64,
-  });
-
-  const binary = globalThis.atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-
-  const ct = contentType || "image/jpeg";
-
-  // 1) Try overwrite first
-  const { error: updateErr } = await supabase.storage.from(bucket).update(path, bytes, {
-    contentType: ct,
-    upsert: true,
-  });
-
-  // 2) If update fails (rare), fallback to upload
-  if (updateErr) {
-    const { error: uploadErr } = await supabase.storage.from(bucket).upload(path, bytes, {
-      contentType: ct,
-      upsert: true,
-    });
-    if (uploadErr) throw uploadErr;
-  }
-
-  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-  return data.publicUrl;
-}
-
-function isHexColor(v: string) {
-  const s = v.trim();
-  return /^#([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(s);
-}
-
-function hexToRgba(hex: string, alpha: number): string {
-  const h = hex.replace("#", "").trim();
-  const hasAlpha = h.length === 8;
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  const a = hasAlpha ? parseInt(h.slice(6, 8), 16) / 255 : 1;
-  const finalA = Math.max(0, Math.min(1, alpha * a));
-  return `rgba(${r},${g},${b},${finalA})`;
-}
-
-function parseCerts(raw: string | null | undefined): string[] {
-  if (!raw) return [];
-  return raw
-    .split(/[,;\n]/g)
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
+} from "@/shared/ui";
 
 export default function TrainerProfileScreen() {
   const { t } = useAppTranslation();
@@ -256,15 +201,9 @@ export default function TrainerProfileScreen() {
       }).unwrap();
       
       await refetch();
-      const { data: files, error: listErr } = await supabase.storage
-      .from("logos")
-      .list(auth.userId, { limit: 50 });
-    
-    console.log("LIST", listErr, files?.filter((f) => f.name.includes("avatar") || f.name.includes("logo")));
-          appToast.success(t("profile.toasts.saved"));
+      appToast.success(t("profile.toasts.saved"));
       
     } catch (e: any) {
-      console.log("UPLOAD ERROR FULL:", e);
       appToast.error(e?.message ?? t("auth.errors.generic"));
     } finally {
       setUploadingLogo(false);
@@ -359,10 +298,10 @@ export default function TrainerProfileScreen() {
 
   const brandA = theme.colors.accent;
   const brandB = theme.colors.accent2;
-  const headerHeight = useStickyHeaderHeight();
+  const headerHeight = useStickyHeaderHeight({ subtitle: true });
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: theme.spacing.sm }}>
       <LinearGradient
         colors={[
           hexToRgba(brandA, 0.45),
@@ -376,6 +315,7 @@ export default function TrainerProfileScreen() {
 
       <StickyHeader
         title={t("tabs.profile")}
+        subtitle={t("trainer.profileSubtitle")}
         backgroundColor={theme.colors.background}
       />
 
@@ -434,7 +374,7 @@ export default function TrainerProfileScreen() {
                     onChangeText={(v) =>
                       setForm((p) => ({ ...p, firstName: v }))
                     }
-                    placeholder="John"
+                    placeholder={t("common.placeholders.firstName")}
                     autoCapitalize="words"
                   />
                 </View>
@@ -445,7 +385,7 @@ export default function TrainerProfileScreen() {
                     onChangeText={(v) =>
                       setForm((p) => ({ ...p, lastName: v }))
                     }
-                    placeholder="Doe"
+                    placeholder={t("common.placeholders.lastName")}
                     autoCapitalize="words"
                   />
                 </View>
@@ -455,7 +395,7 @@ export default function TrainerProfileScreen() {
                 label={t("profile.fields.phone")}
                 value={form.phone}
                 onChangeText={(v) => setForm((p) => ({ ...p, phone: v }))}
-                placeholder="+961 …"
+                placeholder={t("profile.placeholders.phone")}
                 keyboardType="phone-pad"
               />
 
@@ -540,7 +480,7 @@ export default function TrainerProfileScreen() {
                 label={t("profile.fields.instagram")}
                 value={form.instagram}
                 onChangeText={(v) => setForm((p) => ({ ...p, instagram: v }))}
-                placeholder="@yourhandle"
+                placeholder={t("profile.placeholders.instagram")}
                 autoCapitalize="none"
               />
 
@@ -548,7 +488,7 @@ export default function TrainerProfileScreen() {
                 label={t("profile.fields.website")}
                 value={form.website}
                 onChangeText={(v) => setForm((p) => ({ ...p, website: v }))}
-                placeholder="https://…"
+                placeholder={t("profile.placeholders.website")}
                 autoCapitalize="none"
               />
 
@@ -587,7 +527,7 @@ export default function TrainerProfileScreen() {
                 label={t("profile.fields.brandName")}
                 value={form.brandName}
                 onChangeText={(v) => setForm((p) => ({ ...p, brandName: v }))}
-                placeholder="Anvil Coaching"
+                placeholder={t("profile.placeholders.brandName")}
               />
 
               <HStack gap={theme.spacing.md} align="flex-end">

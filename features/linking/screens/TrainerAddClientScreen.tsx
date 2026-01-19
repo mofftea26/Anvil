@@ -11,13 +11,13 @@ import {
   useCreateTrainerInviteMutation,
   useDeclineTrainerRequestMutation,
   useGetTrainerRequestsInboxQuery,
-} from "../../src/features/linking/api/linkingApiSlice";
-import { mapLinkingError } from "../../src/features/linking/utils/linkingErrors";
-import { useMyProfile } from "../../src/features/profile/hooks/useMyProfile";
-import { AppInput } from "../../src/shared/components/AppInput";
-import { KeyboardScreen } from "../../src/shared/components/KeyboardScreen";
-import { useAppSelector } from "../../src/shared/hooks/useAppSelector";
-import { useAppTranslation } from "../../src/shared/i18n/useAppTranslation";
+} from "@/features/linking/api/linkingApiSlice";
+import { mapLinkingError } from "@/features/linking/utils/linkingErrors";
+import { useMyProfile } from "@/features/profile/hooks/useMyProfile";
+import { AppInput } from "@/shared/components/AppInput";
+import { KeyboardScreen } from "@/shared/components/KeyboardScreen";
+import { useAppSelector } from "@/shared/hooks/useAppSelector";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import {
   appToast,
   Button,
@@ -31,7 +31,7 @@ import {
   useStickyHeaderHeight,
   useTheme,
   VStack,
-} from "../../src/shared/ui";
+} from "@/shared/ui";
 
 type Tab = "invite" | "requests" | "create";
 
@@ -193,7 +193,7 @@ export default function AddClientScreen() {
                   <VStack
                     style={{ gap: theme.spacing.sm, alignItems: "center" }}
                   >
-                    <Text weight="bold">QR</Text>
+                    <Text weight="bold">{t("common.qr")}</Text>
                     {generatedCode ? (
                       <QRCode
                         value={generatedCode}
@@ -318,7 +318,7 @@ export default function AddClientScreen() {
                   label={t("auth.email")}
                   value={clientEmail}
                   onChangeText={setClientEmail}
-                  placeholder="client@email.com"
+                  placeholder={t("common.placeholders.email")}
                   keyboardType="email-address"
                   autoCapitalize="none"
                 />
@@ -328,7 +328,7 @@ export default function AddClientScreen() {
                       label={t("auth.firstName")}
                       value={firstName}
                       onChangeText={setFirstName}
-                      placeholder="John"
+                      placeholder={t("common.placeholders.firstName")}
                     />
                   </View>
                   <View style={{ flex: 1 }}>
@@ -336,7 +336,7 @@ export default function AddClientScreen() {
                       label={t("auth.lastName")}
                       value={lastName}
                       onChangeText={setLastName}
-                      placeholder="Doe"
+                      placeholder={t("common.placeholders.lastName")}
                     />
                   </View>
                 </HStack>

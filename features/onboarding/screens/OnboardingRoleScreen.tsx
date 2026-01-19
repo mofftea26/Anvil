@@ -1,10 +1,10 @@
 import { router } from "expo-router";
 import { Pressable } from "react-native";
 
-import { useUpdateMyUserRowMutation } from "../../src/features/profile/api/profileApiSlice";
-import { useAppSelector } from "../../src/shared/hooks/useAppSelector";
-import { useAppTranslation } from "../../src/shared/i18n/useAppTranslation";
-import { Button, Card, KeyboardScreen, Text, useTheme, VStack } from "../../src/shared/ui";
+import { useUpdateMyUserRowMutation } from "@/features/profile/api/profileApiSlice";
+import { useAppSelector } from "@/shared/hooks/useAppSelector";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
+import { Button, Card, KeyboardScreen, Text, useTheme, VStack } from "@/shared/ui";
 
 export default function OnboardingRole() {
   const { t } = useAppTranslation();

@@ -7,11 +7,11 @@ import {
   useCreateTrainerRequestMutation,
   useGetClientRequestsQuery,
   useRedeemInviteCodeMutation,
-} from "../../src/features/linking/api/linkingApiSlice";
-import { mapLinkingError } from "../../src/features/linking/utils/linkingErrors";
-import { AppInput } from "../../src/shared/components/AppInput";
-import { useAppSelector } from "../../src/shared/hooks/useAppSelector";
-import { useAppTranslation } from "../../src/shared/i18n/useAppTranslation";
+} from "@/features/linking/api/linkingApiSlice";
+import { mapLinkingError } from "@/features/linking/utils/linkingErrors";
+import { AppInput } from "@/shared/components/AppInput";
+import { useAppSelector } from "@/shared/hooks/useAppSelector";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import {
   appToast,
   Button,
@@ -20,10 +20,9 @@ import {
   HStack,
   StickyHeader,
   Text,
-  useStickyHeaderHeight,
   useTheme,
   VStack,
-} from "../../src/shared/ui";
+} from "@/shared/ui";
 
 type Tab = "redeem" | "request";
 
@@ -46,7 +45,6 @@ export default function LinkTrainerScreen() {
 
   const { data: myRequests, refetch: refetchRequests } =
     useGetClientRequestsQuery({ clientId }, { skip: !clientId });
-  const headerHeight = useStickyHeaderHeight();
 
   return (
     <VStack style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -124,7 +122,7 @@ export default function LinkTrainerScreen() {
                 label={t("linking.client.inviteCode")}
                 value={code}
                 onChangeText={setCode}
-                placeholder="ABC123"
+                placeholder={t("linking.placeholders.inviteCode")}
                 autoCapitalize="characters"
               />
               <Button
@@ -154,7 +152,7 @@ export default function LinkTrainerScreen() {
                   label={t("linking.client.trainerEmail")}
                   value={trainerEmail}
                   onChangeText={setTrainerEmail}
-                  placeholder="trainer@email.com"
+                placeholder={t("common.placeholders.email")}
                   keyboardType="email-address"
                   autoCapitalize="none"
                 />

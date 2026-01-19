@@ -1,5 +1,5 @@
+import { useAppSelector } from "@/shared/hooks/useAppSelector";
 import { Redirect, Stack } from "expo-router";
-import { useAppSelector } from "../../src/shared/hooks/useAppSelector";
 
 export default function TrainerLayout() {
   const auth = useAppSelector((s) => s.auth);

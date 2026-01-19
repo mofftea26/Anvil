@@ -49,6 +49,7 @@
   "client": {
     "dashboardTitle": "Tableau de bord",
     "dashboardSubtitle": "Votre plan et vos progrès apparaîtront ici.",
+    "profileSubtitle": "Informations personnelles et préférences.",
     "profileTitle": "Profil",
     "profileCardRole": "Rôle",
     "profileSignOut": "Se déconnecter"
@@ -56,6 +57,7 @@
   "trainer": {
     "dashboardTitle": "Tableau de bord",
     "dashboardSubtitle": "Clients, programmes et invitations apparaîtront ici.",
+    "profileSubtitle": "Compte, marque et préférences.",
     "profileTitle": "Profil",
     "profileCardRole": "Rôle",
     "profileSignOut": "Se déconnecter"
@@ -99,11 +101,21 @@
     "yesterday": "Hier",
     "share": "Partager",
     "copy": "Copier",
-    "areYouSure": "Êtes-vous sûr ?"
+    "areYouSure": "Êtes-vous sûr ?",
+    "discard": "Annuler",
+    "tempo": "Tempo",
+    "qr": "QR",
+    "new": "Nouveau",
+    "placeholders": {
+      "email": "name@email.com",
+      "firstName": "Prénom",
+      "lastName": "Nom"
+    }
   },
   "linking": {
     "clients": {
       "title": "Clients",
+      "subtitle": "Gérez vos clients et check-ins.",
       "empty": "Aucun client pour le moment.",
       "viewClient": "Voir le client",
       "archive": "Archiver",
@@ -146,6 +158,7 @@
     },
     "coach": {
       "title": "Mon coach",
+      "subtitle": "Détails du coach et actions du lien.",
       "notLinked": "Aucun coach lié.",
       "linkNow": "Lier maintenant",
       "checkIn": "Check-in",
@@ -162,6 +175,9 @@
       "inviteNotRedeemable": "Le code n’est pas utilisable.",
       "onlyTrainers": "Seuls les coachs peuvent faire cela.",
       "roleLocked": "Le rôle ne peut plus être changé."
+    },
+    "placeholders": {
+      "inviteCode": "ABC123"
     },
     "clientDetails": {
       "basicInfo": "Infos client",
@@ -188,6 +204,74 @@
         "monthly": "Mensuel",
         "custom": "Personnalisé"
       }
+    }
+  },
+  "builder": {
+    "toasts": {
+      "workoutPublished": "Séance publiée ✅",
+      "workoutUpdated": "Séance mise à jour ✅"
+    },
+    "exercisePicker": {
+      "title": "Choisir des exercices",
+      "searchPlaceholder": "Rechercher des exercices…",
+      "tapToSelect": "Appuyez pour sélectionner",
+      "tapToUnselect": "Appuyez pour désélectionner"
+    },
+    "setTypePicker": {
+      "title": "Choisir un type de série",
+      "noneTitle": "Aucun type de série",
+      "noneSubtitle": "Série normale"
+    },
+    "workoutBuilder": {
+      "title": "Builder de séance",
+      "loadingDraft": "Chargement du brouillon…",
+      "publish": "Publier",
+      "publishing": "Publication…"
+    },
+    "setsEditor": {
+      "subtitle": "Séries • types • repos • tempo",
+      "tempoTitle": "Tempo",
+      "notesPlaceholder": "Écrivez des notes de coaching pour cet exercice…",
+      "setsTitle": "Séries",
+      "setTypeFallback": "Type de série",
+      "tempoInfo": {
+        "title": "Tempo expliqué",
+        "body": "Le tempo est : Excentrique / Pause bas / Concentrique / Pause haut\n\nExemple 3/0/1/0 :\n• 3 s descente\n• 0 s pause\n• 1 s montée\n• 0 s pause"
+      }
+    },
+    "workoutDetails": {
+      "defaultTitle": "Séance",
+      "loading": "Chargement de la séance…",
+      "published": "Publié avec succès",
+      "workoutIdLabel": "WorkoutId :",
+      "errors": {
+        "missingWorkoutId": "WorkoutId manquant",
+        "notFound": "Séance introuvable",
+        "loadFailed": "Impossible de charger la séance"
+      }
+    }
+  },
+  "library": {
+    "createProgram": {
+      "title": "Créer un programme",
+      "subtitle": "Prochaine étape : phases + planificateur hebdomadaire + assigner des séances."
+    },
+    "programsScreen": {
+      "subtitle": "À venir : liste + recherche + brouillons + partage."
+    },
+    "workoutsScreen": {
+      "subtitle": "À venir : builder Poliquin (blocs A/B/C + A1/A2 + séries)."
+    },
+    "workoutsList": {
+      "empty": "Aucune séance pour le moment.",
+      "updatedAt": "Mis à jour :"
+    },
+    "exercisesScreen": {
+      "subtitle": "À venir : liste + filtres + création d’exercices personnalisés."
+    },
+    "setTypesDictionaryScreen": {
+      "loadError": "Erreur lors du chargement des types de séries.",
+      "empty": "Aucun élément dans cette catégorie."
     }
   },
   "account": {
@@ -254,7 +338,11 @@
       "date": "AAAA-MM-JJ",
       "bio": "Courte bio…",
       "certifications": "IFBB, NASM…",
-      "notes": "Notes…"
+      "notes": "Notes…",
+      "phone": "+33 …",
+      "instagram": "@votrecompte",
+      "website": "https://…",
+      "brandName": "Anvil Coaching"
     },
     "certifications": {
       "empty": "Aucune certification pour le moment.",

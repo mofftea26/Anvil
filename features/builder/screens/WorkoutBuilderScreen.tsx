@@ -1,25 +1,24 @@
-import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    StyleSheet,
-    useWindowDimensions,
-    View,
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  useWindowDimensions,
+  View,
 } from "react-native";
 
-import { useSetTypesDictionary } from "@/src/features/library/hooks/useSetTypesDictionary";
-import type { SetTypeRow } from "@/src/features/library/types/setTypes";
-import { StickyHeader, Text, useTheme } from "@/src/shared/ui";
+import { useSetTypesDictionary } from "@/features/library/hooks/useSetTypesDictionary";
+import type { SetTypeRow } from "@/features/library/types/setTypes";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
+import { appToast, StickyHeader, Text, useTheme } from "@/shared/ui";
 
 import { useFocusEffect } from "@react-navigation/native";
 import { AddSeriesCard, SeriesPage } from "../components/SeriesPage";
 import { SetsEditorSheet } from "../components/SetsEditorSheet";
 import { StickySaveBar } from "../components/StickySaveBar";
 import { MOCK_LIBRARY_EXERCISES } from "../data/mockLibraryExercises";
-import { usePublishWorkoutDraft } from "../hooks/usePublishWorkoutDraft";
-import { useWorkoutDraft } from "../hooks/useWorkoutDraft";
+import { useWorkoutEditor } from "../hooks/useWorkoutEditor";
 import type { SeriesExercise, WorkoutSeries } from "../types";
 import { consumePendingExercisePick } from "../utils/exercisePickerBridge";
 import { getNextSeriesLabel } from "../utils/seriesLabel";
@@ -43,35 +42,31 @@ function createEmptySeriesState(): WorkoutSeries[] {
 }
 
 export function WorkoutBuilderScreen({ mode }: Props) {
+  const { t } = useAppTranslation();
   const theme = useTheme();
   const { width } = useWindowDimensions();
 
   const routeParams = useLocalSearchParams<{
-    draftId?: string;
-    addExerciseIds?: string;
-    targetSeriesId?: string;
-    addToken?: string;
+    workoutId?: string;
   }>();
 
-  const paramDraftId = routeParams.draftId ?? null;
+  const workoutId = typeof routeParams.workoutId === "string" ? routeParams.workoutId : null;
 
   const initialSeriesRef = useRef<WorkoutSeries[]>(createEmptySeriesState());
 
   const {
     series,
     setSeries,
-    resolvedDraftId,
     isLoading,
     isSaving,
     error,
-    saveDraft,
+    save,
     discardToLastSaved,
-  } = useWorkoutDraft({
+  } = useWorkoutEditor({
+    mode,
+    workoutId,
     initialSeries: initialSeriesRef.current,
-    draftId: mode === "edit" ? paramDraftId : null,
   });
-
-  const { publish, isPublishing, publishError } = usePublishWorkoutDraft();
 
   const [activeSeriesIndex, setActiveSeriesIndex] = useState(0);
 
@@ -83,7 +78,6 @@ export function WorkoutBuilderScreen({ mode }: Props) {
   const { rows: setTypesRows = [] } = useSetTypesDictionary();
 
   const flatRef = useRef<FlatList<CarouselItem>>(null);
-  const lastAppliedTokenRef = useRef<string | null>(null);
 
   const items: CarouselItem[] = useMemo(() => {
     return [
@@ -92,82 +86,38 @@ export function WorkoutBuilderScreen({ mode }: Props) {
     ];
   }, [series]);
 
-  const canPublish = useMemo(() => {
-    const totalExercises = series.reduce((acc, s) => acc + s.exercises.length, 0);
-    return Boolean(resolvedDraftId) && totalExercises > 0 && !isSaving && !isPublishing;
-  }, [resolvedDraftId, series, isSaving, isPublishing]);
   useFocusEffect(
     React.useCallback(() => {
       const pending = consumePendingExercisePick();
       if (!pending) return;
-  
-      setSeries((prev) =>
-        prev.map((s) => {
-          if (s.id !== pending.targetSeriesId) return s;
-  
-          const picked = pending.exerciseIds
-            .map((id) => MOCK_LIBRARY_EXERCISE_BY_ID(id))
-            .filter(Boolean)
-            .map((x) => ({
-              id: cryptoRandomId(),
-              title: x!.title,
-              videoUrl: x!.videoUrl ?? null,
-              notes: null,
-              tempo: { eccentric: "3", bottom: "0", concentric: "1", top: "0" },
-              sets: [],
-              trainerNotes: null,
-            }));
-  
-          return { ...s, exercises: [...s.exercises, ...picked] };
-        })
-      );
+
+      const pickById = (id: string) => MOCK_LIBRARY_EXERCISES.find((x) => x.id === id) ?? null;
+      const picked = pending.exerciseIds
+        .map((id) => pickById(id))
+        .filter(Boolean)
+        .map((x) => ({
+          id: cryptoRandomId(),
+          title: x!.title,
+          videoUrl: x!.videoUrl ?? null,
+          notes: null,
+          tempo: { eccentric: "3", bottom: "0", concentric: "1", top: "0" },
+          sets: [],
+          trainerNotes: null,
+        }));
+
+      if (!picked.length) return;
+
+      setSeries((prev) => {
+        const hasTarget = prev.some((s) => s.id === pending.targetSeriesId);
+        const targetId = hasTarget ? pending.targetSeriesId : prev[0]?.id ?? null;
+        if (!targetId) return prev;
+
+        return prev.map((s) =>
+          s.id !== targetId ? s : { ...s, exercises: [...s.exercises, ...picked] }
+        );
+      });
     }, [setSeries])
   );
-  
-  // ✅ Apply selected exercises returned from picker
-  React.useEffect(() => {
-    const token = routeParams.addToken ?? null;
-    const ids = (routeParams.addExerciseIds ?? "").trim();
-    const targetSeriesId = routeParams.targetSeriesId ?? null;
-
-    if (!token || !ids || !targetSeriesId) return;
-    if (lastAppliedTokenRef.current === token) return;
-
-    lastAppliedTokenRef.current = token;
-
-    const idList = ids
-      .split(",")
-      .map((x) => x.trim())
-      .filter(Boolean);
-
-    if (!idList.length) return;
-
-    const picked = idList
-      .map((id) => MOCK_LIBRARY_EXERCISE_BY_ID(id))
-      .filter(Boolean)
-      .map((x) => ({
-        id: cryptoRandomId(),
-        title: x!.title,
-        videoUrl: x!.videoUrl ?? null,
-        notes: null,
-        tempo: { eccentric: "3", bottom: "0", concentric: "1", top: "0" },
-        sets: [],
-        trainerNotes: null,
-      })) as SeriesExercise[];
-
-    setSeries((prev) =>
-      prev.map((s) =>
-        s.id !== targetSeriesId
-          ? s
-          : { ...s, exercises: [...s.exercises, ...picked] }
-      )
-    );
-  }, [
-    routeParams.addToken,
-    routeParams.addExerciseIds,
-    routeParams.targetSeriesId,
-    setSeries,
-  ]);
 
   function onAddSeries() {
     setSeries((prev) => {
@@ -234,40 +184,30 @@ export function WorkoutBuilderScreen({ mode }: Props) {
   }
 
   async function saveChanges() {
-    const res = await saveDraft();
-    if (!res) return;
-
-    if (mode === "new") {
-      router.replace({
-        pathname: `/(trainer)/library/workout-builder/${res.draftId}` as any,
-        params: { draftId: res.draftId },
-      } as any);
+    const res = await save();
+    if (!res) {
+      appToast.error(error ?? t("auth.errors.generic"));
+      return;
     }
-  }
 
-  async function onPublish() {
-    if (!resolvedDraftId) return;
-
-    // ensure latest draft exists before publishing
-    await saveDraft();
-
-    const workoutId = await publish(resolvedDraftId, null);
-    if (!workoutId) return;
-
-    router.push({
-      pathname: `/(trainer)/library/workouts/${workoutId}` as any,
-      params: { workoutId },
-    } as any);
+    appToast.success(
+      mode === "new"
+        ? t("builder.toasts.workoutPublished")
+        : t("builder.toasts.workoutUpdated")
+    );
+    router.back();
   }
 
   if (isLoading) {
     return (
       <View style={[styles.screen, { backgroundColor: theme.colors.background }]}>
-        <StickyHeader title="Workout Builder" showBackButton />
+        <StickyHeader title={t("builder.workoutBuilder.title")} showBackButton />
         <View style={styles.center}>
           <ActivityIndicator />
           <View style={{ height: 10 }} />
-          <Text style={{ opacity: 0.7 }}>Loading draft...</Text>
+          <Text style={{ opacity: 0.7 }}>
+            {t("builder.workoutBuilder.loadingDraft")}
+          </Text>
         </View>
       </View>
     );
@@ -276,39 +216,15 @@ export function WorkoutBuilderScreen({ mode }: Props) {
   return (
     <View style={[styles.screen, { backgroundColor: theme.colors.background }]}>
       <StickyHeader
-        title="Workout Builder"
+        title={t("builder.workoutBuilder.title")}
         showBackButton
-        rightButton={
-          resolvedDraftId
-            ? {
-                label: isPublishing ? "Publishing..." : "Publish",
-                variant: "secondary",
-                isLoading: isPublishing,
-                onPress: onPublish,
-                icon: (
-                  <Ionicons
-                    name="cloud-upload-outline"
-                    size={18}
-                    color={theme.colors.text}
-                  />
-                ),
-              }
-            : undefined
-        }
+       
       />
 
-      {(error || publishError) ? (
+      {error ? (
         <View style={{ paddingHorizontal: 14, paddingBottom: 6 }}>
           <Text style={{ color: "rgba(255,100,100,0.95)", fontWeight: "900" }}>
-            {error ?? publishError}
-          </Text>
-        </View>
-      ) : null}
-
-      {!canPublish && resolvedDraftId ? (
-        <View style={{ paddingHorizontal: 14, paddingBottom: 6 }}>
-          <Text style={{ opacity: 0.6 }}>
-            Add at least 1 exercise to publish.
+            {error}
           </Text>
         </View>
       ) : null}

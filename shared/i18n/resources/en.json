@@ -52,6 +52,7 @@
   "client": {
     "dashboardTitle": "Dashboard",
     "dashboardSubtitle": "Your plan and progress will live here.",
+    "profileSubtitle": "Personal details and preferences.",
     "profileTitle": "Profile",
     "profileCardRole": "Role",
     "profileSignOut": "Sign out"
@@ -59,6 +60,7 @@
   "trainer": {
     "dashboardTitle": "Dashboard",
     "dashboardSubtitle": "Clients, programs, and invites will live here.",
+    "profileSubtitle": "Account, brand, and preferences.",
     "profileTitle": "Profile",
     "profileCardRole": "Role",
     "profileSignOut": "Sign out"
@@ -102,11 +104,21 @@
     "yesterday": "Yesterday",
     "share": "Share",
     "copy": "Copy",
-    "areYouSure": "Are you sure?"
+    "areYouSure": "Are you sure?",
+    "discard": "Discard",
+    "tempo": "Tempo",
+    "qr": "QR",
+    "new": "New",
+    "placeholders": {
+      "email": "name@email.com",
+      "firstName": "John",
+      "lastName": "Doe"
+    }
   },
   "linking": {
     "clients": {
       "title": "Clients",
+      "subtitle": "Manage your clients and check-ins.",
       "empty": "No clients yet.",
       "viewClient": "View client",
       "archive": "Archive",
@@ -149,6 +161,7 @@
     },
     "coach": {
       "title": "My coach",
+      "subtitle": "Coach details and link actions.",
       "notLinked": "No coach linked yet.",
       "linkNow": "Link now",
       "checkIn": "Check-in",
@@ -165,6 +178,9 @@
       "inviteNotRedeemable": "Invite is not redeemable.",
       "onlyTrainers": "Only trainers can do that.",
       "roleLocked": "Role cannot be changed once set."
+    },
+    "placeholders": {
+      "inviteCode": "ABC123"
     },
     "clientDetails": {
       "basicInfo": "Client info",
@@ -191,6 +207,74 @@
         "monthly": "Monthly",
         "custom": "Custom"
       }
+    }
+  },
+  "builder": {
+    "toasts": {
+      "workoutPublished": "Workout published ✅",
+      "workoutUpdated": "Workout updated ✅"
+    },
+    "exercisePicker": {
+      "title": "Pick exercises",
+      "searchPlaceholder": "Search exercises...",
+      "tapToSelect": "Tap to select",
+      "tapToUnselect": "Tap to unselect"
+    },
+    "setTypePicker": {
+      "title": "Pick set type",
+      "noneTitle": "No set type",
+      "noneSubtitle": "Basic normal set"
+    },
+    "workoutBuilder": {
+      "title": "Workout builder",
+      "loadingDraft": "Loading draft...",
+      "publish": "Publish",
+      "publishing": "Publishing..."
+    },
+    "setsEditor": {
+      "subtitle": "Sets • set types • rest • tempo",
+      "tempoTitle": "Tempo",
+      "notesPlaceholder": "Write coaching notes for this exercise...",
+      "setsTitle": "Sets",
+      "setTypeFallback": "Set type",
+      "tempoInfo": {
+        "title": "Tempo explained",
+        "body": "Tempo is: Eccentric / Bottom Pause / Concentric / Top Pause\n\nExample 3/0/1/0:\n• 3 sec lowering\n• 0 sec pause\n• 1 sec lifting\n• 0 sec pause"
+      }
+    },
+    "workoutDetails": {
+      "defaultTitle": "Workout",
+      "loading": "Loading workout...",
+      "published": "Published successfully",
+      "workoutIdLabel": "WorkoutId:",
+      "errors": {
+        "missingWorkoutId": "Missing workoutId",
+        "notFound": "Workout not found",
+        "loadFailed": "Failed to load workout"
+      }
+    }
+  },
+  "library": {
+    "createProgram": {
+      "title": "Create program",
+      "subtitle": "Next step: phase builder + weekdays planner + assign workouts."
+    },
+    "programsScreen": {
+      "subtitle": "Coming next: list + search + drafts + sharing."
+    },
+    "workoutsScreen": {
+      "subtitle": "Coming next: Poliquin builder (A/B/C blocks + A1/A2 + sets)."
+    },
+    "workoutsList": {
+      "empty": "No workouts yet.",
+      "updatedAt": "Updated:"
+    },
+    "exercisesScreen": {
+      "subtitle": "Coming next: library list + filters + custom exercise creation."
+    },
+    "setTypesDictionaryScreen": {
+      "loadError": "Error loading set types.",
+      "empty": "No items in this category."
     }
   },
   "account": {
@@ -257,7 +341,11 @@
       "date": "YYYY-MM-DD",
       "bio": "Short bio…",
       "certifications": "IFBB, NASM…",
-      "notes": "Notes…"
+      "notes": "Notes…",
+      "phone": "+961 …",
+      "instagram": "@yourhandle",
+      "website": "https://…",
+      "brandName": "Anvil Coaching"
     },
     "certifications": {
       "empty": "No certifications yet.",

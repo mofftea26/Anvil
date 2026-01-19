@@ -1,18 +1,17 @@
 import React from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
-import { useAppTranslation } from "../../../src/shared/i18n/useAppTranslation";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import {
     StickyHeader,
+    TabBackgroundGradient,
     Text,
-    useStickyHeaderHeight,
     useTheme,
     VStack,
-} from "../../../src/shared/ui";
+} from "@/shared/ui";
 
 export default function TrainerDashboard() {
   const { t } = useAppTranslation();
   const theme = useTheme();
-  const headerHeight = useStickyHeaderHeight();
   const [refreshing, setRefreshing] = React.useState(false);
 
   const onRefresh = React.useCallback(async () => {
@@ -25,9 +24,13 @@ export default function TrainerDashboard() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <StickyHeader title={t("trainer.dashboardTitle")} />
+      <TabBackgroundGradient />
+      <StickyHeader
+        title={t("trainer.dashboardTitle")}
+        subtitle={t("trainer.dashboardSubtitle")}
+      />
       <ScrollView
-        style={{ flex: 1, backgroundColor: theme.colors.background }}
+        style={{ flex: 1, backgroundColor: "transparent" }}
         contentContainerStyle={{
           flexGrow: 1,
           padding: theme.spacing.xl,
@@ -43,9 +46,7 @@ export default function TrainerDashboard() {
           />
         }
       >
-        <VStack style={{ gap: theme.spacing.sm }}>
-          <Text muted>{t("trainer.dashboardSubtitle")}</Text>
-        </VStack>
+        <VStack style={{ gap: theme.spacing.sm }} />
       </ScrollView>
     </View>
   );

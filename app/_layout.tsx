@@ -1,7 +1,7 @@
 import "react-native-reanimated";
 import "react-native-url-polyfill/auto";
 
-import { defaultLanguage } from "../src/shared/i18n/i18n";
+import { defaultLanguage } from "@/shared/i18n/i18n";
 
 import {
   Inter_400Regular,
@@ -13,16 +13,16 @@ import { Stack } from "expo-router";
 import { Provider as ReduxProvider } from "react-redux";
 
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { AuthBootstrap } from "../src/features/auth/components/AuthBootstrap";
-import { AppErrorBoundary } from "../src/shared/components/AppErrorBoundary";
-import { applyRtlIfNeeded } from "../src/shared/i18n/rtl";
+import { AuthBootstrap } from "@/features/auth/components/AuthBootstrap";
+import { AppErrorBoundary } from "@/shared/components/AppErrorBoundary";
+import { applyRtlIfNeeded } from "@/shared/i18n/rtl";
 import {
   AppAlertProvider,
   darkTheme,
   ThemeProvider,
   ToastProvider,
-} from "../src/shared/ui";
-import { store } from "../src/store/store";
+} from "@/shared/ui";
+import { store } from "@/store/store";
 applyRtlIfNeeded(defaultLanguage);
 
 export default function RootLayout() {

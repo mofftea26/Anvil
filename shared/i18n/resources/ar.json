@@ -49,6 +49,7 @@
   "client": {
     "dashboardTitle": "لوحة التحكم",
     "dashboardSubtitle": "ستظهر خطتك وتقدمك هنا.",
+    "profileSubtitle": "البيانات الشخصية والتفضيلات.",
     "profileTitle": "الملف الشخصي",
     "profileCardRole": "الدور",
     "profileSignOut": "تسجيل الخروج"
@@ -56,6 +57,7 @@
   "trainer": {
     "dashboardTitle": "لوحة التحكم",
     "dashboardSubtitle": "سيظهر العملاء والبرامج والدعوات هنا.",
+    "profileSubtitle": "إعدادات الحساب والعلامة التجارية والتفضيلات.",
     "profileTitle": "الملف الشخصي",
     "profileCardRole": "الدور",
     "profileSignOut": "تسجيل الخروج"
@@ -99,11 +101,21 @@
     "yesterday": "أمس",
     "share": "مشاركة",
     "copy": "نسخ",
-    "areYouSure": "هل أنت متأكد؟"
+    "areYouSure": "هل أنت متأكد؟",
+    "discard": "تجاهل",
+    "tempo": "الوتيرة",
+    "qr": "QR",
+    "new": "جديد",
+    "placeholders": {
+      "email": "name@email.com",
+      "firstName": "الاسم الأول",
+      "lastName": "اسم العائلة"
+    }
   },
   "linking": {
     "clients": {
       "title": "العملاء",
+      "subtitle": "إدارة عملائك وتسجيلات المتابعة.",
       "empty": "لا يوجد عملاء بعد.",
       "viewClient": "عرض العميل",
       "archive": "أرشفة",
@@ -146,6 +158,7 @@
     },
     "coach": {
       "title": "مدربي",
+      "subtitle": "تفاصيل المدرب وإجراءات الربط.",
       "notLinked": "لا يوجد مدرب مرتبط بعد.",
       "linkNow": "اربط الآن",
       "checkIn": "المتابعة",
@@ -162,6 +175,9 @@
       "inviteNotRedeemable": "لا يمكن استخدام هذا الرمز.",
       "onlyTrainers": "هذا الإجراء للمدربين فقط.",
       "roleLocked": "لا يمكن تغيير الدور بعد اختياره."
+    },
+    "placeholders": {
+      "inviteCode": "ABC123"
     },
     "clientDetails": {
       "basicInfo": "معلومات العميل",
@@ -188,6 +204,74 @@
         "monthly": "شهري",
         "custom": "مخصص"
       }
+    }
+  },
+  "builder": {
+    "toasts": {
+      "workoutPublished": "تم نشر التمرين ✅",
+      "workoutUpdated": "تم تحديث التمرين ✅"
+    },
+    "exercisePicker": {
+      "title": "اختيار التمارين",
+      "searchPlaceholder": "ابحث عن تمارين…",
+      "tapToSelect": "اضغط للاختيار",
+      "tapToUnselect": "اضغط لإلغاء الاختيار"
+    },
+    "setTypePicker": {
+      "title": "اختيار نوع المجموعة",
+      "noneTitle": "بدون نوع",
+      "noneSubtitle": "مجموعة عادية"
+    },
+    "workoutBuilder": {
+      "title": "منشئ التمرين",
+      "loadingDraft": "جارٍ تحميل المسودة…",
+      "publish": "نشر",
+      "publishing": "جارٍ النشر…"
+    },
+    "setsEditor": {
+      "subtitle": "مجموعات • أنواع • راحة • وتيرة",
+      "tempoTitle": "الوتيرة",
+      "notesPlaceholder": "اكتب ملاحظات تدريب لهذا التمرين…",
+      "setsTitle": "المجموعات",
+      "setTypeFallback": "نوع المجموعة",
+      "tempoInfo": {
+        "title": "شرح الوتيرة",
+        "body": "الوتيرة هي: نزول / توقف أسفل / صعود / توقف أعلى\n\nمثال 3/0/1/0:\n• 3 ثواني نزول\n• 0 توقف\n• 1 ثانية صعود\n• 0 توقف"
+      }
+    },
+    "workoutDetails": {
+      "defaultTitle": "تمرين",
+      "loading": "جارٍ تحميل التمرين…",
+      "published": "تم النشر بنجاح",
+      "workoutIdLabel": "WorkoutId:",
+      "errors": {
+        "missingWorkoutId": "WorkoutId مفقود",
+        "notFound": "التمرين غير موجود",
+        "loadFailed": "فشل تحميل التمرين"
+      }
+    }
+  },
+  "library": {
+    "createProgram": {
+      "title": "إنشاء برنامج",
+      "subtitle": "الخطوة التالية: المراحل + مخطط الأسبوع + تعيين التمارين."
+    },
+    "programsScreen": {
+      "subtitle": "قريباً: قائمة + بحث + مسودات + مشاركة."
+    },
+    "workoutsScreen": {
+      "subtitle": "قريباً: منشئ Poliquin (مجموعات A/B/C + A1/A2 + جولات)."
+    },
+    "workoutsList": {
+      "empty": "لا توجد تمارين بعد.",
+      "updatedAt": "آخر تحديث:"
+    },
+    "exercisesScreen": {
+      "subtitle": "قريباً: قائمة التمارين + فلاتر + إنشاء تمارين مخصصة."
+    },
+    "setTypesDictionaryScreen": {
+      "loadError": "حدث خطأ أثناء تحميل أنواع المجموعات.",
+      "empty": "لا توجد عناصر في هذه الفئة."
     }
   },
   "account": {
@@ -254,7 +338,11 @@
       "date": "YYYY-MM-DD",
       "bio": "نبذة قصيرة…",
       "certifications": "IFBB, NASM…",
-      "notes": "ملاحظات…"
+      "notes": "ملاحظات…",
+      "phone": "+961 …",
+      "instagram": "@حسابك",
+      "website": "https://…",
+      "brandName": "Anvil Coaching"
     },
     "certifications": {
       "empty": "لا توجد شهادات بعد.",

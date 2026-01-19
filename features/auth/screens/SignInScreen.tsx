@@ -5,10 +5,10 @@ import { Controller, useForm } from "react-hook-form";
 import { Pressable } from "react-native";
 import { z } from "zod";
 
-import { useAuthActions } from "../../src/features/auth/hooks/useAuthActions";
-import { AppInput } from "../../src/shared/components/AppInput";
-import { useAppTranslation } from "../../src/shared/i18n/useAppTranslation";
-import { appToast, Button, HStack, KeyboardScreen, Text, useTheme, VStack } from "../../src/shared/ui";
+import { useAuthActions } from "@/features/auth/hooks/useAuthActions";
+import { AppInput } from "@/shared/components/AppInput";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
+import { appToast, Button, HStack, KeyboardScreen, Text, useTheme, VStack } from "@/shared/ui";
 
 type Mode = "password" | "magic";
 
@@ -149,7 +149,7 @@ export default function SignInScreen() {
                 label={t("auth.email")}
                 value={value}
                 onChangeText={onChange}
-                placeholder="name@email.com"
+                  placeholder={t("common.placeholders.email")}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 error={fieldState.error?.message}
@@ -214,7 +214,7 @@ export default function SignInScreen() {
                 label={t("auth.email")}
                 value={value}
                 onChangeText={onChange}
-                placeholder="name@email.com"
+                  placeholder={t("common.placeholders.email")}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 error={fieldState.error?.message}

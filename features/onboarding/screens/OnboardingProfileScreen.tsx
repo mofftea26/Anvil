@@ -3,11 +3,11 @@ import { router } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { useUpdateMyUserRowMutation } from "../../src/features/profile/api/profileApiSlice";
-import { AppInput } from "../../src/shared/components/AppInput";
-import { useAppSelector } from "../../src/shared/hooks/useAppSelector";
-import { useAppTranslation } from "../../src/shared/i18n/useAppTranslation";
-import { Button, KeyboardScreen, Text, useTheme, VStack } from "../../src/shared/ui";
+import { useUpdateMyUserRowMutation } from "@/features/profile/api/profileApiSlice";
+import { AppInput } from "@/shared/components/AppInput";
+import { useAppSelector } from "@/shared/hooks/useAppSelector";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
+import { Button, KeyboardScreen, Text, useTheme, VStack } from "@/shared/ui";
 
 export default function OnboardingProfile() {
   const { t } = useAppTranslation();
@@ -61,7 +61,7 @@ export default function OnboardingProfile() {
               label={t("auth.firstName")}
               value={value}
               onChangeText={onChange}
-              placeholder="George"
+              placeholder={t("common.placeholders.firstName")}
               autoCapitalize="words"
               error={fieldState.error ? t("auth.errors.generic") : undefined}
             />
@@ -75,7 +75,7 @@ export default function OnboardingProfile() {
               label={t("auth.lastName")}
               value={value}
               onChangeText={onChange}
-              placeholder="Maalouf"
+              placeholder={t("common.placeholders.lastName")}
               autoCapitalize="words"
               error={fieldState.error ? t("auth.errors.generic") : undefined}
             />

@@ -1,4 +1,4 @@
-import { supabase } from "@/src/shared/supabase/client";
+import { supabase } from "@/shared/supabase/client";
 import { useEffect, useMemo, useState } from "react";
 
 export type ExerciseLibraryRow = {

@@ -9,7 +9,10 @@ module.exports = function (api) {
           root: ['.'],
           alias: {
             '@': './',
-            '@/src': './src',
+            '@/features': './features',
+            '@/shared': './shared',
+            '@/store': './store',
+            '@/types': './types',
           },
           extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
         },

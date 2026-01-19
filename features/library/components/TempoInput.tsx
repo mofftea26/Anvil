@@ -1,7 +1,8 @@
-import { Input, Text, useAppAlert, useTheme } from "@/src/shared/ui";
+import { Input, Text, useAppAlert, useTheme } from "@/shared/ui";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 
 type TempoValue = {
   eccentric: string;
@@ -31,6 +32,7 @@ export function TempoInput({
   value?: string | null;
   onChange: (nextTempo: string) => void;
 }) {
+  const { t } = useAppTranslation();
   const theme = useTheme();
   const alert = useAppAlert();
 
@@ -65,7 +67,7 @@ export function TempoInput({
     <View style={styles.wrap}>
       <View style={styles.left}>
         <Ionicons name="speedometer" size={16} color={theme.colors.textMuted} />
-        <Text style={styles.label}>Tempo</Text>
+        <Text style={styles.label}>{t("common.tempo")}</Text>
       </View>
 
       <View style={styles.row}>

@@ -1,4 +1,4 @@
-import ProgramsScreen from "@/src/features/library/screens/ProgramsScreen";
+import ProgramsScreen from "@/features/library/screens/ProgramsScreen";
 import React from "react";
 
 export default function Screen() {

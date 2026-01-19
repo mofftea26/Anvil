@@ -1,7 +1,7 @@
 import React, { useMemo, useRef } from "react";
 import { FlatList, StyleSheet, useWindowDimensions, View } from "react-native";
 
-import type { SetTypeRow } from "@/src/features/library/types/setTypes";
+import type { SetTypeRow } from "@/features/library/types/setTypes";
 import type { WorkoutSeries } from "../types";
 import { AddSeriesCard, SeriesPage } from "./SeriesPage";
 type Props = {

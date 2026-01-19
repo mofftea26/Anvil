@@ -13,9 +13,11 @@ import { StickySaveBar } from "../components/StickySaveBar";
 import { MOCK_LIBRARY_EXERCISES } from "../data/mockLibraryExercises";
 import { setPendingExercisePick } from "../utils/exercisePickerBridge";
 
-import { StickyHeader, Text, useTheme } from "@/src/shared/ui";
+import { StickyHeader, Text, useTheme } from "@/shared/ui";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 
 export default function ExercisePickerScreen() {
+  const { t } = useAppTranslation();
   const theme = useTheme();
 
   const params = useLocalSearchParams<{
@@ -69,7 +71,7 @@ export default function ExercisePickerScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.colors.background }]}>
-      <StickyHeader title="Pick Exercises" showBackButton />
+      <StickyHeader title={t("builder.exercisePicker.title")} showBackButton />
 
       {/* Search */}
       <View style={{ paddingHorizontal: 14, paddingBottom: 10 }}>
@@ -86,7 +88,7 @@ export default function ExercisePickerScreen() {
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Search exercises..."
+            placeholder={t("builder.exercisePicker.searchPlaceholder")}
             placeholderTextColor="rgba(255,255,255,0.45)"
             style={[styles.searchInput, { color: theme.colors.text }]}
           />
@@ -151,7 +153,9 @@ export default function ExercisePickerScreen() {
                   {item.title}
                 </Text>
                 <Text style={{ opacity: 0.7, marginTop: 2 }} numberOfLines={1}>
-                  Tap to {isOn ? "unselect" : "select"}
+                  {isOn
+                    ? t("builder.exercisePicker.tapToUnselect")
+                    : t("builder.exercisePicker.tapToSelect")}
                 </Text>
               </View>
 

@@ -1,4 +1,4 @@
-import CreateProgramScreen from "@/src/features/library/screens/CreateProgramScreen";
+import CreateProgramScreen from "@/features/library/screens/CreateProgramScreen";
 import React from "react";
 
 export default function Screen() {

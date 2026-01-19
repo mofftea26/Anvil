@@ -1,16 +1,20 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 
-import { Text, useTheme } from "@/src/shared/ui";
+import { Text, useTheme } from "@/shared/ui";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 
 export default function CreateProgramScreen() {
+  const { t } = useAppTranslation();
   const theme = useTheme();
 
   return (
     <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
-      <Text style={[styles.title, { color: theme.colors.text }]}>Create Program</Text>
+      <Text style={[styles.title, { color: theme.colors.text }]}>
+        {t("library.createProgram.title")}
+      </Text>
       <Text style={{ color: theme.colors.textMuted }}>
-        Next step: phase builder + weekdays planner + assign workouts.
+        {t("library.createProgram.subtitle")}
       </Text>
     </View>
   );

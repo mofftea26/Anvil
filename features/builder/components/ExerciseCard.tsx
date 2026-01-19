@@ -6,7 +6,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { useVideoThumbnail } from "../hooks/useVideoThumbnail";
 import type { SeriesExercise } from "../types";
 
-import { Text, useTheme } from "@/src/shared/ui";
+import { Text, useTheme } from "@/shared/ui";
 
 type Props = {
   code: string; // A1, A2...

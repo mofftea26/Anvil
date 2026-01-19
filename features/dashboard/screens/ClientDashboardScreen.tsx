@@ -1,19 +1,18 @@
 import React from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
 
-import { useMyProfile } from "../../../src/features/profile/hooks/useMyProfile";
-import { useAppTranslation } from "../../../src/shared/i18n/useAppTranslation";
+import { useMyProfile } from "@/features/profile/hooks/useMyProfile";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import {
     StickyHeader,
+    TabBackgroundGradient,
     Text,
-    useStickyHeaderHeight,
     useTheme,
-} from "../../../src/shared/ui";
+} from "@/shared/ui";
 
 export default function ClientDashboard() {
   const { t } = useAppTranslation();
   const theme = useTheme();
-  const headerHeight = useStickyHeaderHeight();
   // Dashboard stays lightweight; "My Coach" lives in its dedicated tab.
   const { refetch } = useMyProfile();
 
@@ -29,9 +28,13 @@ export default function ClientDashboard() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <StickyHeader title={t("client.dashboardTitle")} />
+      <TabBackgroundGradient />
+      <StickyHeader
+        title={t("client.dashboardTitle")}
+        subtitle={t("client.dashboardSubtitle")}
+      />
       <ScrollView
-        style={{ flex: 1, backgroundColor: theme.colors.background }}
+        style={{ flex: 1, backgroundColor: "transparent" }}
         contentContainerStyle={{
           padding: theme.spacing.xl,
           paddingTop: theme.spacing.xl,
@@ -46,7 +49,7 @@ export default function ClientDashboard() {
           />
         }
       >
-        <Text muted>{t("client.dashboardSubtitle")}</Text>
+        {/* Header subtitle already shown above */}
       </ScrollView>
     </View>
   );

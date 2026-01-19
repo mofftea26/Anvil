@@ -3,8 +3,8 @@ import { router } from "expo-router";
 import React from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
-import { useAppTranslation } from "@/src/shared/i18n/useAppTranslation";
-import { Text, useTheme } from "@/src/shared/ui";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
+import { StickyHeader, TabBackgroundGradient, Text, useTheme } from "@/shared/ui";
 
 export default function LibraryHomeScreen() {
   const theme = useTheme();
@@ -12,25 +12,22 @@ export default function LibraryHomeScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
+      <TabBackgroundGradient />
+      <StickyHeader
+        title={t("library.title", "Library")}
+        subtitle={t(
+          "library.subtitle",
+          "Create & manage Programs, Workouts, and Exercises."
+        )}
+      />
       <ScrollView
         contentContainerStyle={{
-          padding: theme.spacing.xl,
+          padding: theme.spacing.sm ,
+          paddingTop: theme.spacing.sm,
           gap: theme.spacing.lg,
         }}
         showsVerticalScrollIndicator={false}
       >
-        <View style={{ gap: 6 }}>
-          <Text style={[styles.title, { color: theme.colors.text }]}>
-            {t("library.title", "Library")}
-          </Text>
-          <Text style={[styles.subtitle, { color: theme.colors.textMuted }]}>
-            {t(
-              "library.subtitle",
-              "Create & manage Programs, Workouts, and Exercises."
-            )}
-          </Text>
-        </View>
-
         {/* Quick Actions */}
         <View style={[styles.row, { gap: theme.spacing.md }]}>
           <Pressable
@@ -49,7 +46,7 @@ export default function LibraryHomeScreen() {
               color={theme.colors.accent}
             />
             <Text style={{ color: theme.colors.text, fontSize: 13 }}>
-              {t("library.createProgram", "New Program")}
+              {t("library.newProgram", "New Program")}
             </Text>
           </Pressable>
 

@@ -8,9 +8,10 @@ import { useTheme } from "../theme";
 import { Button } from "./Button";
 import { Text } from "./Text";
 
-export function useStickyHeaderHeight(): number {
+export function useStickyHeaderHeight(options?: { subtitle?: boolean }): number {
   const insets = useSafeAreaInsets();
-  return insets.top + 36 + 12; // safe area + button height + padding
+  // safe area + row height + padding (+ optional subtitle line)
+  return insets.top + (options?.subtitle ? 16 : 0);
 }
 
 type StickyHeaderButton = {
@@ -23,6 +24,7 @@ type StickyHeaderButton = {
 
 type StickyHeaderProps = {
   title: string;
+  subtitle?: string;
   leftButton?: StickyHeaderButton;
   rightButton?: StickyHeaderButton;
   showBackButton?: boolean;
@@ -32,12 +34,13 @@ type StickyHeaderProps = {
 
 export function StickyHeader({
   title,
+  subtitle,
   leftButton,
   rightButton,
   showBackButton = false,
+  backgroundColor,
 }: StickyHeaderProps) {
   const theme = useTheme();
-  const insets = useSafeAreaInsets();
 
   const effectiveLeftButton: StickyHeaderButton | undefined = showBackButton
     ? {
@@ -56,9 +59,9 @@ export function StickyHeader({
       style={[
         styles.header,
         {
-          paddingTop: insets.top,
+          paddingTop: 10,
           paddingBottom: 12,
-          backgroundColor: "transparent",
+          backgroundColor:"transparent",
         },
       ]}
     >
@@ -66,12 +69,13 @@ export function StickyHeader({
         style={{
           justifyContent: "space-between",
           width: "100%",
-          paddingLeft: 24,
+          paddingLeft: 12,
           paddingRight: 12,
+          alignItems: "center",
         }}
       >
         <View style={{ alignItems: "flex-start" }}>
-          {effectiveLeftButton && (
+          {effectiveLeftButton ? (
             <Button
               variant={effectiveLeftButton.variant ?? "secondary"}
               height={36}
@@ -79,24 +83,36 @@ export function StickyHeader({
               onPress={effectiveLeftButton.onPress}
               left={effectiveLeftButton.icon}
             >
-              {title}
+              {effectiveLeftButton.label ?? ""}
             </Button>
-          )}
+          ) : null}
         </View>
-        {!showBackButton && (
+
+        <View style={{ flex: 1, paddingHorizontal: 0 }}>
           <Text
             variant="body"
             weight="semibold"
             numberOfLines={1}
             style={{
-              flex: 1,
               textAlign: "left",
               fontSize: 18,
+              lineHeight: 22,
             }}
           >
             {title}
           </Text>
-        )}
+          {subtitle ? (
+            <Text
+              variant="caption"
+              muted
+              numberOfLines={1}
+              style={{ marginTop: 2 }}
+            >
+              {subtitle}
+            </Text>
+          ) : null}
+        </View>
+
         {rightButton && (
           <Button
             variant={rightButton.variant ?? "secondary"}
@@ -105,7 +121,7 @@ export function StickyHeader({
             onPress={rightButton.onPress}
             left={rightButton.icon}
           >
-            {rightButton.label}
+            {rightButton.label ?? ""}
           </Button>
         )}
       </HStack>

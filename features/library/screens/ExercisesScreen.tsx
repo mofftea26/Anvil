@@ -1,16 +1,20 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 
-import { Text, useTheme } from "@/src/shared/ui";
+import { Text, useTheme } from "@/shared/ui";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 
 export default function ExercisesScreen() {
+  const { t } = useAppTranslation();
   const theme = useTheme();
 
   return (
     <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
-      <Text style={[styles.title, { color: theme.colors.text }]}>Exercises</Text>
+      <Text style={[styles.title, { color: theme.colors.text }]}>
+        {t("library.exercises")}
+      </Text>
       <Text style={{ color: theme.colors.textMuted }}>
-        Coming next: library list + filters + custom exercise creation.
+        {t("library.exercisesScreen.subtitle")}
       </Text>
     </View>
   );

@@ -1,4 +1,4 @@
-import { supabase } from "@/src/shared/supabase/client";
+import { supabase } from "@/shared/supabase/client";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useMemo, useState } from "react";
 import type { SetTypeRow } from "../types/setTypes";

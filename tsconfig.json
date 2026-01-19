@@ -5,7 +5,10 @@
     "strict": true,
     "paths": {
       "@/*": ["./*"],
-      "@/src/*": ["./src/*"]
+      "@/features/*": ["./features/*"],
+      "@/shared/*": ["./shared/*"],
+      "@/store/*": ["./store/*"],
+      "@/types/*": ["./types/*"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]

@@ -65,8 +65,8 @@ export function KeyboardScreen({
           contentContainerStyle={[
             styles.container,
             {
-              paddingHorizontal: theme.spacing.lg,
-              paddingTop: theme.spacing.lg,
+              paddingHorizontal: theme.spacing.xs,
+              paddingTop: theme.spacing.xs,
               paddingBottom: bottom,
             },
             contentContainerStyle,

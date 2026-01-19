@@ -8,10 +8,11 @@ import {
     View,
 } from "react-native";
 
-import type { SetTypeRow } from "@/src/features/library/types/setTypes";
+import type { SetTypeRow } from "@/features/library/types/setTypes";
 import { getSetTypeIconName } from "../utils/setTypeIcons";
 
-import { Text, useTheme } from "@/src/shared/ui";
+import { Text, useTheme } from "@/shared/ui";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 
 type Props = {
   visible: boolean;
@@ -28,6 +29,7 @@ export function SetTypePickerSheet({
   onClose,
   onPick,
 }: Props) {
+  const { t } = useAppTranslation();
   const theme = useTheme();
 
   const grouped = useMemo(() => {
@@ -56,7 +58,7 @@ export function SetTypePickerSheet({
         >
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title}>Pick Set Type</Text>
+            <Text style={styles.title}>{t("builder.setTypePicker.title")}</Text>
 
             <Pressable
               onPress={onClose}
@@ -88,9 +90,11 @@ export function SetTypePickerSheet({
                 <Ionicons name="flash-outline" size={18} color="white" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontWeight: "900" }}>No Set Type</Text>
+                <Text style={{ fontWeight: "900" }}>
+                  {t("builder.setTypePicker.noneTitle")}
+                </Text>
                 <Text style={{ opacity: 0.7, marginTop: 2 }}>
-                  Basic normal set
+                  {t("builder.setTypePicker.noneSubtitle")}
                 </Text>
               </View>
 

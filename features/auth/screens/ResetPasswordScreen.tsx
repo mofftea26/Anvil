@@ -3,10 +3,10 @@ import { router } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { useAuthActions } from "../../src/features/auth/hooks/useAuthActions";
-import { AppInput } from "../../src/shared/components/AppInput";
-import { useAppTranslation } from "../../src/shared/i18n/useAppTranslation";
-import { appToast, Button, KeyboardScreen, Text, useTheme, VStack } from "../../src/shared/ui";
+import { useAuthActions } from "@/features/auth/hooks/useAuthActions";
+import { AppInput } from "@/shared/components/AppInput";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
+import { appToast, Button, KeyboardScreen, Text, useTheme, VStack } from "@/shared/ui";
 
 export default function ResetPasswordScreen() {
   const { t } = useAppTranslation();
