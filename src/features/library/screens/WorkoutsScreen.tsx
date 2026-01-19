@@ -1,18 +1,16 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { useTheme } from "../../../src/shared/ui";
-import { Text } from "../../../src/shared/ui/components/Text";
 
-export default function CreateWorkoutScreen() {
+import { Text, useTheme } from "@/src/shared/ui";
+
+export default function WorkoutsScreen() {
   const theme = useTheme();
 
   return (
     <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
-      <Text style={[styles.title, { color: theme.colors.text }]}>
-        Create Workout
-      </Text>
+      <Text style={[styles.title, { color: theme.colors.text }]}>Workouts</Text>
       <Text style={{ color: theme.colors.textMuted }}>
-        Next step: Blocks A/B/C → Add exercises → Add sets.
+        Coming next: Poliquin builder (A/B/C blocks + A1/A2 + sets).
       </Text>
     </View>
   );

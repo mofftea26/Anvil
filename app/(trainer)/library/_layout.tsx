@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
 import React from "react";
-import { useTheme } from "../../../src/shared/ui";
+import { useTheme } from "@/src/shared/ui";
 
 export default function TrainerLibraryLayout() {
   const theme = useTheme();

@@ -510,6 +510,7 @@ export default function TrainerProfileScreen() {
                       <Chip
                         key={c}
                         label={c}
+                        isActive={false}
                         onPress={() => {
                           alert.confirm({
                             title: t("profile.certifications.deleteTitle"),

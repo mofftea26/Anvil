@@ -2,6 +2,7 @@ export type AppThemeColors = {
   background: string;
   surface: string;
   surface2: string;
+  surface3: string;
   text: string;
   textMuted: string;
   border: string;
@@ -53,6 +54,7 @@ export const darkTheme: AppTheme = {
     background: "#0B0D10",
     surface: "#11151B",
     surface2: "#161C24",
+    surface3: "#1E242E",
     text: "#E7EAF0",
     textMuted: "#AAB3C2",
     border: "rgba(255,255,255,0.10)",
