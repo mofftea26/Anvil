@@ -257,6 +257,8 @@ export default function TrainerClientsScreen() {
                                     source={{ uri: avatarUrl }}
                                     style={{ width: "100%", height: "100%" }}
                                     contentFit="cover"
+                                    cachePolicy="none"
+                                    transition={1000}
                                   />
                                 ) : initials ? (
                                   <Text

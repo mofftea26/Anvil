@@ -1,6 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
@@ -21,12 +20,13 @@ import {
   hexToRgba,
   isHexColor,
   parseCerts,
-  uploadImageFromUri,
 } from "@/features/profile/utils/trainerProfileUtils";
 import { AppInput } from "@/shared/components/AppInput";
 import { KeyboardScreen } from "@/shared/components/KeyboardScreen";
 import { useAppSelector } from "@/shared/hooks/useAppSelector";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
+import { pickAndPrepareSquareImage } from "@/shared/media/imageUpload";
+import { useSupabaseImageUpload } from "@/shared/media/useSupabaseImageUpload";
 import {
   appToast,
   Button,
@@ -55,11 +55,12 @@ export default function TrainerProfileScreen() {
   const [upsertTrainerProfile] = useUpsertTrainerProfileMutation();
 
   const [saving, setSaving] = useState(false);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [clearingAvatar, setClearingAvatar] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = React.useState(false);
+
+  const avatarUpload = useSupabaseImageUpload();
+  const logoUpload = useSupabaseImageUpload();
 
   const onRefresh = React.useCallback(async () => {
     try {
@@ -101,44 +102,29 @@ export default function TrainerProfileScreen() {
     if (!auth.userId) return;
 
     try {
-      setUploadingAvatar(true);
-
-      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!perm.granted) return;
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"] as ImagePicker.MediaType[],
-        allowsEditing: true,
-        quality: 1,
-      });
-
-      if (result.canceled) return;
-
-      const asset = result.assets?.[0];
-      const uri = asset?.uri;
-      if (!uri) return;
-      
       const path = `${auth.userId}/avatar.jpg`;
-      const publicUrl = await uploadImageFromUri(
-        "avatars",
+      const prepared = await pickAndPrepareSquareImage();
+      if (!prepared) return;
+
+      const publicUrl = await avatarUpload.uploadImage({
+        bucket: "avatars",
         path,
-        uri,
-        (asset as any)?.mimeType
-      );
+        fileUri: prepared.uri,
+        contentType: prepared.mimeType,
+        upsert: true,
+      });
       
       await updateMyUserRow({
         userId: auth.userId,
         payload: { avatarUrl: publicUrl },
       }).unwrap();
       
-      setForm((p) => ({ ...p, avatarUrl: `${publicUrl}?v=${Date.now()}` }));
+      setForm((p) => ({ ...p, avatarUrl: `${publicUrl}?t=${Date.now()}` }));
       await refetch();
       appToast.success(t("profile.toasts.saved"));
       
     } catch (e: any) {
       appToast.error(e?.message ?? t("auth.errors.generic"));
-    } finally {
-      setUploadingAvatar(false);
     }
   };
 
@@ -168,32 +154,21 @@ export default function TrainerProfileScreen() {
     if (!auth.userId) return;
 
     try {
-      setUploadingLogo(true);
+      const prepared = await pickAndPrepareSquareImage();
+      if (!prepared) return;
 
-      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!perm.granted) return;
+      const brandId = auth.userId;
+      const path = `${brandId}/logo.jpg`;
 
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"] as ImagePicker.MediaType[],
-        allowsEditing: true,
-        quality: 1,
-      });
-
-      if (result.canceled) return;
-
-      const asset = result.assets?.[0];
-      const uri = asset?.uri;
-      if (!uri) return;
-      
-      const path = `${auth.userId}/logo.jpg`;
-      const publicUrl = await uploadImageFromUri(
-        "logos",
+      const publicUrl = await logoUpload.uploadImage({
+        bucket: "logos",
         path,
-        uri,
-        (asset as any)?.mimeType
-      );
+        fileUri: prepared.uri,
+        contentType: prepared.mimeType,
+        upsert: true,
+      });
       
-      setForm((p) => ({ ...p, logoUrl: `${publicUrl}?v=${Date.now()}` }));
+      setForm((p) => ({ ...p, logoUrl: `${publicUrl}?t=${Date.now()}` }));
       
       await upsertTrainerProfile({
         userId: auth.userId,
@@ -205,8 +180,6 @@ export default function TrainerProfileScreen() {
       
     } catch (e: any) {
       appToast.error(e?.message ?? t("auth.errors.generic"));
-    } finally {
-      setUploadingLogo(false);
     }
   };
 
@@ -356,7 +329,13 @@ export default function TrainerProfileScreen() {
               })
             }
             clearLabel={t("profile.actions.clearPhoto")}
-            disabled={uploadingAvatar || clearingAvatar}
+            disabled={avatarUpload.uploading || clearingAvatar}
+            isUploading={avatarUpload.uploading}
+            uploadLabel={
+              avatarUpload.progress !== null
+                ? `Uploading ${avatarUpload.progress}%`
+                : "Uploading…"
+            }
           />
 
           {/* Trainer */}
@@ -617,7 +596,7 @@ export default function TrainerProfileScreen() {
 
                   <Pressable
                     onPress={() => void pickAndUploadBrandLogo()}
-                    disabled={uploadingLogo}
+                    disabled={logoUpload.uploading}
 
                     style={{
                       flex: 1,
@@ -638,7 +617,7 @@ export default function TrainerProfileScreen() {
                     ) : null}
                   </Pressable>
 
-                  {uploadingLogo ? (
+                  {logoUpload.uploading ? (
   <View
     style={{
       position: "absolute",
@@ -655,7 +634,9 @@ export default function TrainerProfileScreen() {
   >
     <ActivityIndicator />
     <Text weight="bold" style={{ color: "white" }}>
-      {t("account.uploading")}
+      {logoUpload.progress !== null
+        ? `Uploading ${logoUpload.progress}%`
+        : t("account.uploading")}
     </Text>
   </View>
 ) : null}
@@ -664,6 +645,7 @@ export default function TrainerProfileScreen() {
                   {/* Edit icon */}
                   <Pressable
                     onPress={() => void pickAndUploadBrandLogo()}
+                    disabled={logoUpload.uploading}
                     style={({ pressed }) => ({
                       position: "absolute",
                       right: 10,
@@ -676,7 +658,8 @@ export default function TrainerProfileScreen() {
                       borderColor: "rgba(255,255,255,0.14)",
                       alignItems: "center",
                       justifyContent: "center",
-                      opacity: pressed ? 0.85 : 1,
+                      opacity:
+                        logoUpload.uploading ? 0.6 : pressed ? 0.85 : 1,
                     })}
                   >
                     <Ionicons name="pencil" size={16} color="white" />

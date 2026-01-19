@@ -289,6 +289,8 @@ export default function ClientCoachScreen() {
                                 source={{ uri: avatarUrl }}
                                 style={{ width: "100%", height: "100%" }}
                                 contentFit="cover"
+                                cachePolicy="none"
+                                transition={1000}
                               />
                             ) : initials ? (
                               <Text
@@ -337,6 +339,8 @@ export default function ClientCoachScreen() {
                           source={{ uri: data.trainerProfile.logoUrl }}
                           style={{ width: "100%", height: "100%" }}
                           contentFit="cover"
+                          cachePolicy="none"
+                          transition={1000}
                         />
                       </View>
                     ) : null}

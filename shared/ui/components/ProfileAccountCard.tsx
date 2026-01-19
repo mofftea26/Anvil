@@ -132,7 +132,7 @@ export function ProfileAccountCard({
                   style={{ width: "100%", height: "100%" }}
                   contentFit="cover"
                   cachePolicy="none"
-                  transition={250}
+                  transition={1000}
                 />
               ) : initials ? (
                 <Text

@@ -1,5 +1,4 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
-import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
@@ -9,6 +8,8 @@ import { AppInput } from "@/shared/components/AppInput";
 import { BottomSheetPicker } from "@/shared/components/BottomSheetPicker";
 import { KeyboardScreen } from "@/shared/components/KeyboardScreen";
 
+import { pickAndPrepareSquareImage } from "@/shared/media/imageUpload";
+import { useSupabaseImageUpload } from "@/shared/media/useSupabaseImageUpload";
 import { useAuthActions } from "@/features/auth/hooks/useAuthActions";
 import {
   useUpdateMyUserRowMutation,
@@ -28,8 +29,6 @@ import { countries } from "@/shared/constants/countries";
 import { useAppDispatch } from "@/shared/hooks/useAppDispatch";
 import { useAppSelector } from "@/shared/hooks/useAppSelector";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
-import { supabase } from "@/shared/supabase/client";
-import { uriToUint8ArrayJpeg } from "@/shared/supabase/imageUpload";
 import {
   appToast,
   Button,
@@ -75,9 +74,10 @@ export default function ClientProfileScreen() {
   const [upsertClientProfile] = useUpsertClientProfileMutation();
 
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [clearingAvatar, setClearingAvatar] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  const avatarUpload = useSupabaseImageUpload();
 
   const [showDatePicker, setShowDatePicker] = useState(false);
 
@@ -208,47 +208,28 @@ export default function ClientProfileScreen() {
   const pickAndUploadAvatar = async () => {
     if (!auth.userId) return;
     try {
-      setUploading(true);
-      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!perm.granted) return;
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"] as ImagePicker.MediaType[],
-        allowsEditing: true,
-        quality: 0.9,
-      });
-
-      if (result.canceled) return;
-      const uri = result.assets?.[0]?.uri;
-      if (!uri) return;
-
-      const { arrayBuffer, contentType } = await uriToUint8ArrayJpeg(uri);
       const path = `${auth.userId}/avatar.jpg`;
+      const prepared = await pickAndPrepareSquareImage();
+      if (!prepared) return;
 
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(path, arrayBuffer, { upsert: true, contentType });
-
-      if (uploadError) {
-        appToast.error(uploadError.message);
-        return;
-      }
-
-      const { data } = supabase.storage.from("avatars").getPublicUrl(path);
-      const publicUrl = data.publicUrl;
+      const publicUrl = await avatarUpload.uploadImage({
+        bucket: "avatars",
+        path,
+        fileUri: prepared.uri,
+        contentType: prepared.mimeType,
+        upsert: true,
+      });
 
       await updateMyUserRow({
         userId: auth.userId,
         payload: { avatarUrl: publicUrl },
       }).unwrap();
 
-      setForm((p) => ({ ...p, avatarUrl: publicUrl }));
+      setForm((p) => ({ ...p, avatarUrl: `${publicUrl}?t=${Date.now()}` }));
       await refetch();
       appToast.success(t("profile.toasts.saved"));
     } catch (e: any) {
       appToast.error(e?.message ?? t("auth.errors.generic"));
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -432,7 +413,13 @@ export default function ClientProfileScreen() {
               })
             }
             clearLabel={t("profile.actions.clearPhoto")}
-            disabled={uploading || clearingAvatar}
+            disabled={avatarUpload.uploading || clearingAvatar}
+            isUploading={avatarUpload.uploading}
+            uploadLabel={
+              avatarUpload.progress !== null
+                ? `Uploading ${avatarUpload.progress}%`
+                : "Uploading…"
+            }
           />
 
           {/* Client info */}
