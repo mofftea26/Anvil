@@ -1,26 +1,9 @@
 import React from "react";
-import { StyleSheet, View } from "react-native";
 
-import { Text, useTheme } from "@/shared/ui";
-import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
+import { LibraryPlaceholderView } from "@/features/library/components/shared/LibraryPlaceholderView";
+import { useExercises } from "@/features/library/hooks/exercises/useExercises";
 
 export default function ExercisesScreen() {
-  const { t } = useAppTranslation();
-  const theme = useTheme();
-
-  return (
-    <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
-      <Text style={[styles.title, { color: theme.colors.text }]}>
-        {t("library.exercises")}
-      </Text>
-      <Text style={{ color: theme.colors.textMuted }}>
-        {t("library.exercisesScreen.subtitle")}
-      </Text>
-    </View>
-  );
+  const { title, subtitle } = useExercises();
+  return <LibraryPlaceholderView title={title} subtitle={subtitle} />;
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1, padding: 16, gap: 8 },
-  title: { fontSize: 20, fontWeight: "700" },
-});

@@ -1,17 +1,25 @@
-import { useCallback, useMemo, useState } from "react";
+import { appToast } from "@/shared/ui";
+import { useCallback, useMemo } from "react";
 import {
-  useSendPasswordResetMutation,
-  useSignInWithMagicLinkMutation,
-  useSignInWithPasswordMutation,
-  useSignOutMutation,
-  useSignUpWithPasswordMutation,
-  useUpdatePasswordMutation,
+    useSendPasswordResetMutation,
+    useSignInWithMagicLinkMutation,
+    useSignInWithPasswordMutation,
+    useSignOutMutation,
+    useSignUpWithPasswordMutation,
+    useUpdatePasswordMutation,
 } from "../api/authApiSlice";
+
+function getErrorMessage(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  if (e != null && typeof e === "object" && "message" in e) {
+    const m = (e as { message?: unknown }).message;
+    if (typeof m === "string") return m;
+  }
+  return "Unknown error";
+}
 
 type Result = {
   isBusy: boolean;
-  errorMessage: string | null;
-  clearError: () => void;
 
   doSignInPassword: (email: string, password: string) => Promise<void>;
   doSignInMagic: (email: string) => Promise<void>;
@@ -22,7 +30,6 @@ type Result = {
 };
 
 export function useAuthActions(): Result {
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [signInPassword, signInPasswordState] = useSignInWithPasswordMutation();
   const [signInMagic, signInMagicState] = useSignInWithMagicLinkMutation();
   const [signUp, signUpState] = useSignUpWithPasswordMutation();
@@ -48,14 +55,11 @@ export function useAuthActions(): Result {
     ]
   );
 
-  const clearError = useCallback(() => setErrorMessage(null), []);
-
   const wrap = useCallback(async (fn: () => Promise<unknown>) => {
-    setErrorMessage(null);
     try {
       await fn();
     } catch (e) {
-      setErrorMessage(e instanceof Error ? e.message : "Unknown error");
+      appToast.error(getErrorMessage(e));
       throw e;
     }
   }, []);
@@ -91,8 +95,6 @@ export function useAuthActions(): Result {
 
   return {
     isBusy,
-    errorMessage,
-    clearError,
     doSignInPassword,
     doSignInMagic,
     doSignUp,

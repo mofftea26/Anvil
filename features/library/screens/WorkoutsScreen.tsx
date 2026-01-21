@@ -1,57 +1,44 @@
-import { router } from "expo-router";
-import React from "react";
-import { Pressable, RefreshControl, ScrollView, View } from "react-native";
-
-import { useAppSelector } from "@/shared/hooks/useAppSelector";
-import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
-import { Button, Card, LoadingSpinner, StickyHeader, Text, useTheme, VStack } from "@/shared/ui";
 import { Ionicons } from "@expo/vector-icons";
-import { usePublishedWorkouts } from "../hooks/usePublishedWorkouts";
+import React from "react";
+import { RefreshControl, ScrollView, View } from "react-native";
 
-function formatShortDate(iso: string) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  return new Intl.DateTimeFormat(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-  }).format(d);
-}
+import { WorkoutRowCard } from "@/features/library/components/workouts/WorkoutRowCard";
+import { useWorkouts } from "@/features/library/hooks/workouts/useWorkouts";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
+import {
+    Button,
+    Card,
+    LoadingSpinner,
+    StickyHeader,
+    Text,
+    useTheme,
+    VStack,
+} from "@/shared/ui";
 
 export default function WorkoutsScreen() {
   const { t } = useAppTranslation();
   const theme = useTheme();
-  const auth = useAppSelector((s) => s.auth);
-  const trainerId = auth.userId ?? "";
-
-  const { rows, isLoading, error, refetch } = usePublishedWorkouts(trainerId);
-  const [refreshing, setRefreshing] = React.useState(false);
-
-  const onRefresh = React.useCallback(async () => {
-    try {
-      setRefreshing(true);
-      await refetch();
-    } finally {
-      setRefreshing(false);
-    }
-  }, [refetch]);
+  const {
+    rows,
+    isLoading,
+    error,
+    refreshing,
+    onRefresh,
+    onAddWorkout,
+    onOpenWorkout,
+  } = useWorkouts();
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <StickyHeader
         title={t("library.workouts", "Workouts")}
         showBackButton
-
         rightButton={{
-    icon: (
-            <Ionicons
-              name="add-circle-outline"
-              size={22}
-              color={theme.colors.text}
-            />
-          ),  
+          icon: (
+            <Ionicons name="add-circle-outline" size={22} color={theme.colors.text} />
+          ),
           variant: "icon",
-          onPress: () => router.push("/(trainer)/library/workout-builder/new"),
+          onPress: onAddWorkout,
         }}
       />
 
@@ -78,32 +65,19 @@ export default function WorkoutsScreen() {
           <Card>
             <VStack style={{ gap: theme.spacing.sm }}>
               <Text weight="bold">{t("library.workoutsList.empty")}</Text>
-              <Button onPress={() => router.push("/(trainer)/library/workout-builder/new")}>
-                {t("common.new")}
-              </Button>
+              <Button onPress={onAddWorkout}>{t("common.new")}</Button>
             </VStack>
           </Card>
         ) : (
           <VStack style={{ gap: theme.spacing.md }}>
             {rows.map((w) => (
-              <Pressable
+              <WorkoutRowCard
                 key={w.id}
-                onPress={() =>
-                  router.push(`/(trainer)/library/workout-builder/${w.id}` as any)
-                }
-                style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}
-              >
-                <Card>
-                  <VStack style={{ gap: 6 }}>
-                    <Text weight="bold" numberOfLines={1}>
-                      {w.title || t("builder.workoutDetails.defaultTitle")}
-                    </Text>
-                    <Text muted>
-                      {t("library.workoutsList.updatedAt")} {formatShortDate(w.updatedAt)}
-                    </Text>
-                  </VStack>
-                </Card>
-              </Pressable>
+                workout={w}
+                updatedAtLabel={t("library.workoutsList.updatedAt")}
+                defaultTitle={t("builder.workoutDetails.defaultTitle")}
+                onPress={() => onOpenWorkout(w.id)}
+              />
             ))}
           </VStack>
         )}

@@ -49,6 +49,32 @@ export function formatDatePretty(iso: string) {
   }).format(d);
 }
 
+export function formatCheckIn(iso: string, t: (k: string) => string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+
+  const now = new Date();
+  const startOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  );
+  const startOfTarget = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diffDays = Math.round(
+    (startOfTarget.getTime() - startOfToday.getTime()) / 86400000
+  );
+
+  if (diffDays === 0) return t("common.today");
+  if (diffDays === 1) return t("common.tomorrow");
+  if (diffDays === -1) return t("common.yesterday");
+
+  return new Intl.DateTimeFormat(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  }).format(d);
+}
+
 function hashStringToInt(input: string): number {
   let h = 0;
   for (let i = 0; i < input.length; i++) {

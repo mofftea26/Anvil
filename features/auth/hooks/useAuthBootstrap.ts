@@ -8,9 +8,6 @@ import { useLazyGetUserRoleQuery } from "../api/authApiSlice";
 import { authActions } from "../store/authSlice";
 
 function parseUrl(url: string) {
-  // Supports:
-  // - PKCE: ?code=...
-  // - implicit: #access_token=...&refresh_token=...
   const parsed = Linking.parse(url);
   const query = (parsed.queryParams ?? {}) as Record<
     string,
@@ -19,7 +16,6 @@ function parseUrl(url: string) {
 
   const code = typeof query.code === "string" ? query.code : undefined;
 
-  // Hash params aren't always in queryParams; parse manually if needed:
   const hash = url.split("#")[1] ?? "";
   const hashParams = new URLSearchParams(hash);
   const access_token = hashParams.get("access_token") ?? undefined;

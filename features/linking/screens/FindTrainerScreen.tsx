@@ -1,22 +1,12 @@
 import { router } from "expo-router";
-import React from "react";
 import { RefreshControl, View } from "react-native";
 
-import {
-  useCreateTrainerRequestMutation,
-  useGetClientRequestsQuery,
-} from "@/features/linking/api/linkingApiSlice";
-import { AppInput } from "@/shared/components/AppInput";
-import { KeyboardScreen } from "@/shared/components/KeyboardScreen";
-import { useAppSelector } from "@/shared/hooks/useAppSelector";
+import { FindTrainerForm } from "@/features/linking/components/find-trainer/FindTrainerForm";
+import { FindTrainerRequestsList } from "@/features/linking/components/find-trainer/FindTrainerRequestsList";
+import { useFindTrainer } from "@/features/linking/hooks/find-trainer/useFindTrainer";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import {
-  appToast,
-  Button,
-  Card,
-  Divider,
-  HStack,
-  LoadingSpinner,
+  KeyboardScreen,
   StickyHeader,
   Text,
   useStickyHeaderHeight,
@@ -27,27 +17,20 @@ import {
 export default function FindTrainerScreen() {
   const { t } = useAppTranslation();
   const theme = useTheme();
-  const auth = useAppSelector((s) => s.auth);
-  const clientId = auth.userId ?? "";
 
-  const [trainerEmail, setTrainerEmail] = React.useState("");
-  const [message, setMessage] = React.useState("");
-  const [createReq, createReqState] = useCreateTrainerRequestMutation();
-
-  const { data, isLoading, error, refetch } = useGetClientRequestsQuery(
-    { clientId },
-    { skip: !clientId }
-  );
-  const [refreshing, setRefreshing] = React.useState(false);
-
-  const onRefresh = React.useCallback(async () => {
-    try {
-      setRefreshing(true);
-      await refetch();
-    } finally {
-      setRefreshing(false);
-    }
-  }, [refetch]);
+  const {
+    trainerEmail,
+    setTrainerEmail,
+    message,
+    setMessage,
+    onSubmit,
+    createReqState,
+    data,
+    isLoading,
+    error,
+    onRefresh,
+    refreshing,
+  } = useFindTrainer();
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -74,74 +57,21 @@ export default function FindTrainerScreen() {
         <VStack style={{ gap: theme.spacing.lg }}>
           {error ? (
             <Text color={theme.colors.danger}>
-              {(error as any)?.message ?? t("auth.errors.generic")}
+              {(error as { message?: string })?.message ??
+                t("auth.errors.generic")}
             </Text>
           ) : null}
 
-          <Card>
-            <VStack style={{ gap: theme.spacing.md }}>
-              <AppInput
-                label={t("linking.client.trainerEmail")}
-                value={trainerEmail}
-                onChangeText={setTrainerEmail}
-              placeholder={t("common.placeholders.email")}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-              <AppInput
-                label={t("linking.client.message")}
-                value={message}
-                onChangeText={setMessage}
-                multiline
-                autoGrow
-              />
-              <Button
-                isLoading={createReqState.isLoading}
-                onPress={async () => {
-                  try {
-                    await createReq({
-                      trainerEmail: trainerEmail.trim(),
-                      message: message.trim() || null,
-                    }).unwrap();
-                    appToast.success(t("linking.client.sendRequest"));
-                    setMessage("");
-                    await refetch();
-                  } catch (e: any) {
-                    appToast.error(e?.message ?? t("auth.errors.generic"));
-                  }
-                }}
-              >
-                {t("linking.client.sendRequest")}
-              </Button>
-            </VStack>
-          </Card>
+          <FindTrainerForm
+            trainerEmail={trainerEmail}
+            onTrainerEmailChange={setTrainerEmail}
+            message={message}
+            onMessageChange={setMessage}
+            onSubmit={onSubmit}
+            isLoading={createReqState.isLoading}
+          />
 
-          <Card>
-            <VStack style={{ gap: 10 }}>
-              <Text weight="bold">{t("linking.requests.title")}</Text>
-              <Divider opacity={0.6} />
-
-              {isLoading ? <LoadingSpinner /> : null}
-
-              {!isLoading && (!data?.length || data.length === 0) ? (
-                <Text muted>{t("linking.requests.empty")}</Text>
-              ) : (
-                <VStack style={{ gap: 10 }}>
-                  {data?.map((r) => (
-                    <Card key={r.id} background="surface2">
-                      <VStack style={{ gap: 6 }}>
-                        <HStack align="center" justify="space-between">
-                          <Text weight="bold">{r.trainerEmail}</Text>
-                          <Text muted>{r.status}</Text>
-                        </HStack>
-                        {r.message ? <Text muted>{r.message}</Text> : null}
-                      </VStack>
-                    </Card>
-                  ))}
-                </VStack>
-              )}
-            </VStack>
-          </Card>
+          <FindTrainerRequestsList requests={data} isLoading={isLoading} />
 
           <View style={{ height: 10 }} />
         </VStack>

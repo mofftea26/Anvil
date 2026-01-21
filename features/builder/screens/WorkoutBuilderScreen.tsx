@@ -285,10 +285,6 @@ export function WorkoutBuilderScreen({ mode }: Props) {
   );
 }
 
-function MOCK_LIBRARY_EXERCISE_BY_ID(id: string) {
-  return MOCK_LIBRARY_EXERCISES.find((x) => x.id === id) ?? null;
-}
-
 function cryptoRandomId() {
   return `id_${Math.random().toString(16).slice(2)}_${Date.now()}`;
 }
