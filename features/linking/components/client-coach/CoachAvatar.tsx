@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { View } from "react-native";
 
@@ -6,7 +5,7 @@ import {
   getInitials,
   pickAvatarBg,
 } from "@/features/linking/utils/coachFormatting";
-import { Text, useTheme } from "@/shared/ui";
+import { Icon, Text, useTheme } from "@/shared/ui";
 
 type CoachAvatarProps = {
   avatarUrl?: string | null;
@@ -53,7 +52,7 @@ export function CoachAvatar({
           {initials}
         </Text>
       ) : (
-        <Ionicons name="person" size={20} color="white" />
+        <Icon name="person" size={20} color="white" />
       )}
     </View>
   );

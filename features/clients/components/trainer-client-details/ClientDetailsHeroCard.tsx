@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
@@ -6,7 +5,7 @@ import { View } from "react-native";
 
 import { getInitials, pickAvatarBg } from "@/features/clients/utils/clientUi";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
-import { Card, Divider, HStack, Text, VStack } from "@/shared/ui";
+import { Card, Divider, HStack, Icon, Text, VStack } from "@/shared/ui";
 
 type ClientDetailsHeroCardProps = {
   clientUser: {
@@ -92,7 +91,7 @@ export function ClientDetailsHeroCard({
                     {initials}
                   </Text>
                 ) : (
-                  <Ionicons name="person" size={20} color="white" />
+                  <Icon name="person" size={20} color="white" />
                 )}
               </View>
 

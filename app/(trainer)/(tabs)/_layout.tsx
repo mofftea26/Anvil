@@ -1,8 +1,7 @@
-import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
-import { useTheme } from "@/shared/ui";
-import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import React from "react";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
+import { Icon, useTheme } from "@/shared/ui";
 
 export default function TrainerTabsLayout() {
   const theme = useTheme();
@@ -35,10 +34,11 @@ export default function TrainerTabsLayout() {
         options={{
           title: t("tabs.dashboard"),
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
+            <Icon
               name={focused ? "analytics" : "analytics-outline"}
               size={size}
               color={color}
+              strokeWidth={focused ? 2 : 1.5}
             />
           ),
         }}
@@ -50,10 +50,11 @@ export default function TrainerTabsLayout() {
         options={{
           title: t("tabs.library"), // add translation key if missing
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
+            <Icon
               name={focused ? "layers" : "layers-outline"}
               size={size}
               color={color}
+              strokeWidth={focused ? 2 : 1.5}
             />
           ),
         }}
@@ -64,10 +65,11 @@ export default function TrainerTabsLayout() {
         options={{
           title: t("tabs.clients"),
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
+            <Icon
               name={focused ? "people" : "people-outline"}
               size={size}
               color={color}
+              strokeWidth={focused ? 2 : 1.5}
             />
           ),
         }}
@@ -78,10 +80,11 @@ export default function TrainerTabsLayout() {
         options={{
           title: t("tabs.profile"),
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
+            <Icon
               name={focused ? "person" : "person-outline"}
               size={size}
               color={color}
+              strokeWidth={focused ? 2 : 1.5}
             />
           ),
         }}

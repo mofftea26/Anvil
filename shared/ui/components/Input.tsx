@@ -1,9 +1,9 @@
-import { Ionicons } from "@expo/vector-icons";
 import React, { useMemo, useState } from "react";
 import type { TextInputProps, ViewStyle } from "react-native";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
 import { useAppTranslation } from "../../i18n/useAppTranslation";
 import { useTheme } from "../theme";
+import { Icon } from "./Icon";
 import { Text } from "./Text";
 
 export type InputProps = {
@@ -99,10 +99,11 @@ export function Input({
             hitSlop={10}
             style={styles.iconBtn}
           >
-            <Ionicons
+            <Icon
               name={visible ? "eye-off-outline" : "eye-outline"}
               size={20}
               color={theme.colors.textMuted}
+              strokeWidth={1.5}
             />
           </Pressable>
         ) : null}

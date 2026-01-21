@@ -113,6 +113,16 @@
     }
   },
   "linking": {
+    "findTrainer": {
+      "byEmail": "بالبريد",
+      "redeemCode": "استخدام رمز",
+      "scanQR": "مسح رمز QR",
+      "orEnterManually": "أو إدخال الرمز يدوياً",
+      "redeemSuccess": "تم استخدام الرمز. أنت الآن مرتبط بمدربك.",
+      "cameraPermissionRequired": "مطلوب الوصول للكاميرا لمسح رموز QR.",
+      "grantCameraPermission": "السماح بالكاميرا",
+      "pointAtQR": "وجّه الكاميرا نحو رمز QR الخاص بالمدرب"
+    },
     "clients": {
       "title": "العملاء",
       "subtitle": "إدارة عملائك وتسجيلات المتابعة.",

@@ -1,10 +1,10 @@
-import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React from "react";
 import { ActivityIndicator, Pressable, View } from "react-native";
 import { HStack, VStack } from "../layout/Stack";
 import { useTheme } from "../theme";
 import { Card } from "./Card";
+import { Icon } from "./Icon";
 import { Text } from "./Text";
 
 function getInitials(firstName: string, lastName: string): string | null {
@@ -142,7 +142,7 @@ export function ProfileAccountCard({
                   {initials}
                 </Text>
               ) : (
-                <Ionicons name="person" size={26} color="white" />
+                <Icon name="person" size={26} color="white" strokeWidth={1.5} />
               )}
 
               {/* NEW: spinner overlay */}
@@ -183,9 +183,9 @@ export function ProfileAccountCard({
               }}
             >
               {isUploading ? (
-                <Ionicons name="cloud-upload-outline" size={14} color="white" />
+                <Icon name="cloud-upload-outline" size={14} color="white" strokeWidth={1.5} />
               ) : (
-                <Ionicons name="create-outline" size={14} color="white" />
+                <Icon name="create-outline" size={14} color="white" strokeWidth={1.5} />
               )}
             </View>
           </Pressable>

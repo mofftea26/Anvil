@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import React, { PropsWithChildren, useMemo } from "react";
 import {
   StyleSheet,
@@ -11,6 +10,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ToastManager from "toastify-react-native";
 
+import { Icon } from "../components/Icon";
 import { useTheme } from "../theme";
 
 type ToastType = "success" | "error" | "info" | "warn" | "default";
@@ -72,11 +72,11 @@ function ToastCard(props: ToastCardProps) {
         styleProp as StyleProp<ViewStyle>,
       ]}
     >
-      <Ionicons
+      <Icon
         name={iconName}
         size={22}
         color={accentColor}
-        style={styles.icon}
+        strokeWidth={1.5}
       />
       <View style={styles.textWrap}>
         {text1 ? (
@@ -117,10 +117,11 @@ function ToastCard(props: ToastCardProps) {
           style={styles.close}
           activeOpacity={0.7}
         >
-          <Ionicons
+          <Icon
             name="close"
             size={20}
             color={theme.colors.textMuted}
+            strokeWidth={1.5}
           />
         </TouchableOpacity>
       ) : null}

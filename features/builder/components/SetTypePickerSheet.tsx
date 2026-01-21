@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import React, { useMemo } from "react";
 import {
     Modal,
@@ -11,7 +10,7 @@ import {
 import type { SetTypeRow } from "@/features/library/types/setTypes";
 import { getSetTypeIconName } from "../utils/setTypeIcons";
 
-import { Text, useTheme } from "@/shared/ui";
+import { Icon, Text, useTheme } from "@/shared/ui";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 
 type Props = {
@@ -67,7 +66,7 @@ export function SetTypePickerSheet({
                 { backgroundColor: theme.colors.surface3 },
               ]}
             >
-              <Ionicons name="close" size={18} color={theme.colors.text} />
+              <Icon name="close" size={18} color={theme.colors.text} />
             </Pressable>
           </View>
 
@@ -87,7 +86,7 @@ export function SetTypePickerSheet({
               ]}
             >
               <View style={styles.iconWrap}>
-                <Ionicons name="flash-outline" size={18} color="white" />
+                <Icon name="flash-outline" size={18} color="white" />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontWeight: "900" }}>
@@ -99,7 +98,7 @@ export function SetTypePickerSheet({
               </View>
 
               {selectedId === null ? (
-                <Ionicons
+                <Icon
                   name="checkmark-circle"
                   size={20}
                   color={theme.colors.accent}
@@ -132,7 +131,7 @@ export function SetTypePickerSheet({
                         ]}
                       >
                         <View style={styles.iconWrap}>
-                          <Ionicons name={icon} size={18} color="white" />
+                          <Icon name={icon} size={18} color="white" />
                         </View>
 
                         <Text style={{ flex: 1, fontWeight: "900" }}>
@@ -140,13 +139,13 @@ export function SetTypePickerSheet({
                         </Text>
 
                         {isSelected ? (
-                          <Ionicons
+                          <Icon
                             name="checkmark-circle"
                             size={20}
                             color={theme.colors.accent}
                           />
                         ) : (
-                          <Ionicons
+                          <Icon
                             name="chevron-forward"
                             size={18}
                             color="rgba(255,255,255,0.55)"

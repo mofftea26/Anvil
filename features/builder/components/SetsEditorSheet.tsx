@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import React, { useMemo, useState } from "react";
 import {
     Alert,
@@ -15,7 +14,7 @@ import type { ExerciseSet, SeriesExercise } from "../types";
 import { getSetTypeIconName } from "../utils/setTypeIcons";
 import { SetTypePickerSheet } from "./SetTypePickerSheet";
 
-import { Button, HStack, Text, useTheme } from "@/shared/ui";
+import { Button, HStack, Icon, Text, useTheme } from "@/shared/ui";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 
 type Props = {
@@ -139,7 +138,7 @@ export function SetsEditorSheet({
                 { backgroundColor: theme.colors.surface3 },
               ]}
             >
-              <Ionicons name="close" size={18} color={theme.colors.text} />
+              <Icon name="close" size={18} color={theme.colors.text} />
             </Pressable>
           </View>
 
@@ -152,7 +151,7 @@ export function SetsEditorSheet({
                 </Text>
 
                 <Pressable onPress={openTempoInfo} style={styles.infoBtn}>
-                  <Ionicons
+                  <Icon
                     name="information-circle"
                     size={18}
                     color="white"
@@ -258,14 +257,14 @@ export function SetsEditorSheet({
                       }}
                       style={styles.typeChip}
                     >
-                      <Ionicons name={icon} size={14} color="white" />
+                      <Icon name={icon} size={14} color="white" />
                       <Text
                         style={{ color: "white", fontWeight: "900" }}
                         numberOfLines={1}
                       >
                         {st?.title ?? t("builder.setsEditor.setTypeFallback")}
                       </Text>
-                      <Ionicons
+                      <Icon
                         name="chevron-down"
                         size={14}
                         color="rgba(255,255,255,0.7)"
@@ -302,7 +301,7 @@ export function SetsEditorSheet({
                       onPress={() => removeSet(s.id)}
                       style={styles.trash}
                     >
-                      <Ionicons
+                      <Icon
                         name="trash"
                         size={16}
                         color="rgba(255,255,255,0.9)"
@@ -378,7 +377,7 @@ function IconInput({
 }) {
   return (
     <View style={styles.iconInputWrap}>
-      <Ionicons name={icon} size={14} color="white" />
+      <Icon name={icon} size={14} color="white" />
       <TextInput
         value={value}
         onChangeText={(v) => onChange(v.replace(/[^\d]/g, ""))}

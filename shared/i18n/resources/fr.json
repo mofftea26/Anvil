@@ -113,6 +113,16 @@
     }
   },
   "linking": {
+    "findTrainer": {
+      "byEmail": "Par email",
+      "redeemCode": "Utiliser un code",
+      "scanQR": "Scanner le QR",
+      "orEnterManually": "ou saisir le code",
+      "redeemSuccess": "Code validé. Vous êtes maintenant lié à votre coach.",
+      "cameraPermissionRequired": "L’accès à la caméra est nécessaire pour scanner les QR.",
+      "grantCameraPermission": "Autoriser la caméra",
+      "pointAtQR": "Visez le QR du coach"
+    },
     "clients": {
       "title": "Clients",
       "subtitle": "Gérez vos clients et check-ins.",

@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
@@ -10,7 +9,7 @@ import {
   pickAvatarBg,
 } from "@/features/clients/utils/clientUi";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
-import { Button, Card, HStack, Text, useTheme, VStack } from "@/shared/ui";
+import { Button, Card, HStack, Icon, Text, useTheme, VStack } from "@/shared/ui";
 
 export type TrainerClientRow = {
   id: string;
@@ -138,7 +137,7 @@ export function TrainerClientCard({
                     {initials}
                   </Text>
                 ) : (
-                  <Ionicons name="person" size={20} color="white" />
+                  <Icon name="person" size={20} color="white" />
                 )}
               </View>
               <VStack style={{ flex: 1 }}>

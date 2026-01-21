@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { View } from "react-native";
 
@@ -6,7 +5,7 @@ import type { TrainerProfileForm } from "@/features/profile/hooks/trainer-profil
 import { AppInput } from "@/shared/components/AppInput";
 import { PhoneInput } from "@/shared/components/PhoneInput";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
-import { Button, Card, Chip, Text, useAppAlert, useTheme, VStack, HStack } from "@/shared/ui";
+import { Button, Card, Chip, Icon, Text, useAppAlert, useTheme, VStack, HStack } from "@/shared/ui";
 
 type TrainerFormCardProps = {
   form: TrainerProfileForm;
@@ -89,7 +88,7 @@ export function TrainerFormCard({ form, setForm }: TrainerFormCardProps) {
                 });
               }}
               left={
-                <Ionicons
+                <Icon
                   name="add-circle-outline"
                   size={22}
                   color={theme.colors.text}

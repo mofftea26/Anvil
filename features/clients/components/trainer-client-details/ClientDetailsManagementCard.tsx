@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import React from "react";
 import { Platform } from "react-native";
@@ -7,7 +6,7 @@ import type { ManagementForm } from "@/features/clients/hooks/trainer-client-det
 import { AppInput } from "@/shared/components/AppInput";
 import { BottomSheetPicker } from "@/shared/components/BottomSheetPicker";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
-import { Button, Card, Text, useTheme, VStack, HStack } from "@/shared/ui";
+import { Button, Card, Icon, Text, useTheme, VStack, HStack } from "@/shared/ui";
 
 type ClientDetailsManagementCardProps = {
   form: ManagementForm;
@@ -92,7 +91,7 @@ export function ClientDetailsManagementCard({
                 height={40}
                 onPress={() => setShowDatePicker(true)}
                 left={
-                  <Ionicons
+                  <Icon
                     name="calendar-outline"
                     size={24}
                     color={theme.colors.accent}

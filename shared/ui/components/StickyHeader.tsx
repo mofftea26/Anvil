@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React from "react";
 import { StyleSheet, View } from "react-native";
@@ -6,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HStack } from "../layout/Stack";
 import { useTheme } from "../theme";
 import { Button } from "./Button";
+import { Icon } from "./Icon";
 import { Text } from "./Text";
 
 export function useStickyHeaderHeight(options?: { subtitle?: boolean }): number {
@@ -49,7 +49,7 @@ export function StickyHeader({
         variant: "ghost" as const,
         isLoading: false,
         icon: (
-          <Ionicons name="chevron-back" size={22} color={theme.colors.text} />
+          <Icon name="chevron-back" size={22} color={theme.colors.text} />
         ),
       }
     : leftButton;

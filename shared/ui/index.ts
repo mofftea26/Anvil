@@ -11,6 +11,7 @@ export { Card } from "./components/Card";
 export { Chip } from "./components/Chip";
 export { ColorPickerField } from "./components/ColorPickerField";
 export { Divider } from "./components/Divider";
+export { Icon } from "./components/Icon";
 export { IconButton } from "./components/IconButton";
 export type { IconButtonProps } from "./components/IconButton";
 export { ImagePickerField } from "./components/ImagePickerField";

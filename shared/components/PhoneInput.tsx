@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import {
   AsYouType,
   getCountryCallingCode,
@@ -22,6 +21,7 @@ import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import {
   Button,
   Card,
+  Icon,
   Text,
   useTheme,
 } from "@/shared/ui";
@@ -174,7 +174,7 @@ export function PhoneInput({
           <Text style={{ color: theme.colors.text }}>
             +{dialCode}
           </Text>
-          <Ionicons
+          <Icon
             name="chevron-down"
             size={16}
             color={theme.colors.textMuted}
@@ -243,7 +243,7 @@ export function PhoneInput({
                 }}
                 height={40}
                 left={
-                  <Ionicons
+                  <Icon
                     name="close-sharp"
                     size={24}
                     color={theme.colors.accent}

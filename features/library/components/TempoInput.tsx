@@ -1,5 +1,4 @@
-import { Input, Text, useAppAlert, useTheme } from "@/shared/ui";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon, Input, Text, useAppAlert, useTheme } from "@/shared/ui";
 import React, { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
@@ -66,7 +65,7 @@ export function TempoInput({
   return (
     <View style={styles.wrap}>
       <View style={styles.left}>
-        <Ionicons name="speedometer" size={16} color={theme.colors.textMuted} />
+        <Icon name="speedometer" size={16} color={theme.colors.textMuted} />
         <Text style={styles.label}>{t("common.tempo")}</Text>
       </View>
 
@@ -109,7 +108,7 @@ export function TempoInput({
         />
 
         <Pressable onPress={showInfo} style={styles.infoBtn}>
-          <Ionicons name="information-circle" size={18} color={theme.colors.accent2} />
+          <Icon name="information-circle" size={18} color={theme.colors.accent2} />
         </Pressable>
       </View>
     </View>

@@ -18,10 +18,7 @@ type TrainerClientWithDetails = TrainerClientLink & {
         UserRow,
         "id" | "email" | "firstName" | "lastName" | "avatarUrl"
       > & {
-        profile?: Pick<
-          ClientProfile,
-          "target" | "heightCm" | "weightKg"
-        > | null;
+        profile?: Pick<ClientProfile, "target" | "heightCm" | "weightKg"> | null;
       })
     | null;
   management?: TrainerClientManagement | null;
@@ -29,13 +26,26 @@ type TrainerClientWithDetails = TrainerClientLink & {
 
 type CoachDetails = {
   link: TrainerClientLink;
-  trainer: Pick<
-    UserRow,
-    "id" | "email" | "firstName" | "lastName" | "avatarUrl"
-  > | null;
+  trainer: Pick<UserRow, "id" | "email" | "firstName" | "lastName" | "avatarUrl"> | null;
   trainerProfile: TrainerProfile | null;
   management: TrainerClientManagement | null;
 };
+
+
+
+export type TrainerRequestsInboxRow = {
+  id: string;
+  clientId: string;
+  trainerEmail: string;
+  status: "pending" | "accepted" | "declined" | "cancelled" | string;
+  message: string | null;
+  createdAt: string;
+  resolvedAt: string | null;
+  clientFirstName: string | null;
+  clientLastName: string | null;
+  clientAvatarUrl: string | null;
+};
+
 
 export const linkingApiSlice = api.injectEndpoints({
   overrideExisting: true,
@@ -89,8 +99,7 @@ export const linkingApiSlice = api.injectEndpoints({
             ),
         ]);
 
-        if (usersRes.error)
-          return { error: { message: usersRes.error.message } };
+        if (usersRes.error) return { error: { message: usersRes.error.message } };
         if (profilesRes.error)
           return { error: { message: profilesRes.error.message } };
         if ((managementRes as any).error)
@@ -210,13 +219,10 @@ export const linkingApiSlice = api.injectEndpoints({
       { clientId: string; nextCheckInAt: string | null }
     >({
       async queryFn({ clientId, nextCheckInAt }) {
-        const { data, error } = await supabase.rpc(
-          "anvil_mark_client_checkin",
-          {
-            p_client_id: clientId,
-            p_next_check_in_at: nextCheckInAt,
-          }
-        );
+        const { data, error } = await supabase.rpc("anvil_mark_client_checkin", {
+          p_client_id: clientId,
+          p_next_check_in_at: nextCheckInAt,
+        });
         if (error) return { error: { message: error.message } };
         return { data: data as TrainerClientManagement };
       },
@@ -225,12 +231,9 @@ export const linkingApiSlice = api.injectEndpoints({
 
     deleteArchivedClientLink: build.mutation<null, { clientId: string }>({
       async queryFn({ clientId }) {
-        const { error } = await supabase.rpc(
-          "anvil_delete_archived_client_link",
-          {
-            p_client_id: clientId,
-          }
-        );
+        const { error } = await supabase.rpc("anvil_delete_archived_client_link", {
+          p_client_id: clientId,
+        });
         if (error) return { error: { message: error.message } };
         return { data: null };
       },
@@ -243,15 +246,11 @@ export const linkingApiSlice = api.injectEndpoints({
       { targetEmail?: string | null; expiresAt?: string | null }
     >({
       async queryFn({ targetEmail, expiresAt }) {
-        const { data, error } = await supabase.rpc(
-          "anvil_create_trainer_invite",
-          {
-            p_target_email: targetEmail ?? null,
-            p_expires_at: expiresAt ?? null,
-          }
-        );
+        const { data, error } = await supabase.rpc("anvil_create_trainer_invite", {
+          p_target_email: targetEmail ?? null,
+          p_expires_at: expiresAt ?? null,
+        });
         if (error) return { error: { message: error.message } };
-
         return { data: data as TrainerInvite };
       },
       invalidatesTags: ["TrainerInvites"],
@@ -269,9 +268,7 @@ export const linkingApiSlice = api.injectEndpoints({
         if (error) return { error: { message: error.message } };
         return { data: (data as TrainerInvite[]) ?? [] };
       },
-      providesTags: (_res, _err, arg) => [
-        { type: "TrainerInvites", id: arg.trainerId },
-      ],
+      providesTags: (_res, _err, arg) => [{ type: "TrainerInvites", id: arg.trainerId }],
     }),
 
     // ---------- Client: redeem invite ----------
@@ -292,13 +289,10 @@ export const linkingApiSlice = api.injectEndpoints({
       { trainerEmail: string; message?: string | null }
     >({
       async queryFn({ trainerEmail, message }) {
-        const { data, error } = await supabase.rpc(
-          "anvil_create_trainer_request",
-          {
-            p_trainer_email: trainerEmail,
-            p_message: message ?? null,
-          }
-        );
+        const { data, error } = await supabase.rpc("anvil_create_trainer_request", {
+          p_trainer_email: trainerEmail,
+          p_message: message ?? null,
+        });
         if (error) return { error: { message: error.message } };
         return { data: data as TrainerRequest };
       },
@@ -309,88 +303,73 @@ export const linkingApiSlice = api.injectEndpoints({
       async queryFn({ clientId }) {
         const { data, error } = await supabase
           .from("trainerRequests")
-          .select(
-            "id,clientId,trainerEmail,message,status,createdAt,resolvedAt"
-          )
+          .select("id,clientId,trainerEmail,message,status,createdAt,resolvedAt")
           .eq("clientId", clientId)
           .order("createdAt", { ascending: false });
         if (error) return { error: { message: error.message } };
         return { data: (data as TrainerRequest[]) ?? [] };
       },
-      providesTags: (_res, _err, arg) => [
-        { type: "TrainerRequests", id: arg.clientId },
-      ],
+      providesTags: (_res, _err, arg) => [{ type: "TrainerRequests", id: arg.clientId }],
     }),
 
-    cancelTrainerRequest: build.mutation<TrainerRequest, { requestId: string }>(
-      {
-        async queryFn({ requestId }) {
-          const { data, error } = await supabase.rpc(
-            "anvil_cancel_trainer_request",
-            {
-              p_request_id: requestId,
-            }
-          );
-          if (error) return { error: { message: error.message } };
-          return { data: data as TrainerRequest };
-        },
-        invalidatesTags: ["TrainerRequests"],
-      }
-    ),
-
-    // ---------- Trainer: requests inbox ----------
-    getTrainerRequestsInbox: build.query<
-      TrainerRequest[],
-      { trainerEmail: string }
-    >({
-      async queryFn({ trainerEmail }) {
-        const { data, error } = await supabase
-          .from("trainerRequests")
-          .select(
-            "id,clientId,trainerEmail,message,status,createdAt,resolvedAt"
-          )
-          .eq("trainerEmail", trainerEmail)
-          .order("createdAt", { ascending: false });
-        if (error) return { error: { message: error.message } };
-        return { data: (data as TrainerRequest[]) ?? [] };
-      },
-      providesTags: (_res, _err, arg) => [
-        { type: "TrainerRequests", id: arg.trainerEmail },
-      ],
-    }),
-
-    acceptTrainerRequest: build.mutation<
-      TrainerClientLink,
-      { requestId: string }
-    >({
+    cancelTrainerRequest: build.mutation<TrainerRequest, { requestId: string }>({
       async queryFn({ requestId }) {
-        const { data, error } = await supabase.rpc(
-          "anvil_accept_trainer_request",
-          {
-            p_request_id: requestId,
-          }
-        );
-        if (error) return { error: { message: error.message } };
-        return { data: data as TrainerClientLink };
-      },
-      invalidatesTags: ["TrainerRequests", "TrainerClients", "Coach"],
-    }),
-
-    declineTrainerRequest: build.mutation<
-      TrainerRequest,
-      { requestId: string }
-    >({
-      async queryFn({ requestId }) {
-        const { data, error } = await supabase.rpc(
-          "anvil_decline_trainer_request",
-          {
-            p_request_id: requestId,
-          }
-        );
+        const { data, error } = await supabase.rpc("anvil_cancel_trainer_request", {
+          p_request_id: requestId,
+        });
         if (error) return { error: { message: error.message } };
         return { data: data as TrainerRequest };
       },
-      invalidatesTags: ["TrainerRequests"],
+invalidatesTags: [{ type: "TrainerRequests", id: "inbox" }, "TrainerClients", "Coach"],
+    }),
+
+    // ---------- Trainer: requests inbox ----------
+    getTrainerRequestsInbox: build.query<TrainerRequestsInboxRow[], void>({
+      async queryFn() {
+        const { data, error } = await supabase.rpc("get_trainer_requests_inbox");
+        if (error) return { error: { message: error.message } };
+    
+        const rows = (data as any[]) ?? [];
+    
+        // return EXACTLY what the RPC returns (flat)
+        const mapped: TrainerRequestsInboxRow[] = rows.map((r) => ({
+          id: r.id,
+          clientId: r.clientId,
+          trainerEmail: r.trainerEmail,
+          status: r.status,
+          message: r.message ?? null,
+          createdAt: r.createdAt,
+          resolvedAt: r.resolvedAt ?? null,
+          clientFirstName: r.clientFirstName ?? null,
+          clientLastName: r.clientLastName ?? null,
+          clientAvatarUrl: r.clientAvatarUrl ?? null,
+        }));
+    
+        return { data: mapped };
+      },
+      providesTags: () => [{ type: "TrainerRequests", id: "inbox" }],
+    }),
+    
+    acceptTrainerRequest: build.mutation<TrainerClientLink, { requestId: string }>({
+      async queryFn({ requestId }) {
+        const { data, error } = await supabase.rpc("anvil_accept_trainer_request", {
+          p_request_id: requestId,
+        });
+        if (error) return { error: { message: error.message } };
+        return { data: data as TrainerClientLink };
+      },
+      invalidatesTags: [{ type: "TrainerRequests", id: "inbox" }, "TrainerClients", "Coach"],
+    }),
+
+    declineTrainerRequest: build.mutation<TrainerRequest, { requestId: string }>({
+      async queryFn({ requestId }) {
+        const { data, error } = await supabase.rpc("anvil_decline_trainer_request", {
+          p_request_id: requestId,
+        });
+        if (error) return { error: { message: error.message } };
+        return { data: data as TrainerRequest };
+      },
+      invalidatesTags: [{ type: "TrainerRequests", id: "inbox" }, "TrainerClients", "Coach"],
     }),
 
     // ---------- Client: my coach ----------
@@ -432,8 +411,7 @@ export const linkingApiSlice = api.injectEndpoints({
         ]);
 
         if (userRes.error) return { error: { message: userRes.error.message } };
-        if (profileRes.error)
-          return { error: { message: profileRes.error.message } };
+        if (profileRes.error) return { error: { message: profileRes.error.message } };
         if ((managementRes as any).error)
           return { error: { message: (managementRes as any).error.message } };
 
@@ -459,14 +437,11 @@ export const linkingApiSlice = api.injectEndpoints({
       }
     >({
       async queryFn({ trainerId, status, pauseReason }) {
-        const { error } = await supabase.rpc(
-          "anvil_client_set_relationship_status",
-          {
-            p_trainer_id: trainerId,
-            p_status: status,
-            p_pause_reason: pauseReason ?? null,
-          }
-        );
+        const { error } = await supabase.rpc("anvil_client_set_relationship_status", {
+          p_trainer_id: trainerId,
+          p_status: status,
+          p_pause_reason: pauseReason ?? null,
+        });
         if (error) return { error: { message: error.message } };
         return { data: null };
       },
@@ -500,13 +475,10 @@ export const linkingApiSlice = api.injectEndpoints({
           const accessToken = sessionRes.data?.session?.access_token ?? null;
           if (!accessToken) return { error: { message: "Not authenticated" } };
 
-          const { data, error } = await supabase.functions.invoke(
-            "anvil-create-client",
-            {
-              body: payload,
-              headers: { Authorization: `Bearer ${accessToken}` },
-            }
-          );
+          const { data, error } = await supabase.functions.invoke("anvil-create-client", {
+            body: payload,
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
 
           if (error) return { error: { message: error.message } };
           return { data: data ?? null };

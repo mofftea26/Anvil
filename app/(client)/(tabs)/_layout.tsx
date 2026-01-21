@@ -1,8 +1,7 @@
-import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import React from "react";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
-import { useTheme } from "@/shared/ui";
+import { Icon, useTheme } from "@/shared/ui";
 
 export default function ClientTabsLayout() {
   const theme = useTheme();
@@ -45,10 +44,11 @@ export default function ClientTabsLayout() {
         options={{
           title: t("tabs.dashboard"),
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
+            <Icon
               name={focused ? "grid" : "grid-outline"}
               size={size}
               color={color}
+              strokeWidth={focused ? 2 : 1.5}
             />
           ),
         }}
@@ -59,10 +59,11 @@ export default function ClientTabsLayout() {
         options={{
           title: t("tabs.coach"),
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
+            <Icon
               name={focused ? "barbell" : "barbell-outline"}
               size={size}
               color={color}
+              strokeWidth={focused ? 2 : 1.5}
             />
           ),
         }}
@@ -73,10 +74,11 @@ export default function ClientTabsLayout() {
         options={{
           title: t("tabs.profile"),
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
+            <Icon
               name={focused ? "person" : "person-outline"}
               size={size}
               color={color}
+              strokeWidth={focused ? 2 : 1.5}
             />
           ),
         }}

@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
 
@@ -6,13 +5,14 @@ import { WorkoutRowCard } from "@/features/library/components/workouts/WorkoutRo
 import { useWorkouts } from "@/features/library/hooks/workouts/useWorkouts";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import {
-    Button,
-    Card,
-    LoadingSpinner,
-    StickyHeader,
-    Text,
-    useTheme,
-    VStack,
+  Button,
+  Card,
+  Icon,
+  LoadingSpinner,
+  StickyHeader,
+  Text,
+  useTheme,
+  VStack,
 } from "@/shared/ui";
 
 export default function WorkoutsScreen() {
@@ -35,7 +35,7 @@ export default function WorkoutsScreen() {
         showBackButton
         rightButton={{
           icon: (
-            <Ionicons name="add-circle-outline" size={22} color={theme.colors.text} />
+            <Icon name="add-circle-outline" size={22} color={theme.colors.text} strokeWidth={1.5} />
           ),
           variant: "icon",
           onPress: onAddWorkout,

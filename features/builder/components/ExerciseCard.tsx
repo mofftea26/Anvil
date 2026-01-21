@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React, { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
@@ -6,7 +5,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { useVideoThumbnail } from "../hooks/useVideoThumbnail";
 import type { SeriesExercise } from "../types";
 
-import { Text, useTheme } from "@/shared/ui";
+import { Icon, Text, useTheme } from "@/shared/ui";
 
 type Props = {
   code: string; // A1, A2...
@@ -115,7 +114,7 @@ export function ExerciseCard({ code, exercise, onPress }: Props) {
 function Pill({ icon, text }: { icon: any; text: string }) {
   return (
     <View style={styles.pill}>
-      <Ionicons name={icon} size={14} color="white" />
+      <Icon name={icon} size={14} color="white" />
       <Text style={styles.pillText}>{text}</Text>
     </View>
   );

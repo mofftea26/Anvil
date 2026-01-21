@@ -1,8 +1,14 @@
-import { router } from "expo-router";
+import React, { useState } from "react";
 import { RefreshControl, View } from "react-native";
 
 import { FindTrainerForm } from "@/features/linking/components/find-trainer/FindTrainerForm";
+import {
+  FindTrainerOptionSwitch,
+  type FindTrainerMode,
+} from "@/features/linking/components/find-trainer/FindTrainerOptionSwitch";
+import { FindTrainerRedeemCode } from "@/features/linking/components/find-trainer/FindTrainerRedeemCode";
 import { FindTrainerRequestsList } from "@/features/linking/components/find-trainer/FindTrainerRequestsList";
+import { RedeemCodeScanner } from "@/features/linking/components/find-trainer/RedeemCodeScanner";
 import { useFindTrainer } from "@/features/linking/hooks/find-trainer/useFindTrainer";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import {
@@ -17,6 +23,7 @@ import {
 export default function FindTrainerScreen() {
   const { t } = useAppTranslation();
   const theme = useTheme();
+  const [mode, setMode] = useState<FindTrainerMode>("email");
 
   const {
     trainerEmail,
@@ -30,6 +37,12 @@ export default function FindTrainerScreen() {
     error,
     onRefresh,
     refreshing,
+    redeemCode,
+    setRedeemCode,
+    onRedeemCode,
+    redeemState,
+    showScanner,
+    setShowScanner,
   } = useFindTrainer();
 
   return (
@@ -37,11 +50,6 @@ export default function FindTrainerScreen() {
       <StickyHeader
         title={t("linking.coach.findTrainer")}
         showBackButton
-        rightButton={{
-          label: t("common.close"),
-          onPress: () => router.back(),
-          variant: "secondary",
-        }}
       />
       <KeyboardScreen
         bottomSpace={12}
@@ -62,20 +70,43 @@ export default function FindTrainerScreen() {
             </Text>
           ) : null}
 
-          <FindTrainerForm
-            trainerEmail={trainerEmail}
-            onTrainerEmailChange={setTrainerEmail}
-            message={message}
-            onMessageChange={setMessage}
-            onSubmit={onSubmit}
-            isLoading={createReqState.isLoading}
+          <FindTrainerOptionSwitch
+            mode={mode}
+            onModeChange={setMode}
+            byEmailLabel={t("linking.findTrainer.byEmail")}
+            redeemCodeLabel={t("linking.findTrainer.redeemCode")}
           />
+
+          {mode === "email" ? (
+            <FindTrainerForm
+              trainerEmail={trainerEmail}
+              onTrainerEmailChange={setTrainerEmail}
+              message={message}
+              onMessageChange={setMessage}
+              onSubmit={onSubmit}
+              isLoading={createReqState.isLoading}
+            />
+          ) : (
+            <FindTrainerRedeemCode
+              redeemCode={redeemCode}
+              onRedeemCodeChange={setRedeemCode}
+              onRedeem={() => onRedeemCode(redeemCode)}
+              onScanQR={() => setShowScanner(true)}
+              isLoading={redeemState.isLoading}
+            />
+          )}
 
           <FindTrainerRequestsList requests={data} isLoading={isLoading} />
 
           <View style={{ height: 10 }} />
         </VStack>
       </KeyboardScreen>
+
+      <RedeemCodeScanner
+        visible={showScanner}
+        onCodeScanned={onRedeemCode}
+        onClose={() => setShowScanner(false)}
+      />
     </View>
   );
 }

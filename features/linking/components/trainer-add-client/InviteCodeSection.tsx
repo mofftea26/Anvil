@@ -1,6 +1,6 @@
-import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import QRCode from "react-native-qrcode-svg";
+import React from "react";
 
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import {
@@ -8,6 +8,7 @@ import {
   Button,
   Card,
   HStack,
+  Icon,
   IconButton,
   LoadingSpinner,
   Text,
@@ -39,10 +40,11 @@ export function InviteCodeSection({
             isLoading={isGenerating}
             onPress={() => void onGenerate()}
             left={
-              <Ionicons
+              <Icon
                 name="key-outline"
                 size={18}
                 color={theme.colors.background}
+                strokeWidth={1.5}
               />
             }
           >
@@ -87,10 +89,11 @@ export function InviteCodeSection({
             </VStack>
             <IconButton
               icon={
-                <Ionicons
+                <Icon
                   name="copy-outline"
                   size={18}
                   color={theme.colors.text}
+                  strokeWidth={1.5}
                 />
               }
               onPress={async () => {

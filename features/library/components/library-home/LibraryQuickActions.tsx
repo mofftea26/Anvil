@@ -1,8 +1,7 @@
-import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { Text, useTheme } from "@/shared/ui";
+import { Icon, Text, useTheme } from "@/shared/ui";
 
 type LibraryQuickActionsProps = {
   onNewProgram: () => void;
@@ -31,7 +30,7 @@ export function LibraryQuickActions({
           },
         ]}
       >
-        <Ionicons name="add-circle-outline" size={18} color={theme.colors.accent} />
+        <Icon name="add-circle-outline" size={18} color={theme.colors.accent} strokeWidth={1.5} />
         <Text style={{ color: theme.colors.text, fontSize: 13 }}>{newProgramLabel}</Text>
       </Pressable>
 
@@ -45,7 +44,7 @@ export function LibraryQuickActions({
           },
         ]}
       >
-        <Ionicons name="add-circle-outline" size={18} color={theme.colors.accent2} />
+        <Icon name="add-circle-outline" size={18} color={theme.colors.accent2} strokeWidth={1.5} />
         <Text style={{ color: theme.colors.text, fontSize: 13 }}>{newWorkoutLabel}</Text>
       </Pressable>
     </View>

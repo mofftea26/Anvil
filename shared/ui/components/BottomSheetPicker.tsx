@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
   FlatList,
@@ -14,6 +13,7 @@ import { useTheme } from "../theme";
 import { Button } from "./Button";
 import { Card } from "./Card";
 import { Divider } from "./Divider";
+import { Icon } from "./Icon";
 import { Text } from "./Text";
 
 export type BottomSheetOption = {
@@ -202,10 +202,11 @@ export function BottomSheetPicker(props: BottomSheetPickerProps) {
                 onPress={close}
                 height={40}
                 left={
-                  <Ionicons
+                  <Icon
                     name="close-sharp"
                     size={24}
                     color={theme.colors.accent}
+                    strokeWidth={1.5}
                   />
                 }
               ></Button>

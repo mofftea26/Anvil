@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
@@ -12,6 +11,7 @@ import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import {
   Button,
   Card,
+  Icon,
   LoadingSpinner,
   StickyHeader,
   TabBackgroundGradient,
@@ -48,10 +48,11 @@ export default function TrainerClientsScreen() {
           onPress: () => router.push("/(trainer)/add-client" as Parameters<typeof router.push>[0]),
           variant: "icon",
           icon: (
-            <Ionicons
+            <Icon
               name="add-circle-outline"
               size={22}
               color={theme.colors.text}
+              strokeWidth={1.5}
             />
           ),
         }}

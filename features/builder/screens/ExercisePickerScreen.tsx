@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
@@ -13,7 +12,7 @@ import { StickySaveBar } from "../components/StickySaveBar";
 import { MOCK_LIBRARY_EXERCISES } from "../data/mockLibraryExercises";
 import { setPendingExercisePick } from "../utils/exercisePickerBridge";
 
-import { StickyHeader, Text, useTheme } from "@/shared/ui";
+import { Icon, StickyHeader, Text, useTheme } from "@/shared/ui";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 
 export default function ExercisePickerScreen() {
@@ -84,7 +83,7 @@ export default function ExercisePickerScreen() {
             },
           ]}
         >
-          <Ionicons name="search" size={16} color="rgba(255,255,255,0.75)" />
+          <Icon name="search" size={16} color="rgba(255,255,255,0.75)" />
           <TextInput
             value={query}
             onChangeText={setQuery}
@@ -94,7 +93,7 @@ export default function ExercisePickerScreen() {
           />
           {query.length ? (
             <Pressable onPress={() => setQuery("")} style={{ padding: 4 }}>
-              <Ionicons name="close" size={16} color="rgba(255,255,255,0.75)" />
+              <Icon name="close" size={16} color="rgba(255,255,255,0.75)" />
             </Pressable>
           ) : null}
         </View>
@@ -110,7 +109,7 @@ export default function ExercisePickerScreen() {
               },
             ]}
           >
-            <Ionicons
+            <Icon
               name="checkmark-circle"
               size={16}
               color={theme.colors.accent}
@@ -141,7 +140,7 @@ export default function ExercisePickerScreen() {
               ]}
             >
               <View style={[styles.thumb, { backgroundColor: theme.colors.surface3 }]}>
-                <Ionicons
+                <Icon
                   name="videocam"
                   size={18}
                   color="rgba(255,255,255,0.85)"
@@ -168,7 +167,7 @@ export default function ExercisePickerScreen() {
                   },
                 ]}
               >
-                <Ionicons
+                <Icon
                   name={isOn ? "checkmark" : "add"}
                   size={16}
                   color={isOn ? "black" : "white"}

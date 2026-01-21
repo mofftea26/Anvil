@@ -1,16 +1,12 @@
-import { Ionicons } from "@expo/vector-icons";
-import type { ComponentProps } from "react";
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { Text, useTheme } from "@/shared/ui";
-
-type IoniconName = ComponentProps<typeof Ionicons>["name"];
+import { Icon, Text, useTheme } from "@/shared/ui";
 
 type LibraryCardProps = {
   title: string;
   subtitle: string;
-  icon: IoniconName;
+  icon: string;
   onPress: () => void;
 };
 
@@ -32,7 +28,7 @@ export function LibraryCard({ title, subtitle, icon, onPress }: LibraryCardProps
             { backgroundColor: theme.colors.surface2, borderColor: theme.colors.border },
           ]}
         >
-          <Ionicons name={icon} size={18} color={theme.colors.text} />
+          <Icon name={icon} size={18} color={theme.colors.text} strokeWidth={1.5} />
         </View>
 
         <View style={{ flex: 1, gap: 4 }}>
@@ -43,7 +39,7 @@ export function LibraryCard({ title, subtitle, icon, onPress }: LibraryCardProps
         </View>
       </View>
 
-      <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
+      <Icon name="chevron-forward" size={18} color={theme.colors.textMuted} strokeWidth={1.5} />
     </Pressable>
   );
 }

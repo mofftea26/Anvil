@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
@@ -13,6 +12,7 @@ import {
   ColorPickerField,
   Divider,
   HStack,
+  Icon,
   Text,
   useTheme,
   VStack,
@@ -164,7 +164,7 @@ export function TrainerBrandCard({
             >
               {!form.logoUrl ? (
                 <VStack style={{ gap: 8, alignItems: "center" }}>
-                  <Ionicons
+                  <Icon
                     name="cloud-upload-outline"
                     size={24}
                     color={theme.colors.textMuted}
@@ -216,7 +216,7 @@ export function TrainerBrandCard({
                 opacity: isLogoUploading ? 0.6 : pressed ? 0.85 : 1,
               })}
             >
-              <Ionicons name="pencil" size={16} color="white" />
+              <Icon name="pencil" size={16} color="white" />
             </Pressable>
 
             <View
