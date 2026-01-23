@@ -324,31 +324,42 @@ invalidatesTags: [{ type: "TrainerRequests", id: "inbox" }, "TrainerClients", "C
     }),
 
     // ---------- Trainer: requests inbox ----------
-    getTrainerRequestsInbox: build.query<TrainerRequestsInboxRow[], void>({
-      async queryFn() {
-        const { data, error } = await supabase.rpc("get_trainer_requests_inbox");
+    getTrainerRequestsInbox: build.query<TrainerRequestsInboxRow[], { trainerEmail: string }>({
+      async queryFn({ trainerEmail }) {
+        console.log("[getTrainerRequestsInbox] queryFn trainerEmail:", trainerEmail);
+    
+        if (!trainerEmail?.trim()) return { data: [] };
+    
+        const { data, error } = await supabase.rpc("get_trainer_requests_inbox", {
+          p_trainer_email: trainerEmail,
+        });
+    
+        console.log("[getTrainerRequestsInbox] rpc error:", error);
+        console.log("[getTrainerRequestsInbox] rpc data:", data);
+    
         if (error) return { error: { message: error.message } };
     
         const rows = (data as any[]) ?? [];
-    
-        // return EXACTLY what the RPC returns (flat)
-        const mapped: TrainerRequestsInboxRow[] = rows.map((r) => ({
-          id: r.id,
-          clientId: r.clientId,
-          trainerEmail: r.trainerEmail,
-          status: r.status,
-          message: r.message ?? null,
-          createdAt: r.createdAt,
-          resolvedAt: r.resolvedAt ?? null,
-          clientFirstName: r.clientFirstName ?? null,
-          clientLastName: r.clientLastName ?? null,
-          clientAvatarUrl: r.clientAvatarUrl ?? null,
-        }));
-    
-        return { data: mapped };
+        return {
+          data: rows.map((r) => ({
+            id: r.id,
+            clientId: r.clientId,
+            trainerEmail: r.trainerEmail,
+            status: r.status,
+            message: r.message ?? null,
+            createdAt: r.createdAt,
+            resolvedAt: r.resolvedAt ?? null,
+            clientFirstName: r.clientFirstName ?? null,
+            clientLastName: r.clientLastName ?? null,
+            clientAvatarUrl: r.clientAvatarUrl ?? null,
+          })),
+        };
       },
       providesTags: () => [{ type: "TrainerRequests", id: "inbox" }],
+      keepUnusedDataFor: 0,
     }),
+    
+  
     
     acceptTrainerRequest: build.mutation<TrainerClientLink, { requestId: string }>({
       async queryFn({ requestId }) {

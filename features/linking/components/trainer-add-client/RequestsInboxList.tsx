@@ -31,7 +31,6 @@ export function RequestsInboxList({
 }: RequestsInboxListProps) {
   const { t } = useAppTranslation();
   const theme = useTheme();
-
   return (
     <VStack style={{ gap: theme.spacing.md }}>
       <Text weight="bold">{t("linking.requests.title")}</Text>
@@ -83,6 +82,7 @@ export function RequestsInboxList({
                           source={{ uri: avatarUrl }}
                           style={StyleSheet.absoluteFill}
                           contentFit="cover"
+                          cachePolicy="none"
                         />
                       ) : initials ? (
                         <Text

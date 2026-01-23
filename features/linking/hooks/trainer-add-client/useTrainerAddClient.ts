@@ -38,6 +38,7 @@ export function useTrainerAddClient() {
     { trainerEmail },
     { skip: !trainerEmail }
   );
+
   const [acceptReq] = useAcceptTrainerRequestMutation();
   const [declineReq] = useDeclineTrainerRequestMutation();
 
@@ -140,8 +141,10 @@ export function useTrainerAddClient() {
     }
   }, [clientEmail, firstName, lastName, createClient, t]);
 
-  const pendingRequests = (inbox ?? []).filter((r) => r.status === "pending");
-
+  const pendingRequests = (inbox ?? []).filter(
+    (r) => (r.status ?? "").toLowerCase() === "pending"
+  );
+  
   return {
     tab,
     setTab,
