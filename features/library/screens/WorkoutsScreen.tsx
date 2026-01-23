@@ -1,7 +1,7 @@
 import React from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
 
-import { WorkoutRowCard } from "@/features/library/components/workouts/WorkoutRowCard";
+import { WorkoutCard } from "@/features/library/components/workouts/WorkoutCard";
 import { useWorkouts } from "@/features/library/hooks/workouts/useWorkouts";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import {
@@ -71,7 +71,7 @@ export default function WorkoutsScreen() {
         ) : (
           <VStack style={{ gap: theme.spacing.md }}>
             {rows.map((w) => (
-              <WorkoutRowCard
+              <WorkoutCard
                 key={w.id}
                 workout={w}
                 updatedAtLabel={t("library.workoutsList.updatedAt")}

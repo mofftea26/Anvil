@@ -3,7 +3,8 @@ import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
 import { SetTypesCard } from "./SetTypesCard";
-import { Text } from "@/shared/ui";
+import { Card, Icon, Text, useTheme, VStack } from "@/shared/ui";
+import { hexToRgba } from "@/features/profile/utils/trainerProfileUtils";
 
 type SetTypesContentProps = {
   rows: SetTypeRow[];
@@ -16,18 +17,56 @@ export function SetTypesContent({
   emptyLabel,
   getRowKey,
 }: SetTypesContentProps) {
+  const theme = useTheme();
+
   if (!rows?.length) {
     return (
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.empty}>
-          <Text style={{ opacity: 0.7 }}>{emptyLabel}</Text>
-        </View>
+        <Card>
+          <VStack
+            style={{
+              alignItems: "center",
+              gap: theme.spacing.md,
+              paddingVertical: theme.spacing.xl,
+            }}
+          >
+            <View
+              style={[
+                styles.emptyIconContainer,
+                {
+                  backgroundColor: hexToRgba(theme.colors.accent, 0.1),
+                  borderColor: hexToRgba(theme.colors.accent, 0.2),
+                },
+              ]}
+            >
+              <Icon
+                name="book-outline"
+                size={32}
+                color={theme.colors.accent}
+                strokeWidth={2}
+              />
+            </View>
+            <Text muted style={{ textAlign: "center", fontSize: 14 }}>
+              {emptyLabel}
+            </Text>
+          </VStack>
+        </Card>
       </ScrollView>
     );
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
+    <ScrollView
+      contentContainerStyle={[
+        styles.content,
+        {
+          padding: theme.spacing.md,
+          paddingBottom: theme.spacing.xl,
+          gap: theme.spacing.md,
+        },
+      ]}
+      showsVerticalScrollIndicator={false}
+    >
       {rows.map((row, index) => (
         <SetTypesCard key={getRowKey(row, index)} row={row} />
       ))}
@@ -37,12 +76,14 @@ export function SetTypesContent({
 
 const styles = StyleSheet.create({
   content: {
-    padding: 12,
-    gap: 12,
-    paddingBottom: 32,
+    flexGrow: 1,
   },
-  empty: {
-    paddingVertical: 24,
+  emptyIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    borderWidth: 1.5,
     alignItems: "center",
+    justifyContent: "center",
   },
 });

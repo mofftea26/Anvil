@@ -45,7 +45,7 @@ export default function ClientTabsLayout() {
           title: t("tabs.dashboard"),
           tabBarIcon: ({ color, size, focused }) => (
             <Icon
-              name={focused ? "grid" : "grid-outline"}
+              name={focused ? "dashboard" : "dashboard-outline"}
               size={size}
               color={color}
               strokeWidth={focused ? 2 : 1.5}

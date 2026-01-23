@@ -45,6 +45,10 @@ export const iconMap: Record<string, string> = {
   // Tab Icons
   "analytics": "Analytics01Icon",
   "analytics-outline": "Analytics01Icon",
+  "dashboard": "DashboardSpeed01Icon",
+  "dashboard-outline": "DashboardSpeed01Icon",
+  "home": "GridIcon",
+  "home-outline": "GridIcon",
   "layers": "LayerIcon",
   "layers-outline": "LayerIcon",
   "people": "UserGroupIcon",
@@ -70,13 +74,19 @@ export const iconMap: Record<string, string> = {
   "key-outline": "Key01Icon",
   "copy-outline": "Copy01Icon",
   "eye-outline": "EyeIcon",
-  "eye-off-outline": "EyeIcon", // Using EyeIcon for both - can be styled differently if needed
+  "eye-off-outline": "EyeIcon", // EyeSlashIcon not available, using EyeIcon
   "close-sharp": "Cancel01Icon",
   "hourglass-outline": "HourglassIcon",
   "timer-outline": "Timer01Icon",
   "trash": "Delete01Icon",
   "videocam": "Video01Icon",
+  "video": "Video01Icon",
+  "play": "Video01Icon",
   "checkmark": "CheckmarkCircle01Icon",
+  "email": "Mail01Icon",
+  "mail": "Mail01Icon",
+  "lock": "LockIcon",
+  "password": "LockIcon",
 };
 
 /**

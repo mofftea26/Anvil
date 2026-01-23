@@ -141,7 +141,7 @@ export default function ExercisePickerScreen() {
             >
               <View style={[styles.thumb, { backgroundColor: theme.colors.surface3 }]}>
                 <Icon
-                  name="videocam"
+                  name="video"
                   size={18}
                   color="rgba(255,255,255,0.85)"
                 />

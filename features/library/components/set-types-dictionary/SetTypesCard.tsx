@@ -1,8 +1,11 @@
 import type { SetTypeRow } from "@/features/library/types/setTypes";
+import { getSetTypeIconName } from "@/features/library/utils/setTypeIcons";
 import React from "react";
+import { LinearGradient } from "expo-linear-gradient";
 import { StyleSheet, View } from "react-native";
 
-import { Text, useTheme } from "@/shared/ui";
+import { Card, Icon, Text, useTheme } from "@/shared/ui";
+import { hexToRgba } from "@/features/profile/utils/trainerProfileUtils";
 
 type SetTypesCardProps = {
   row: SetTypeRow;
@@ -12,29 +15,76 @@ export function SetTypesCard({ row }: SetTypesCardProps) {
   const theme = useTheme();
   const title = row?.title ?? "";
   const description = row?.description;
+  const iconName = getSetTypeIconName(row);
 
   return (
-    <View
-      style={[
-        styles.card,
-        {
-          backgroundColor: theme.colors.surface2,
-          borderColor: theme.colors.border,
-        },
-      ]}
-    >
-      <Text style={{ fontWeight: "800", fontSize: 16 }}>{title}</Text>
-      {description ? (
-        <Text style={{ opacity: 0.85, marginTop: 6 }}>{description}</Text>
-      ) : null}
-    </View>
+    <Card padded={false} style={{ overflow: "hidden" }}>
+      <View style={{ position: "relative" }}>
+        <LinearGradient
+          colors={[
+            hexToRgba(theme.colors.accent, 0.08),
+            hexToRgba(theme.colors.accent2, 0.04),
+            "rgba(255,255,255,0.00)",
+          ]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFillObject}
+        />
+
+        <View style={[styles.content, { padding: theme.spacing.md }]}>
+          <View style={styles.header}>
+            <View
+              style={[
+                styles.iconContainer,
+                {
+                  backgroundColor: hexToRgba(theme.colors.accent, 0.15),
+                  borderColor: hexToRgba(theme.colors.accent, 0.25),
+                },
+              ]}
+            >
+              <Icon
+                name={iconName}
+                size={22}
+                color={theme.colors.accent}
+                strokeWidth={2}
+              />
+            </View>
+            <View style={{ flex: 1, gap: 4 }}>
+              <Text weight="bold" style={{ fontSize: 16 }}>
+                {title}
+              </Text>
+              {description ? (
+                <Text
+                  muted
+                  style={{ fontSize: 13, lineHeight: 18 }}
+                  numberOfLines={2}
+                >
+                  {description}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+        </View>
+      </View>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: 16,
+  content: {
+    gap: 12,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+  },
+  iconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     borderWidth: 1,
-    padding: 14,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
