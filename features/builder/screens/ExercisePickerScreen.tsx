@@ -57,14 +57,12 @@ export default function ExercisePickerScreen() {
       return;
     }
 
-    // store selection in bridge memory
     setPendingExercisePick({
       token: Date.now().toString(),
       targetSeriesId,
       exerciseIds: selectedIds,
     });
 
-    // go back without remounting builder
     router.back();
   }
 

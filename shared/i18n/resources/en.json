@@ -65,7 +65,11 @@
     "profileCardRole": "Role",
     "profileSignOut": "Sign out"
   },
-  "common": {
+    "common": {
+    "duration": {
+      "mins": "MINS",
+      "notAvailable": "N/A"
+    },
     "showPassword": "Show password",
     "hidePassword": "Hide password",
     "loading": "Loading…",
@@ -224,6 +228,22 @@
       "workoutPublished": "Workout published ✅",
       "workoutUpdated": "Workout updated ✅"
     },
+    "workoutBuilder": {
+      "title": "Workout builder",
+      "titlePlaceholder": "Workout Title",
+      "defaultTitle": "Workout",
+      "loadingDraft": "Loading draft...",
+      "publish": "Publish",
+      "publishing": "Publishing...",
+      "swipe": "SWIPE",
+      "addSeries": "Add Series",
+      "addTrainerNotes": "Add Trainer Notes",
+      "trainerNotes": "Trainer Notes",
+      "addSet": "Add Set",
+      "exerciseCount_one": "exercise",
+      "exerciseCount_other": "exercises",
+      "addExercise": "Add Exercise"
+    },
     "exercisePicker": {
       "title": "Pick exercises",
       "searchPlaceholder": "Search exercises...",
@@ -234,12 +254,6 @@
       "title": "Pick set type",
       "noneTitle": "No set type",
       "noneSubtitle": "Basic normal set"
-    },
-    "workoutBuilder": {
-      "title": "Workout builder",
-      "loadingDraft": "Loading draft...",
-      "publish": "Publish",
-      "publishing": "Publishing..."
     },
     "setsEditor": {
       "subtitle": "Sets • set types • rest • tempo",
@@ -267,20 +281,32 @@
   "library": {
     "createProgram": {
       "title": "Create program",
-      "subtitle": "Next step: phase builder + weekdays planner + assign workouts."
+      "subtitle": "Design complete training phases with intelligent weekly planning."
     },
     "programsScreen": {
-      "subtitle": "Coming next: list + search + drafts + sharing."
+      "subtitle": "Manage your training programs with powerful search and sharing tools."
     },
     "workoutsScreen": {
-      "subtitle": "Coming next: Poliquin builder (A/B/C blocks + A1/A2 + sets)."
+      "subtitle": "Build sophisticated training blocks with structured series progression."
     },
+    "workoutsDesc": "Build powerful training blocks with structured series",
+    "title": "Library",
+    "subtitle": "Create & manage Programs, Workouts, and Exercises.",
+    "newProgram": "New Program",
+    "createWorkout": "New Workout",
+    "programs": "Programs",
+    "programsDesc": "Design complete training phases with weekly planning",
+    "workouts": "Workouts",
+    "exercises": "Exercises",
+    "exercisesDesc": "Access thousands of exercises + create your own",
+    "setTypes": "Set Types Dictionary",
+    "setTypesDesc": "Master advanced techniques: Warm-up, Drop sets, Density & more",
     "workoutsList": {
       "empty": "No workouts yet.",
       "updatedAt": "Updated:"
     },
     "exercisesScreen": {
-      "subtitle": "Coming next: library list + filters + custom exercise creation."
+      "subtitle": "Explore an extensive exercise library with smart filters and customization."
     },
     "setTypesDictionaryScreen": {
       "loadError": "Error loading set types.",

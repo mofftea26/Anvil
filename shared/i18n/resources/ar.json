@@ -63,6 +63,10 @@
     "profileSignOut": "تسجيل الخروج"
   },
   "common": {
+    "duration": {
+      "mins": "دق",
+      "notAvailable": "غير متاح"
+    },
     "showPassword": "إظهار كلمة المرور",
     "hidePassword": "إخفاء كلمة المرور",
     "loading": "جارٍ التحميل…",
@@ -236,7 +240,17 @@
       "title": "منشئ التمرين",
       "loadingDraft": "جارٍ تحميل المسودة…",
       "publish": "نشر",
-      "publishing": "جارٍ النشر…"
+      "publishing": "جارٍ النشر…",
+      "titlePlaceholder": "عنوان التمرين",
+      "defaultTitle": "تمرين",
+      "swipe": "اسحب",
+      "addSeries": "إضافة مجموعة",
+      "addTrainerNotes": "إضافة ملاحظات المدرب",
+      "trainerNotes": "ملاحظات المدرب",
+      "addSet": "إضافة مجموعة",
+      "exerciseCount_one": "تمرين",
+      "exerciseCount_other": "تمارين",
+      "addExercise": "إضافة تمرين"
     },
     "setsEditor": {
       "subtitle": "مجموعات • أنواع • راحة • وتيرة",
@@ -264,20 +278,32 @@
   "library": {
     "createProgram": {
       "title": "إنشاء برنامج",
-      "subtitle": "الخطوة التالية: المراحل + مخطط الأسبوع + تعيين التمارين."
+      "subtitle": "صمم مراحل تدريب كاملة مع تخطيط أسبوعي ذكي."
     },
     "programsScreen": {
-      "subtitle": "قريباً: قائمة + بحث + مسودات + مشاركة."
+      "subtitle": "أدر برامجك التدريبية بأدوات بحث ومشاركة قوية."
     },
     "workoutsScreen": {
-      "subtitle": "قريباً: منشئ Poliquin (مجموعات A/B/C + A1/A2 + جولات)."
+      "subtitle": "أنشئ مجموعات تدريب متقدمة مع تقدم منظم للجولات."
     },
+    "workoutsDesc": "أنشئ مجموعات تدريب قوية مع جولات منظمة",
+    "title": "المكتبة",
+    "subtitle": "أنشئ وأدر البرامج والتمارين والحركات.",
+    "newProgram": "برنامج جديد",
+    "createWorkout": "تمرين جديد",
+    "programs": "البرامج",
+    "programsDesc": "صمم مراحل تدريب كاملة مع تخطيط أسبوعي ذكي",
+    "workouts": "التمارين",
+    "exercises": "الحركات",
+    "exercisesDesc": "استكشف آلاف الحركات + أنشئ حركاتك الخاصة",
+    "setTypes": "قاموس أنواع المجموعات",
+    "setTypesDesc": "أتقن التقنيات المتقدمة: إحماء، مجموعات منخفضة، كثافة والمزيد",
     "workoutsList": {
       "empty": "لا توجد تمارين بعد.",
       "updatedAt": "آخر تحديث:"
     },
     "exercisesScreen": {
-      "subtitle": "قريباً: قائمة التمارين + فلاتر + إنشاء تمارين مخصصة."
+      "subtitle": "استكشف مكتبة تمارين واسعة مع فلاتر ذكية وتخصيص."
     },
     "setTypesDictionaryScreen": {
       "loadError": "حدث خطأ أثناء تحميل أنواع المجموعات.",

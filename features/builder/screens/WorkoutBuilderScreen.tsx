@@ -87,7 +87,6 @@ export function WorkoutBuilderScreen({ mode }: Props) {
   const titleInputRef = useRef<TextInput>(null);
   const [currentSeriesIndex, setCurrentSeriesIndex] = useState(0);
 
-  // Calculate duration from exercises
   const durationMinutes = useMemo(() => {
     return calculateWorkoutDuration(series);
   }, [series]);
@@ -231,7 +230,6 @@ export function WorkoutBuilderScreen({ mode }: Props) {
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.colors.background }]}>
-      {/* Custom Header with Editable Title and Duration */}
       <View style={styles.customHeader}>
         <HStack align="center" justify="space-between" style={styles.headerContent}>
           <Pressable onPress={() => router.back()} style={styles.backButton}>
@@ -260,7 +258,7 @@ export function WorkoutBuilderScreen({ mode }: Props) {
                     fontWeight: "600",
                   },
                 ]}
-                placeholder="Workout Title"
+                placeholder={t("builder.workoutBuilder.titlePlaceholder")}
                 placeholderTextColor={theme.colors.textMuted}
                 maxLength={50}
               />
@@ -277,7 +275,7 @@ export function WorkoutBuilderScreen({ mode }: Props) {
                   ]}
                   numberOfLines={1}
                 >
-                  {title || "Workout"}
+                  {title || t("builder.workoutBuilder.defaultTitle")}
                 </Text>
                 <Icon name="edit" size={16} color={theme.colors.textMuted} />
               </HStack>
@@ -327,25 +325,18 @@ export function WorkoutBuilderScreen({ mode }: Props) {
           const s = series.find((x) => x.id === item.id);
           if (!s) return <View style={{ width, height: "100%" }} />;
 
-          const seriesIndex = series.findIndex((x) => x.id === item.id);
-          const isFirstSeries = seriesIndex === 0;
-          const isLastSeries = seriesIndex === series.length - 1;
-
           return (
             <View style={{ width, paddingHorizontal: 14, height: "100%" }}>
-              <SeriesPage
-                series={s}
-                onEditExercise={(exerciseId) => onEditExercise(s.id, exerciseId)}
-                onAddExercise={onAddExercise}
-                isFirstSeries={isFirstSeries}
-                isLastSeries={isLastSeries}
-              />
+                <SeriesPage
+                  series={s}
+                  onEditExercise={(exerciseId) => onEditExercise(s.id, exerciseId)}
+                  onAddExercise={onAddExercise}
+                />
             </View>
           );
         }}
       />
 
-      {/* Arrows Between Series Page and Save Bar - Screen Level */}
       <View style={styles.arrowsContainer}>
         {currentSeriesIndex > 0 && (
           <View style={styles.leftArrows}>
@@ -389,6 +380,7 @@ function cryptoRandomId() {
 }
 
 function AnimatedSwipeText() {
+  const { t } = useAppTranslation();
   const theme = useTheme();
   const opacity = useState(new Animated.Value(0.4))[0];
 
@@ -421,7 +413,7 @@ function AnimatedSwipeText() {
           letterSpacing: 0.5,
         }}
       >
-        SWIPE
+        {t("builder.workoutBuilder.swipe")}
       </Text>
     </Animated.View>
   );

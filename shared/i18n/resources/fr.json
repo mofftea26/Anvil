@@ -63,6 +63,10 @@
     "profileSignOut": "Se déconnecter"
   },
   "common": {
+    "duration": {
+      "mins": "MIN",
+      "notAvailable": "N/D"
+    },
     "showPassword": "Afficher le mot de passe",
     "hidePassword": "Masquer le mot de passe",
     "loading": "Chargement…",
@@ -236,7 +240,17 @@
       "title": "Builder de séance",
       "loadingDraft": "Chargement du brouillon…",
       "publish": "Publier",
-      "publishing": "Publication…"
+      "publishing": "Publication…",
+      "titlePlaceholder": "Titre de la séance",
+      "defaultTitle": "Séance",
+      "swipe": "GLISSER",
+      "addSeries": "Ajouter une Série",
+      "addTrainerNotes": "Ajouter des Notes d'Entraîneur",
+      "trainerNotes": "Notes d'Entraîneur",
+      "addSet": "Ajouter une Série",
+      "exerciseCount_one": "exercice",
+      "exerciseCount_other": "exercices",
+      "addExercise": "Ajouter un Exercice"
     },
     "setsEditor": {
       "subtitle": "Séries • types • repos • tempo",
@@ -264,14 +278,26 @@
   "library": {
     "createProgram": {
       "title": "Créer un programme",
-      "subtitle": "Prochaine étape : phases + planificateur hebdomadaire + assigner des séances."
+      "subtitle": "Concevez des phases d'entraînement complètes avec planification hebdomadaire intelligente."
     },
     "programsScreen": {
-      "subtitle": "À venir : liste + recherche + brouillons + partage."
+      "subtitle": "Gérez vos programmes d'entraînement avec des outils de recherche et de partage puissants."
     },
     "workoutsScreen": {
-      "subtitle": "À venir : builder Poliquin (blocs A/B/C + A1/A2 + séries)."
+      "subtitle": "Construisez des blocs d'entraînement sophistiqués avec progression de séries structurée."
     },
+    "workoutsDesc": "Construisez des blocs d'entraînement puissants avec des séries structurées",
+    "title": "Bibliothèque",
+    "subtitle": "Créez et gérez des Programmes, Séances et Exercices.",
+    "newProgram": "Nouveau Programme",
+    "createWorkout": "Nouvelle Séance",
+    "programs": "Programmes",
+    "programsDesc": "Concevez des phases d'entraînement complètes avec planification hebdomadaire",
+    "workouts": "Séances",
+    "exercises": "Exercices",
+    "exercisesDesc": "Accédez à des milliers d'exercices + créez les vôtres",
+    "setTypes": "Dictionnaire des Types de Séries",
+    "setTypesDesc": "Maîtrisez les techniques avancées : Échauffement, Drop sets, Densité & plus",
     "workoutsList": {
       "empty": "Aucune séance pour le moment.",
       "updatedAt": "Mis à jour :"

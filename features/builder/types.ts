@@ -21,7 +21,6 @@ export type Tempo = {
   
     sets: ExerciseSet[];
   
-    // Optional text fields
     notes: string | null;
     trainerNotes: string | null;
   };

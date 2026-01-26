@@ -1,5 +1,6 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import { VStack } from "../layout/Stack";
 import { useTheme } from "../theme";
 import { Text } from "./Text";
@@ -10,6 +11,7 @@ type DurationCircleProps = {
 };
 
 export function DurationCircle({ minutes, size = "small" }: DurationCircleProps) {
+  const { t } = useAppTranslation();
   const theme = useTheme();
 
   const sizeMap = {
@@ -62,7 +64,7 @@ export function DurationCircle({ minutes, size = "small" }: DurationCircleProps)
               },
             ]}
           >
-            MINS
+            {t("common.duration.mins")}
           </Text>
         )}
       </VStack>

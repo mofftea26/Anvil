@@ -6,20 +6,19 @@ import type { WorkoutSeries } from "../types";
 import { ExerciseCard } from "./ExerciseCard";
 
 import { hexToRgba } from "@/features/profile/utils/trainerProfileUtils";
+import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import { Button, Text, useTheme } from "@/shared/ui";
 
 type Props = {
   series: WorkoutSeries;
   onEditExercise: (exerciseId: string) => void;
   onAddExercise: (seriesId: string) => void;
-  isFirstSeries?: boolean;
-  isLastSeries?: boolean;
 };
 
-export function SeriesPage({ series, onEditExercise, onAddExercise, isFirstSeries = false, isLastSeries = false }: Props) {
+export function SeriesPage({ series, onEditExercise, onAddExercise }: Props) {
+  const { t } = useAppTranslation();
   const theme = useTheme();
   const { height: screenHeight } = useWindowDimensions();
-  // Account for header (~80px) + save bar (~100px) + padding
   const maxHeight = screenHeight - 180;
 
   return (
@@ -33,7 +32,6 @@ export function SeriesPage({ series, onEditExercise, onAddExercise, isFirstSerie
           },
         ]}
       >
-        {/* Compact Header */}
         <View style={styles.header}>
           <LinearGradient
             colors={[
@@ -66,12 +64,14 @@ export function SeriesPage({ series, onEditExercise, onAddExercise, isFirstSerie
               weight="semibold"
               style={{ fontSize: 14, color: theme.colors.text, marginLeft: 10 }}
             >
-              {series.exercises.length} {series.exercises.length === 1 ? "exercise" : "exercises"}
+              {series.exercises.length}{" "}
+              {series.exercises.length === 1
+                ? t("builder.workoutBuilder.exerciseCount_one")
+                : t("builder.workoutBuilder.exerciseCount_other")}
             </Text>
           </View>
         </View>
 
-        {/* Scrollable Content */}
         <View style={styles.scrollContainer}>
           <ScrollView
             style={styles.scrollView}
@@ -98,14 +98,13 @@ export function SeriesPage({ series, onEditExercise, onAddExercise, isFirstSerie
               fullWidth
               onPress={() => onAddExercise(series.id)}
             >
-              + Add Exercise
+              {t("builder.workoutBuilder.addExercise")}
             </Button>
 
             <View style={{ height: 100 }} />
           </ScrollView>
         </View>
 
-        {/* Bottom Fade Gradient - Applied to entire card */}
         <LinearGradient
           colors={[
             "transparent",
@@ -126,6 +125,7 @@ export function SeriesPage({ series, onEditExercise, onAddExercise, isFirstSerie
 }
 
 export function AddSeriesCard({ onPress }: { onPress: () => void }) {
+  const { t } = useAppTranslation();
   const theme = useTheme();
 
   return (
@@ -150,11 +150,8 @@ export function AddSeriesCard({ onPress }: { onPress: () => void }) {
       />
       <View style={styles.addCardContent}>
         <Button variant="secondary" fullWidth onPress={onPress}>
-          + Add Serie
+          {t("builder.workoutBuilder.addSeries")}
         </Button>
-
-
-   
       </View>
     </View>
   );
@@ -208,14 +205,6 @@ const styles = StyleSheet.create({
     right: 0,
     height: 100,
   },
-  arrowsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
   addCard: {
     flex: 1,
     borderRadius: 20,
@@ -231,12 +220,5 @@ const styles = StyleSheet.create({
     zIndex: 1,
     width: "100%",
     alignItems: "center",
-  },
-  scrollIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginTop: 20,
   },
 });

@@ -190,7 +190,7 @@ export function SetsEditorSheet({
                   fullWidth
                   onPress={() => setShowNotes(true)}
                 >
-                  + Add Trainer Notes
+                  {t("builder.workoutBuilder.addTrainerNotes")}
                 </Button>
               ) : (
                 <View
@@ -203,7 +203,7 @@ export function SetsEditorSheet({
                   ]}
                 >
                   <Text style={{ fontWeight: "900", marginBottom: 8 }}>
-                    Trainer Notes
+                    {t("builder.workoutBuilder.trainerNotes")}
                   </Text>
                   <TextInput
                     value={local.notes ?? ""}
@@ -229,7 +229,7 @@ export function SetsEditorSheet({
                 {t("builder.setsEditor.setsTitle")}
               </Text>
               <Button variant="ghost" onPress={addSet}>
-                + Add Set
+                {t("builder.workoutBuilder.addSet")}
               </Button>
             </View>
 

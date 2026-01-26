@@ -52,7 +52,7 @@ export default function LibraryHomeScreen() {
 
         <LibraryCard
           title={t("library.workouts", "Workouts")}
-          subtitle={t("library.workoutsDesc", "Poliquin blocks A/B/C with sets")}
+          subtitle={t("library.workoutsDesc")}
           icon="barbell-outline"
           onPress={onWorkouts}
         />

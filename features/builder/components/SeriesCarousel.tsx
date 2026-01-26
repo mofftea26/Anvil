@@ -1,24 +1,19 @@
-import React, { useMemo, useRef } from "react";
-import { FlatList, StyleSheet, useWindowDimensions, View } from "react-native";
+import React, { useMemo } from "react";
+import { FlatList, useWindowDimensions, View } from "react-native";
 
-import type { SetTypeRow } from "@/features/library/types/setTypes";
 import type { WorkoutSeries } from "../types";
 import { AddSeriesCard, SeriesPage } from "./SeriesPage";
 type Props = {
   series: WorkoutSeries[];
-  setTypes: SetTypeRow[];
-
   onAddSeries: () => void;
   onEditExercise: (seriesId: string, exerciseId: string) => void;
 };
 
 export function SeriesCarousel({
   series,
-  setTypes,
   onAddSeries,
   onEditExercise,
 }: Props) {
-  const listRef = useRef<FlatList<any>>(null);
   const { width } = useWindowDimensions();
 
   const itemWidth = Math.min(width - 56, 420);
@@ -30,7 +25,6 @@ export function SeriesCarousel({
 
   return (
     <FlatList
-      ref={listRef}
       horizontal
       showsHorizontalScrollIndicator={false}
       data={data}
@@ -64,4 +58,3 @@ export function SeriesCarousel({
   );
 }
 
-const styles = StyleSheet.create({});

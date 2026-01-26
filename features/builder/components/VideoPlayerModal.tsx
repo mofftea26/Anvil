@@ -1,7 +1,5 @@
-// Note: expo-av Video is deprecated in favor of expo-video, but expo-video requires a development build
-// TODO: Migrate to expo-video when ready for development build
 import { Video, ResizeMode } from "expo-av";
-import React, { useRef, useState } from "react";
+import React from "react";
 import { Modal, Pressable, StyleSheet, View } from "react-native";
 import { Icon, Text, useTheme } from "@/shared/ui";
 
@@ -19,8 +17,6 @@ export function VideoPlayerModal({
   onClose,
 }: VideoPlayerModalProps) {
   const theme = useTheme();
-  const videoRef = useRef<Video>(null);
-  const [status, setStatus] = useState<any>({});
 
   if (!videoUrl) {
     return null;
@@ -45,14 +41,12 @@ export function VideoPlayerModal({
         </View>
         <View style={styles.videoContainer}>
           <Video
-            ref={videoRef}
             source={{ uri: videoUrl }}
             style={styles.video}
             useNativeControls
             resizeMode={ResizeMode.CONTAIN}
             isLooping={false}
             shouldPlay={true}
-            onPlaybackStatusUpdate={setStatus}
           />
         </View>
       </View>

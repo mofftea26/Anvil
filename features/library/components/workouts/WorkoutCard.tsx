@@ -24,7 +24,6 @@ export function WorkoutCard({
   const title = workout.title || defaultTitle;
   const updatedDate = formatShortDate(workout.updatedAt);
 
-  // Extract workout stats from state
   const stats = useMemo(() => {
     try {
       const state = workout.state;
@@ -55,7 +54,6 @@ export function WorkoutCard({
     }
   }, [workout.state]);
 
-  // Calculate total duration from all series
   const durationMinutes = useMemo(() => {
     try {
       const state = workout.state;
@@ -91,7 +89,6 @@ export function WorkoutCard({
         ]}
       >
         <View style={{ position: "relative", overflow: "hidden" }}>
-          {/* Enhanced Gradient Background */}
           <LinearGradient
             colors={[
               hexToRgba(theme.colors.accent, 0.16),

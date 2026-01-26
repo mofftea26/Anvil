@@ -26,10 +26,8 @@ function calculateExerciseDuration(exercise: SeriesExercise): number {
     const reps = Number(set.reps) || 0;
     const restSec = Number(set.restSec) || 0;
 
-    // Time for this set (reps * tempo per rep)
     totalSeconds += reps * repDuration;
 
-    // Rest period after set (except after last set)
     if (index < exercise.sets.length - 1) {
       totalSeconds += restSec;
     }
@@ -54,7 +52,6 @@ export function calculateWorkoutDuration(series: WorkoutSeries[]): number | null
     });
   });
 
-  // Convert to minutes and round up
   const totalMinutes = Math.ceil(totalSeconds / 60);
   return totalMinutes > 0 ? totalMinutes : null;
 }

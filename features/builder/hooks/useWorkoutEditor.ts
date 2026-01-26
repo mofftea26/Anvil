@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createWorkout, fetchWorkoutById, updateWorkout } from "../api/workouts.api";
-import type { WorkoutSeries } from "../types";
+import type { SeriesExercise, WorkoutSeries } from "../types";
 import type { WorkoutState } from "../types/workoutState";
 
 type Params = {
@@ -29,7 +29,77 @@ function normalizeLoadedState(raw: any, fallbackSeries: WorkoutSeries[]): Workou
   if (!Array.isArray(maybeSeries)) {
     return { version: 1, series: fallbackSeries };
   }
-  return { version: 1, series: maybeSeries as WorkoutSeries[] };
+
+  // Normalize each series to match the expected structure
+  const normalizedSeries: WorkoutSeries[] = maybeSeries
+    .map((s: any): WorkoutSeries | null => {
+      if (!s || typeof s !== "object" || !s.id || !s.label) {
+        return null;
+      }
+
+      // Normalize exercises
+      const exercises: SeriesExercise[] = Array.isArray(s.exercises)
+        ? (() => {
+            const mapped = s.exercises.map((ex: any): SeriesExercise | null => {
+              if (!ex || typeof ex !== "object" || !ex.id) {
+                return null;
+              }
+
+              // Ensure tempo object is complete
+              const tempo = ex.tempo && typeof ex.tempo === "object"
+                ? {
+                    top: String(ex.tempo.top ?? "0"),
+                    bottom: String(ex.tempo.bottom ?? "0"),
+                    eccentric: String(ex.tempo.eccentric ?? "0"),
+                    concentric: String(ex.tempo.concentric ?? "0"),
+                  }
+                : {
+                    top: "0",
+                    bottom: "0",
+                    eccentric: "0",
+                    concentric: "0",
+                  };
+
+              // Normalize sets array
+              const sets = Array.isArray(ex.sets)
+                ? ex.sets.map((set: any) => ({
+                    id: String(set?.id ?? ""),
+                    reps: String(set?.reps ?? ""),
+                    restSec: String(set?.restSec ?? ""),
+                    setTypeId: set?.setTypeId ?? null,
+                  }))
+                : [];
+
+              return {
+                id: String(ex.id),
+                title: String(ex.title ?? ""),
+                videoUrl: ex.videoUrl ?? null,
+                tempo,
+                sets,
+                notes: ex.notes ?? null,
+                trainerNotes: ex.trainerNotes ?? null,
+              };
+            });
+            return mapped.filter((ex): ex is SeriesExercise => ex !== null);
+          })()
+        : [];
+
+      return {
+        id: String(s.id),
+        label: String(s.label),
+        exercises,
+        durationMin: typeof s.durationMin === "number" ? s.durationMin : null,
+        durationSec: typeof s.durationSec === "number" ? s.durationSec : null,
+      };
+    })
+    .filter((s): s is WorkoutSeries => s !== null);
+
+  // If normalization resulted in empty series, use fallback
+  if (normalizedSeries.length === 0) {
+    return { version: 1, series: fallbackSeries };
+  }
+
+  return { version: 1, series: normalizedSeries };
 }
 
 export function useWorkoutEditor({
@@ -113,7 +183,6 @@ export function useWorkoutEditor({
   }, [mode, workoutId]);
 
   const discardToLastSaved = useCallback(() => {
-    // Create deep copies to ensure React detects the change
     const savedSeries = JSON.parse(JSON.stringify(lastSavedRef.current.series));
     const savedTitle = lastSavedRef.current.title;
     setSeries(savedSeries);
