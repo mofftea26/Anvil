@@ -1,5 +1,6 @@
 export { AppAlertProvider, useAppAlert } from "./alert/AppAlertProvider";
 export type { AppAlertButton, AppAlertOptions, AppAlertPromptOptions } from "./alert/AppAlertProvider";
+export { AnimatedArrow } from "./components/AnimatedArrow";
 export { BottomSheetPicker } from "./components/BottomSheetPicker";
 export type {
   BottomSheetOption,
@@ -11,6 +12,7 @@ export { Card } from "./components/Card";
 export { Chip } from "./components/Chip";
 export { ColorPickerField } from "./components/ColorPickerField";
 export { Divider } from "./components/Divider";
+export { DurationCircle } from "./components/DurationCircle";
 export { Icon } from "./components/Icon";
 export { IconButton } from "./components/IconButton";
 export type { IconButtonProps } from "./components/IconButton";

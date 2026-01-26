@@ -12,6 +12,8 @@ type Params = {
 type Return = {
   series: WorkoutSeries[];
   setSeries: React.Dispatch<React.SetStateAction<WorkoutSeries[]>>;
+  title: string;
+  setTitle: React.Dispatch<React.SetStateAction<string>>;
 
   isLoading: boolean;
   isSaving: boolean;
@@ -36,20 +38,27 @@ export function useWorkoutEditor({
   initialSeries,
 }: Params): Return {
   const [series, setSeries] = useState<WorkoutSeries[]>(initialSeries);
+  const [title, setTitle] = useState<string>("Workout");
   const [isLoading, setIsLoading] = useState(mode === "edit");
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const lastSavedRef = useRef<WorkoutSeries[]>(initialSeries);
+  const lastSavedRef = useRef<{ series: WorkoutSeries[]; title: string }>({
+    series: initialSeries,
+    title: "Workout",
+  });
   const loadedOnceRef = useRef(false);
 
   const hasChanges = useMemo(() => {
     try {
-      return JSON.stringify(series) !== JSON.stringify(lastSavedRef.current);
+      return (
+        JSON.stringify(series) !== JSON.stringify(lastSavedRef.current.series) ||
+        title !== lastSavedRef.current.title
+      );
     } catch {
       return true;
     }
-  }, [series]);
+  }, [series, title]);
 
   useEffect(() => {
     let mounted = true;
@@ -57,8 +66,9 @@ export function useWorkoutEditor({
     async function run() {
       if (mode !== "edit") {
         loadedOnceRef.current = true;
-        lastSavedRef.current = initialSeries;
+        lastSavedRef.current = { series: initialSeries, title: "Workout" };
         setSeries(initialSeries);
+        setTitle("Workout");
         setIsLoading(false);
         setError(null);
         return;
@@ -83,7 +93,8 @@ export function useWorkoutEditor({
 
         if (!mounted) return;
         setSeries(parsed.series);
-        lastSavedRef.current = parsed.series;
+        setTitle(row.title || "Workout");
+        lastSavedRef.current = { series: parsed.series, title: row.title || "Workout" };
         loadedOnceRef.current = true;
       } catch (e: any) {
         if (!mounted) return;
@@ -102,7 +113,11 @@ export function useWorkoutEditor({
   }, [mode, workoutId]);
 
   const discardToLastSaved = useCallback(() => {
-    setSeries(lastSavedRef.current);
+    // Create deep copies to ensure React detects the change
+    const savedSeries = JSON.parse(JSON.stringify(lastSavedRef.current.series));
+    const savedTitle = lastSavedRef.current.title;
+    setSeries(savedSeries);
+    setTitle(savedTitle);
   }, []);
 
   const save = useCallback(async () => {
@@ -114,11 +129,12 @@ export function useWorkoutEditor({
 
       if (mode === "new") {
         const created = await createWorkout({
-          title: "Workout",
+          title: title.trim() || "Workout",
           state: payload,
         });
-        lastSavedRef.current = created.state.series;
+        lastSavedRef.current = { series: created.state.series, title: created.title };
         setSeries(created.state.series);
+        setTitle(created.title);
         return { workoutId: created.id };
       }
 
@@ -126,10 +142,12 @@ export function useWorkoutEditor({
 
       const updated = await updateWorkout({
         workoutId,
+        title: title.trim() || "Workout",
         state: payload,
       });
-      lastSavedRef.current = updated.state.series;
+      lastSavedRef.current = { series: updated.state.series, title: updated.title };
       setSeries(updated.state.series);
+      setTitle(updated.title);
       return { workoutId: updated.id };
     } catch (e: any) {
       setError(e?.message ?? "Failed to save workout");
@@ -137,11 +155,13 @@ export function useWorkoutEditor({
     } finally {
       setIsSaving(false);
     }
-  }, [mode, workoutId, series]);
+  }, [mode, workoutId, series, title]);
 
   return {
     series,
     setSeries,
+    title,
+    setTitle,
     isLoading,
     isSaving,
     error,

@@ -1,21 +1,25 @@
 import { Image } from "expo-image";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
 import { useVideoThumbnail } from "../hooks/useVideoThumbnail";
 import type { SeriesExercise } from "../types";
+import { VideoPlayerModal } from "./VideoPlayerModal";
 
 import { Icon, Text, useTheme } from "@/shared/ui";
+import { hexToRgba } from "@/features/profile/utils/trainerProfileUtils";
 
 type Props = {
   code: string; // A1, A2...
   exercise: SeriesExercise;
-  onPress: () => void;
+  onEdit: () => void;
 };
 
-export function ExerciseCard({ code, exercise, onPress }: Props) {
+export function ExerciseCard({ code, exercise, onEdit }: Props) {
   const theme = useTheme();
   const { thumbnailUri } = useVideoThumbnail(exercise.videoUrl ?? null);
+  const [showVideo, setShowVideo] = useState(false);
 
   const summary = useMemo(() => {
     const setsCount = exercise.sets.length;
@@ -45,140 +49,233 @@ export function ExerciseCard({ code, exercise, onPress }: Props) {
     };
   }, [exercise.sets, exercise.tempo]);
 
+  const handleCardPress = () => {
+    if (exercise.videoUrl) {
+      setShowVideo(true);
+    }
+  };
+
   return (
-    <Pressable
-      onPress={onPress}
-      style={[
-        styles.card,
-        {
-          backgroundColor: theme.colors.surface2,
-          borderColor: theme.colors.border,
-        },
-      ]}
-    >
-      {/* Background */}
-      {thumbnailUri ? (
-        <Image
-          source={{ uri: thumbnailUri }}
-          style={StyleSheet.absoluteFillObject}
-          contentFit="cover"
-        />
-      ) : (
-        <View
-          style={[
-            StyleSheet.absoluteFillObject,
-            { backgroundColor: theme.colors.surface3 },
-          ]}
-        />
-      )}
-
-      {/* Overlay */}
-      <View
-        style={[
-          StyleSheet.absoluteFillObject,
-          { backgroundColor: "rgba(0,0,0,0.5)" },
+    <>
+      <Pressable
+        onPress={handleCardPress}
+        style={({ pressed }) => [
+          styles.card,
+          {
+            backgroundColor: theme.colors.surface3,
+            transform: [{ scale: pressed ? 0.98 : 1 }],
+          },
         ]}
-      />
+      >
+        {/* Background Image or Gradient */}
+        {thumbnailUri ? (
+          <Image
+            source={{ uri: thumbnailUri }}
+            style={StyleSheet.absoluteFillObject}
+            contentFit="cover"
+          />
+        ) : (
+          <LinearGradient
+            colors={[
+              hexToRgba(theme.colors.accent, 0.12),
+              hexToRgba(theme.colors.accent2, 0.06),
+              theme.colors.surface3,
+            ]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />
+        )}
 
-      {/* Top content */}
-      <View style={styles.top}>
-        <View style={styles.titleRow}>
-          <View
-            style={[
-              styles.codeBadge,
-              { borderColor: "rgba(255,255,255,0.18)" },
+        {/* Subtle Overlay */}
+        <LinearGradient
+          colors={["rgba(0,0,0,0.2)", "rgba(0,0,0,0.4)"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={StyleSheet.absoluteFillObject}
+        />
+
+        {/* Content */}
+        <View style={styles.content}>
+          {/* Edit Button - Top Right */}
+          <Pressable
+            onPress={(e) => {
+              e.stopPropagation();
+              onEdit();
+            }}
+            style={({ pressed }) => [
+              styles.editButton,
+              {
+                backgroundColor: hexToRgba(theme.colors.accent, 0.25),
+                opacity: pressed ? 0.7 : 1,
+              },
             ]}
           >
-            <Text style={styles.codeText}>{code}</Text>
+            <Icon name="edit" size={16} color={theme.colors.accent} />
+          </Pressable>
+
+          {/* Top Row: Code and Title */}
+          <View style={styles.topRow}>
+            <View
+              style={[
+                styles.codeBadge,
+                {
+                  backgroundColor: hexToRgba(theme.colors.accent, 0.2),
+                  borderColor: hexToRgba(theme.colors.accent, 0.35),
+                },
+              ]}
+            >
+              <Text
+                weight="bold"
+                style={{ fontSize: 11, color: theme.colors.accent }}
+              >
+                {code}
+              </Text>
+            </View>
+
+            <View style={styles.titleContainer}>
+              <Text
+                weight="bold"
+                style={styles.title}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {exercise.title}
+              </Text>
+            </View>
           </View>
 
-          <Text style={styles.title} numberOfLines={2}>
-            {exercise.title}
-          </Text>
-        </View>
+          {/* Center: Play Icon */}
+          {exercise.videoUrl && (
+            <View style={styles.playIconContainer}>
+              <View
+                style={[
+                  styles.playIconCircle,
+                  { backgroundColor: hexToRgba(theme.colors.accent, 0.3) },
+                ]}
+              >
+                <Icon name="play" size={32} color={theme.colors.accent} />
+              </View>
+            </View>
+          )}
 
-      
-
-        {/* Sets + Reps + Rest (same line) */}
-        <View style={styles.pillRow}>
-        <Pill icon="timer-outline" text={summary.tempoText} />
-          <Pill icon="layers" text={summary.setsText} />
-          <Pill icon="fitness" text={summary.repsText} />
-          <Pill icon="hourglass-outline" text={summary.restText} />
+          {/* Bottom: Stats Row */}
+          <View style={styles.statsRow}>
+            <StatBadge icon="timer" text={summary.tempoText} theme={theme} />
+            <StatBadge icon="layers" text={summary.setsText} theme={theme} />
+            <StatBadge icon="fitness" text={summary.repsText} theme={theme} />
+            {summary.restText !== "-- rest" && (
+              <StatBadge icon="hourglass" text={summary.restText} theme={theme} />
+            )}
+          </View>
         </View>
-      </View>
-    </Pressable>
+      </Pressable>
+
+      {/* Video Modal */}
+      <VideoPlayerModal
+        visible={showVideo}
+        videoUrl={exercise.videoUrl}
+        title={exercise.title}
+        onClose={() => setShowVideo(false)}
+      />
+    </>
   );
 }
 
-function Pill({ icon, text }: { icon: any; text: string }) {
+function StatBadge({ icon, text, theme }: { icon: string; text: string; theme: any }) {
   return (
-    <View style={styles.pill}>
-      <Icon name={icon} size={14} color="white" />
-      <Text style={styles.pillText}>{text}</Text>
+    <View
+      style={[
+        styles.statBadge,
+        {
+          backgroundColor: "rgba(255,255,255,0.1)",
+          borderColor: "rgba(255,255,255,0.15)",
+        },
+      ]}
+    >
+      <Icon name={icon} size={10} color="white" />
+      <Text style={styles.statText}>{text}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    height: 168,
-    borderRadius: 20,
+    borderRadius: 16,
     overflow: "hidden",
-    borderWidth: 1,
-    padding: 12,
+    marginBottom: 12,
+    minHeight: 180,
   },
-  top: {
+  content: {
+    padding: 14,
+    position: "relative",
+    zIndex: 1,
     flex: 1,
     justifyContent: "space-between",
   },
-  titleRow: {
+  editButton: {
+    position: "absolute",
+    top: 14,
+    right: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+  },
+  topRow: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     gap: 10,
   },
   codeBadge: {
-    minWidth: 44,
-    height: 34,
-    borderRadius: 14,
-    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    minWidth: 36,
     alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.28)",
-    paddingHorizontal: 10,
   },
-  codeText: {
-    color: "white",
-    fontWeight: "900",
+  titleContainer: {
+    flex: 1,
   },
   title: {
     color: "white",
     fontSize: 16,
-    fontWeight: "900",
+    lineHeight: 20,
+    fontWeight: "700",
+  },
+  playIconContainer: {
     flex: 1,
-    paddingTop: 4,
-  },
-  pillRow: {
-    flexDirection: "row",
-    gap: 3,
     alignItems: "center",
-    justifyContent: "space-between",
-    flexWrap: "wrap",
+    justifyContent: "center",
   },
-  pill: {
+  playIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  statsRow: {
     flexDirection: "row",
     gap: 6,
-    alignItems: "center",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 999,
-    backgroundColor: "rgba(0,0,0,0.35)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.15)",
+    flexWrap: "wrap",
+    marginTop: "auto",
   },
-  pillText: {
+  statBadge: {
+    flexDirection: "row",
+    gap: 4,
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  statText: {
     color: "white",
-    fontWeight: "800",
-    fontSize: 8,
+    fontWeight: "600",
+    fontSize: 9,
   },
 });

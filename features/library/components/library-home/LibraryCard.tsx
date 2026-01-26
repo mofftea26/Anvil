@@ -18,14 +18,14 @@ export function LibraryCard({ title, subtitle, icon, onPress }: LibraryCardProps
       onPress={onPress}
       style={[
         styles.card,
-        { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+        { backgroundColor: theme.colors.surface },
       ]}
     >
       <View style={styles.cardLeft}>
         <View
           style={[
             styles.iconCircle,
-            { backgroundColor: theme.colors.surface2, borderColor: theme.colors.border },
+            { backgroundColor: theme.colors.surface2 },
           ]}
         >
           <Icon name={icon} size={18} color={theme.colors.text} strokeWidth={1.5} />
@@ -48,7 +48,6 @@ const styles = StyleSheet.create({
   card: {
     padding: 14,
     borderRadius: 16,
-    borderWidth: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -63,7 +62,6 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 12,
-    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
   },

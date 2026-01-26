@@ -26,7 +26,6 @@ export function SetTypesTabs({ tabs, activeTabKey, onSelect }: SetTypesTabsProps
         styles.tabsWrap,
         {
           backgroundColor: theme.colors.surface,
-          borderBottomColor: theme.colors.border,
         },
       ]}
     >
@@ -49,9 +48,6 @@ export function SetTypesTabs({ tabs, activeTabKey, onSelect }: SetTypesTabsProps
                   backgroundColor: isActive
                     ? hexToRgba(theme.colors.accent, 0.15)
                     : theme.colors.surface2,
-                  borderColor: isActive
-                    ? theme.colors.accent
-                    : theme.colors.border,
                   opacity: pressed ? 0.8 : 1,
                 },
               ]}
@@ -104,7 +100,6 @@ export function SetTypesTabs({ tabs, activeTabKey, onSelect }: SetTypesTabsProps
 
 const styles = StyleSheet.create({
   tabsWrap: {
-    borderBottomWidth: 1,
     paddingVertical: 12,
   },
   tabsContent: {
@@ -118,7 +113,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderRadius: 12,
-    borderWidth: 1.5,
     minHeight: 40,
   },
   badge: {

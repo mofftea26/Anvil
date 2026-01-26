@@ -35,7 +35,6 @@ export function SetTypesContent({
                 styles.emptyIconContainer,
                 {
                   backgroundColor: hexToRgba(theme.colors.accent, 0.1),
-                  borderColor: hexToRgba(theme.colors.accent, 0.2),
                 },
               ]}
             >
@@ -82,7 +81,6 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 20,
-    borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
   },

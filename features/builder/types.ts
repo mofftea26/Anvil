@@ -30,5 +30,7 @@ export type Tempo = {
     id: string;
     label: string; // A, B, C...
     exercises: SeriesExercise[];
+    durationMin?: number | null;
+    durationSec?: number | null;
   };
   

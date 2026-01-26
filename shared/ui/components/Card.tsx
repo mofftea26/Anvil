@@ -1,8 +1,8 @@
 import React from "react";
 import type { ViewProps, ViewStyle } from "react-native";
 import { View } from "react-native";
-import { useTheme } from "../theme";
 import type { AppTheme } from "../theme";
+import { useTheme } from "../theme";
 
 type Props = ViewProps & {
   padded?: boolean;
@@ -15,7 +15,7 @@ export function Card({
   style,
   padded = true,
   radius = "lg",
-  bordered = true,
+  bordered = false,
   background = "surface",
   ...props
 }: Props) {

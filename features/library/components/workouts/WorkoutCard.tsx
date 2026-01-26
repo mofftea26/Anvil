@@ -1,11 +1,11 @@
 import type { WorkoutRow } from "@/features/builder/api/workouts.api";
 import { formatShortDate } from "@/features/library/utils/formatShortDate";
-import React, { useMemo } from "react";
 import { LinearGradient } from "expo-linear-gradient";
+import React, { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { Card, HStack, Icon, Text, useTheme, VStack } from "@/shared/ui";
 import { hexToRgba } from "@/features/profile/utils/trainerProfileUtils";
+import { Card, DurationCircle, HStack, Icon, Text, useTheme, VStack } from "@/shared/ui";
 
 type WorkoutCardProps = {
   workout: WorkoutRow;
@@ -55,159 +55,236 @@ export function WorkoutCard({
     }
   }, [workout.state]);
 
+  // Calculate total duration from all series
+  const durationMinutes = useMemo(() => {
+    try {
+      const state = workout.state;
+      if (!state?.series) return null;
+
+      const totalMinutes = state.series.reduce(
+        (sum, s) => sum + (s.durationMin ?? 0),
+        0
+      );
+
+      return totalMinutes > 0 ? totalMinutes : null;
+    } catch {
+      return null;
+    }
+  }, [workout.state]);
+
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}
+      style={({ pressed }) => [
+        styles.pressable,
+        { transform: [{ scale: pressed ? 0.98 : 1 }] },
+      ]}
     >
-      <Card padded={false} style={{ overflow: "hidden" }}>
-        <View style={{ position: "relative" }}>
+      <Card
+        padded={false}
+        style={[
+          styles.card,
+          {
+            borderRadius: theme.radii.lg,
+            borderColor: hexToRgba(theme.colors.accent, 0.15),
+          },
+        ]}
+      >
+        <View style={{ position: "relative", overflow: "hidden" }}>
+          {/* Enhanced Gradient Background */}
           <LinearGradient
             colors={[
-              hexToRgba(theme.colors.accent, 0.12),
-              hexToRgba(theme.colors.accent2, 0.06),
-              "rgba(255,255,255,0.00)",
+              hexToRgba(theme.colors.accent, 0.16),
+              hexToRgba(theme.colors.accent2, 0.08),
+              hexToRgba(theme.colors.accent, 0.04),
+              "transparent",
             ]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={StyleSheet.absoluteFillObject}
           />
 
-          <VStack
-            style={{
-              padding: theme.spacing.md,
-              gap: theme.spacing.sm,
-            }}
-          >
-            {/* Header */}
-            <HStack align="center" justify="space-between">
-              <HStack align="center" gap={10} style={{ flex: 1 }}>
-                <View
+          {/* Content */}
+          <VStack style={[styles.content, { padding: theme.spacing.lg }]}>
+            {/* Header Section */}
+            <HStack align="flex-start" justify="space-between" style={styles.header}>
+              <VStack style={{ flex: 1, gap: theme.spacing.xs }}>
+                {/* Title */}
+                <Text
+                  weight="bold"
                   style={[
-                    styles.iconContainer,
+                    styles.title,
                     {
-                      backgroundColor: hexToRgba(theme.colors.accent, 0.15),
-                      borderColor: hexToRgba(theme.colors.accent, 0.25),
+                      color: theme.colors.text,
+                      fontSize: 20,
+                      lineHeight: 26,
+                    },
+                  ]}
+                  numberOfLines={2}
+                >
+                  {title}
+                </Text>
+
+                {/* Updated Date */}
+                <Text
+                  muted
+                  style={[
+                    styles.dateText,
+                    {
+                      fontSize: 13,
+                      color: theme.colors.textMuted,
                     },
                   ]}
                 >
-                  <Icon
-                    name="fitness"
-                    size={20}
-                    color={theme.colors.accent}
-                    strokeWidth={2}
-                  />
-                </View>
-                <VStack style={{ flex: 1, gap: 2 }}>
-                  <Text weight="bold" style={{ fontSize: 16 }} numberOfLines={1}>
-                    {title}
-                  </Text>
-                  <Text muted style={{ fontSize: 12 }}>
-                    {updatedAtLabel} {updatedDate}
-                  </Text>
-                </VStack>
-              </HStack>
-              <Icon
-                name="chevron-forward"
-                size={18}
-                color={theme.colors.textMuted}
-                strokeWidth={1.5}
-              />
+                  {updatedAtLabel} {updatedDate}
+                </Text>
+              </VStack>
+
+              {/* Duration Badge - Prominent Circle */}
+              <DurationCircle minutes={durationMinutes} size="small" />
             </HStack>
 
-            {/* Stats */}
+            {/* Stats Section - Modern Horizontal Layout */}
             {stats && (stats.series > 0 || stats.exercises > 0 || stats.sets > 0) ? (
-              <View
-                style={{
-                  paddingTop: theme.spacing.sm,
-                  borderTopWidth: 1,
-                  borderTopColor: hexToRgba(theme.colors.border, 0.5),
-                }}
-              >
+              <View style={styles.statsContainer}>
                 <HStack
                   align="center"
+                  justify="flex-start"
                   gap={theme.spacing.md}
-                  style={{ flexWrap: "wrap" }}
+                  style={styles.statsRow}
                 >
                   {stats.series > 0 ? (
-                    <View
-                      style={[
-                        styles.statBadge,
-                        {
-                          backgroundColor: hexToRgba(theme.colors.accent, 0.1),
-                          borderColor: hexToRgba(theme.colors.accent, 0.2),
-                        },
-                      ]}
-                    >
-                      <Icon
-                        name="layers"
-                        size={12}
-                        color={theme.colors.accent}
-                        strokeWidth={2}
-                      />
-                      <Text
-                        style={{
-                          fontSize: 11,
-                          fontWeight: "700",
-                          color: theme.colors.accent,
-                        }}
+                    <View style={styles.statItem}>
+                      <View
+                        style={[
+                          styles.statIconContainer,
+                          {
+                            backgroundColor: hexToRgba(theme.colors.accent, 0.15),
+                          },
+                        ]}
                       >
-                        {stats.series} {stats.series === 1 ? "Series" : "Series"}
-                      </Text>
+                        <Icon
+                          name="layers"
+                          size={16}
+                          color={theme.colors.accent}
+                          strokeWidth={2}
+                        />
+                      </View>
+                      <VStack style={styles.statTextContainer}>
+                        <Text
+                          weight="bold"
+                          style={[
+                            styles.statNumber,
+                            {
+                              color: theme.colors.text,
+                              fontSize: 16,
+                            },
+                          ]}
+                        >
+                          {stats.series}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.statLabel,
+                            {
+                              color: theme.colors.textMuted,
+                              fontSize: 11,
+                            },
+                          ]}
+                        >
+                          {stats.series === 1 ? "Series" : "Series"}
+                        </Text>
+                      </VStack>
                     </View>
                   ) : null}
+
                   {stats.exercises > 0 ? (
-                    <View
-                      style={[
-                        styles.statBadge,
-                        {
-                          backgroundColor: hexToRgba(theme.colors.accent2, 0.1),
-                          borderColor: hexToRgba(theme.colors.accent2, 0.2),
-                        },
-                      ]}
-                    >
-                      <Icon
-                        name="fitness"
-                        size={12}
-                        color={theme.colors.accent2}
-                        strokeWidth={2}
-                      />
-                      <Text
-                        style={{
-                          fontSize: 11,
-                          fontWeight: "700",
-                          color: theme.colors.accent2,
-                        }}
+                    <View style={styles.statItem}>
+                      <View
+                        style={[
+                          styles.statIconContainer,
+                          {
+                            backgroundColor: hexToRgba(theme.colors.accent2, 0.15),
+                          },
+                        ]}
                       >
-                        {stats.exercises} {stats.exercises === 1 ? "Exercise" : "Exercises"}
-                      </Text>
+                        <Icon
+                          name="fitness"
+                          size={16}
+                          color={theme.colors.accent2}
+                          strokeWidth={2}
+                        />
+                      </View>
+                      <VStack style={styles.statTextContainer}>
+                        <Text
+                          weight="bold"
+                          style={[
+                            styles.statNumber,
+                            {
+                              color: theme.colors.text,
+                              fontSize: 16,
+                            },
+                          ]}
+                        >
+                          {stats.exercises}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.statLabel,
+                            {
+                              color: theme.colors.textMuted,
+                              fontSize: 11,
+                            },
+                          ]}
+                        >
+                          {stats.exercises === 1 ? "Exercise" : "Exercises"}
+                        </Text>
+                      </VStack>
                     </View>
                   ) : null}
+
                   {stats.sets > 0 ? (
-                    <View
-                      style={[
-                        styles.statBadge,
-                        {
-                          backgroundColor: hexToRgba(theme.colors.textMuted, 0.1),
-                          borderColor: hexToRgba(theme.colors.textMuted, 0.2),
-                        },
-                      ]}
-                    >
-                      <Icon
-                        name="fitness"
-                        size={12}
-                        color={theme.colors.textMuted}
-                        strokeWidth={2}
-                      />
-                      <Text
-                        muted
-                        style={{
-                          fontSize: 11,
-                          fontWeight: "700",
-                        }}
+                    <View style={styles.statItem}>
+                      <View
+                        style={[
+                          styles.statIconContainer,
+                          {
+                            backgroundColor: hexToRgba(theme.colors.textMuted, 0.15),
+                          },
+                        ]}
                       >
-                        {stats.sets} {stats.sets === 1 ? "Set" : "Sets"}
-                      </Text>
+                        <Icon
+                          name="fitness"
+                          size={16}
+                          color={theme.colors.textMuted}
+                          strokeWidth={2}
+                        />
+                      </View>
+                      <VStack style={styles.statTextContainer}>
+                        <Text
+                          weight="bold"
+                          style={[
+                            styles.statNumber,
+                            {
+                              color: theme.colors.text,
+                              fontSize: 16,
+                            },
+                          ]}
+                        >
+                          {stats.sets}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.statLabel,
+                            {
+                              color: theme.colors.textMuted,
+                              fontSize: 11,
+                            },
+                          ]}
+                        >
+                          {stats.sets === 1 ? "Set" : "Sets"}
+                        </Text>
+                      </VStack>
                     </View>
                   ) : null}
                 </HStack>
@@ -221,21 +298,52 @@ export function WorkoutCard({
 }
 
 const styles = StyleSheet.create({
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    borderWidth: 1,
+  pressable: {
+    marginBottom: 2,
+  },
+  card: {
+    overflow: "hidden",
+    borderWidth: 0,
+  },
+  content: {
+    gap: 16,
+    position: "relative",
+  },
+  header: {
+    gap: 12,
+  },
+  title: {
+    fontWeight: "700",
+  },
+  dateText: {
+    marginTop: 2,
+  },
+  statsContainer: {
+    paddingTop: 4,
+  },
+  statsRow: {
+    flexWrap: "wrap",
+  },
+  statItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  statIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
   },
-  statBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
+  statTextContainer: {
+    gap: 2,
+  },
+  statNumber: {
+    fontWeight: "700",
+    lineHeight: 20,
+  },
+  statLabel: {
+    lineHeight: 14,
   },
 });

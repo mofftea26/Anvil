@@ -38,7 +38,6 @@ export function SetTypesCard({ row }: SetTypesCardProps) {
                 styles.iconContainer,
                 {
                   backgroundColor: hexToRgba(theme.colors.accent, 0.15),
-                  borderColor: hexToRgba(theme.colors.accent, 0.25),
                 },
               ]}
             >
@@ -83,7 +82,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
   },

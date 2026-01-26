@@ -26,7 +26,6 @@ export function LibraryQuickActions({
           styles.quickBtn,
           {
             backgroundColor: theme.colors.surface2,
-            borderColor: theme.colors.border,
           },
         ]}
       >
@@ -40,7 +39,6 @@ export function LibraryQuickActions({
           styles.quickBtn,
           {
             backgroundColor: theme.colors.surface2,
-            borderColor: theme.colors.border,
           },
         ]}
       >
@@ -61,6 +59,5 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 12,
     borderRadius: 14,
-    borderWidth: 1,
   },
 });

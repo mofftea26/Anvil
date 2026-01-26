@@ -17,6 +17,7 @@ export const iconMap: Record<string, string> = {
   "checkmark-circle": "CheckmarkCircle01Icon",
   "create-outline": "Edit01Icon",
   "pencil": "Edit01Icon",
+  "edit": "Edit01Icon",
   
   // People
   "person": "UserIcon",

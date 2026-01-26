@@ -1,9 +1,12 @@
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   FlatList,
+  Pressable,
   StyleSheet,
+  TextInput,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -11,7 +14,7 @@ import {
 import { useSetTypesDictionary } from "@/features/library/hooks/useSetTypesDictionary";
 import type { SetTypeRow } from "@/features/library/types/setTypes";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
-import { appToast, StickyHeader, Text, useTheme } from "@/shared/ui";
+import { AnimatedArrow, appToast, DurationCircle, HStack, Icon, Text, useTheme } from "@/shared/ui";
 
 import { useFocusEffect } from "@react-navigation/native";
 import { AddSeriesCard, SeriesPage } from "../components/SeriesPage";
@@ -20,6 +23,7 @@ import { StickySaveBar } from "../components/StickySaveBar";
 import { MOCK_LIBRARY_EXERCISES } from "../data/mockLibraryExercises";
 import { useWorkoutEditor } from "../hooks/useWorkoutEditor";
 import type { SeriesExercise, WorkoutSeries } from "../types";
+import { calculateWorkoutDuration } from "../utils/calculateWorkoutDuration";
 import { consumePendingExercisePick } from "../utils/exercisePickerBridge";
 import { getNextSeriesLabel } from "../utils/seriesLabel";
 
@@ -57,6 +61,8 @@ export function WorkoutBuilderScreen({ mode }: Props) {
   const {
     series,
     setSeries,
+    title,
+    setTitle,
     isLoading,
     isSaving,
     error,
@@ -68,7 +74,7 @@ export function WorkoutBuilderScreen({ mode }: Props) {
     initialSeries: initialSeriesRef.current,
   });
 
-  const [activeSeriesIndex, setActiveSeriesIndex] = useState(0);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
 
   const [editingExercise, setEditingExercise] = useState<{
     seriesId: string;
@@ -78,6 +84,13 @@ export function WorkoutBuilderScreen({ mode }: Props) {
   const { rows: setTypesRows = [] } = useSetTypesDictionary();
 
   const flatRef = useRef<FlatList<CarouselItem>>(null);
+  const titleInputRef = useRef<TextInput>(null);
+  const [currentSeriesIndex, setCurrentSeriesIndex] = useState(0);
+
+  // Calculate duration from exercises
+  const durationMinutes = useMemo(() => {
+    return calculateWorkoutDuration(series);
+  }, [series]);
 
   const items: CarouselItem[] = useMemo(() => {
     return [
@@ -139,13 +152,13 @@ export function WorkoutBuilderScreen({ mode }: Props) {
       });
     });
   }
+
   function onAddExercise(seriesId: string) {
     router.push({
       pathname: "/(trainer)/library/workout-builder/exercise-picker",
       params: { targetSeriesId: seriesId },
     });
   }
-  
 
   function onEditExercise(seriesId: string, exerciseId: string) {
     setEditingExercise({ seriesId, exerciseId });
@@ -177,7 +190,6 @@ export function WorkoutBuilderScreen({ mode }: Props) {
 
   function discardChanges() {
     discardToLastSaved();
-    setActiveSeriesIndex(0);
     requestAnimationFrame(() => {
       flatRef.current?.scrollToIndex({ index: 0, animated: true });
     });
@@ -201,7 +213,11 @@ export function WorkoutBuilderScreen({ mode }: Props) {
   if (isLoading) {
     return (
       <View style={[styles.screen, { backgroundColor: theme.colors.background }]}>
-        <StickyHeader title={t("builder.workoutBuilder.title")} showBackButton />
+        <View style={styles.customHeader}>
+          <Pressable onPress={() => router.back()} style={styles.backButton}>
+            <Icon name="chevron-back" size={22} color={theme.colors.text} />
+          </Pressable>
+        </View>
         <View style={styles.center}>
           <ActivityIndicator />
           <View style={{ height: 10 }} />
@@ -215,11 +231,64 @@ export function WorkoutBuilderScreen({ mode }: Props) {
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.colors.background }]}>
-      <StickyHeader
-        title={t("builder.workoutBuilder.title")}
-        showBackButton
-       
-      />
+      {/* Custom Header with Editable Title and Duration */}
+      <View style={styles.customHeader}>
+        <HStack align="center" justify="space-between" style={styles.headerContent}>
+          <Pressable onPress={() => router.back()} style={styles.backButton}>
+            <Icon name="chevron-back" size={22} color={theme.colors.text} />
+          </Pressable>
+
+          <Pressable
+            onPress={() => {
+              setIsEditingTitle(true);
+              setTimeout(() => titleInputRef.current?.focus(), 100);
+            }}
+            style={styles.titleContainer}
+          >
+            {isEditingTitle ? (
+              <TextInput
+                ref={titleInputRef}
+                value={title}
+                onChangeText={setTitle}
+                onBlur={() => setIsEditingTitle(false)}
+                onSubmitEditing={() => setIsEditingTitle(false)}
+                style={[
+                  styles.titleInput,
+                  {
+                    color: theme.colors.text,
+                    fontSize: 18,
+                    fontWeight: "600",
+                  },
+                ]}
+                placeholder="Workout Title"
+                placeholderTextColor={theme.colors.textMuted}
+                maxLength={50}
+              />
+            ) : (
+              <HStack align="center" gap={8}>
+                <Text
+                  weight="semibold"
+                  style={[
+                    styles.titleText,
+                    {
+                      color: theme.colors.text,
+                      fontSize: 18,
+                    },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {title || "Workout"}
+                </Text>
+                <Icon name="edit" size={16} color={theme.colors.textMuted} />
+              </HStack>
+            )}
+          </Pressable>
+
+          <View style={styles.rightSection}>
+            <DurationCircle minutes={durationMinutes} size="small" />
+          </View>
+        </HStack>
+      </View>
 
       {error ? (
         <View style={{ paddingHorizontal: 14, paddingBottom: 6 }}>
@@ -240,33 +309,63 @@ export function WorkoutBuilderScreen({ mode }: Props) {
           paddingBottom: 130,
           paddingTop: 10,
         }}
-        onMomentumScrollEnd={(e) => {
-          const idx = Math.round(e.nativeEvent.contentOffset.x / width);
-          setActiveSeriesIndex(Math.min(idx, Math.max(0, series.length - 1)));
+        onMomentumScrollEnd={(event) => {
+          const index = Math.round(event.nativeEvent.contentOffset.x / width);
+          if (index < series.length) {
+            setCurrentSeriesIndex(index);
+          }
         }}
-        renderItem={({ item }) => {
+        renderItem={({ item, index }) => {
           if (item.kind === "addSeries") {
             return (
-              <View style={{ width, paddingHorizontal: 14 }}>
+              <View style={{ width, paddingHorizontal: 14, height: "100%" }}>
                 <AddSeriesCard onPress={onAddSeries} />
               </View>
             );
           }
 
           const s = series.find((x) => x.id === item.id);
-          if (!s) return <View style={{ width }} />;
+          if (!s) return <View style={{ width, height: "100%" }} />;
+
+          const seriesIndex = series.findIndex((x) => x.id === item.id);
+          const isFirstSeries = seriesIndex === 0;
+          const isLastSeries = seriesIndex === series.length - 1;
 
           return (
-            <View style={{ width, paddingHorizontal: 14 }}>
+            <View style={{ width, paddingHorizontal: 14, height: "100%" }}>
               <SeriesPage
                 series={s}
                 onEditExercise={(exerciseId) => onEditExercise(s.id, exerciseId)}
                 onAddExercise={onAddExercise}
+                isFirstSeries={isFirstSeries}
+                isLastSeries={isLastSeries}
               />
             </View>
           );
         }}
       />
+
+      {/* Arrows Between Series Page and Save Bar - Screen Level */}
+      <View style={styles.arrowsContainer}>
+        {currentSeriesIndex > 0 && (
+          <View style={styles.leftArrows}>
+            <AnimatedArrow direction="left" />
+            <AnimatedArrow direction="left" delay={200} />
+            <AnimatedArrow direction="left" delay={400} />
+          </View>
+        )}
+        
+        <View style={styles.swipeTextContainer}>
+          <AnimatedSwipeText />
+        </View>
+        
+        {/* Right arrows always appear */}
+        <View style={styles.rightArrows}>
+          <AnimatedArrow direction="right" />
+          <AnimatedArrow direction="right" delay={200} />
+          <AnimatedArrow direction="right" delay={400} />
+        </View>
+      </View>
 
       <StickySaveBar
         onSave={saveChanges}
@@ -289,7 +388,114 @@ function cryptoRandomId() {
   return `id_${Math.random().toString(16).slice(2)}_${Date.now()}`;
 }
 
+function AnimatedSwipeText() {
+  const theme = useTheme();
+  const opacity = useState(new Animated.Value(0.4))[0];
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 0.4,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [opacity]);
+
+  return (
+    <Animated.View style={{ opacity }}>
+      <Text
+        style={{
+          color: theme.colors.textMuted,
+          fontSize: 12,
+          fontWeight: "600",
+          letterSpacing: 0.5,
+        }}
+      >
+        SWIPE
+      </Text>
+    </Animated.View>
+  );
+}
+
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
+  customHeader: {
+    paddingTop: 10,
+    paddingBottom: 12,
+    paddingHorizontal: 12,
+  },
+  headerContent: {
+    width: "100%",
+    alignItems: "center",
+  },
+  backButton: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 8,
+  },
+  titleContainer: {
+    flex: 1,
+    paddingHorizontal: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  titleText: {
+    textAlign: "center",
+  },
+  titleInput: {
+    textAlign: "center",
+    minWidth: 100,
+    paddingVertical: 4,
+  },
+  rightSection: {
+    width: 40,
+    alignItems: "flex-end",
+    justifyContent: "center",
+  },
+  arrowsContainer: {
+    position: "absolute",
+    bottom: 80,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingBottom: 8,
+  },
+  leftArrows: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    width: 60,
+    justifyContent: "flex-start",
+  },
+  swipeTextContainer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  rightArrows: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    width: 60,
+    justifyContent: "flex-end",
+    marginLeft: "auto",
+  },
 });
