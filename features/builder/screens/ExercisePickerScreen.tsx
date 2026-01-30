@@ -18,6 +18,7 @@ import { setPendingExercisePick } from "../utils/exercisePickerBridge";
 
 import { Chip, Icon, StickyHeader, Text, useTheme } from "@/shared/ui";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
+import { formatSlugToLabel } from "@/shared/utils";
 
 function getUniqueMuscles(exercises: Exercise[]): string[] {
   const set = new Set<string>();
@@ -196,7 +197,7 @@ export default function ExercisePickerScreen() {
             {allMuscles.map((muscle) => (
               <Chip
                 key={muscle}
-                label={muscle}
+                label={formatSlugToLabel(muscle)}
                 isActive={selectedMuscles.includes(muscle)}
                 onPress={() => toggleMuscle(muscle)}
                 style={styles.chip}

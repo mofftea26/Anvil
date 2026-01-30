@@ -1,6 +1,7 @@
+import { Video, ResizeMode } from "expo-av";
 import { Image } from "expo-image";
 import { useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -14,8 +15,12 @@ import { fetchExerciseById } from "../api/exercises.api";
 import { VideoPlayerModal } from "../components/VideoPlayerModal";
 import type { Exercise } from "../types/exercise";
 import { hexToRgba } from "@/features/profile/utils/trainerProfileUtils";
+import { formatSlugToLabel } from "@/shared/utils";
 
 import { Icon, StickyHeader, Text, useTheme } from "@/shared/ui";
+
+const SPEED_OPTIONS = [0.5, 0.75, 1, 2] as const;
+type SpeedOption = (typeof SPEED_OPTIONS)[number];
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
@@ -42,6 +47,27 @@ export default function ExerciseDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [videoModalVisible, setVideoModalVisible] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState<SpeedOption>(1);
+  const videoRef = useRef<React.ComponentRef<typeof Video>>(null);
+
+  const cycleSpeed = useCallback(() => {
+    setPlaybackRate((prev) => {
+      const idx = SPEED_OPTIONS.indexOf(prev);
+      return SPEED_OPTIONS[(idx + 1) % SPEED_OPTIONS.length];
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!exercise?.videoUrl) return;
+    const apply = async () => {
+      try {
+        await videoRef.current?.setRateAsync(playbackRate, false);
+      } catch {
+        // ignore
+      }
+    };
+    apply();
+  }, [exercise?.videoUrl, playbackRate]);
 
   useEffect(() => {
     let mounted = true;
@@ -104,9 +130,46 @@ export default function ExerciseDetailScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero – matches ExercisePickerCard */}
+        {/* Hero – video autoplays here when videoUrl; image or placeholder otherwise */}
         <View style={[styles.heroWrap, { backgroundColor: theme.colors.surface2 }]}>
-          {exercise.imageUrl ? (
+          {exercise.videoUrl ? (
+            <>
+              <Video
+                ref={videoRef}
+                source={{ uri: exercise.videoUrl }}
+                style={StyleSheet.absoluteFillObject}
+                useNativeControls={false}
+                resizeMode={ResizeMode.COVER}
+                isLooping
+                shouldPlay
+                isMuted
+              />
+              <View style={styles.heroOverlay} pointerEvents="box-none">
+                <View style={styles.heroOverlayButtons}>
+                  <Pressable
+                    onPress={cycleSpeed}
+                    style={({ pressed }) => [
+                      styles.heroOverlayButton,
+                      { backgroundColor: "rgba(0,0,0,0.6)", opacity: pressed ? 0.9 : 1 },
+                    ]}
+                  >
+                    <Text weight="bold" style={[styles.heroSpeedLabel, { color: theme.colors.text }]}>
+                      {playbackRate}x
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => setVideoModalVisible(true)}
+                    style={({ pressed }) => [
+                      styles.heroOverlayButton,
+                      { backgroundColor: "rgba(0,0,0,0.6)", opacity: pressed ? 0.9 : 1 },
+                    ]}
+                  >
+                    <Icon name="grid" size={20} color={theme.colors.text} />
+                  </Pressable>
+                </View>
+              </View>
+            </>
+          ) : exercise.imageUrl ? (
             <Image
               source={{ uri: exercise.imageUrl }}
               style={StyleSheet.absoluteFillObject}
@@ -124,22 +187,7 @@ export default function ExerciseDetailScreen() {
               style={StyleSheet.absoluteFillObject}
             />
           )}
-          <LinearGradient
-            colors={["transparent", "rgba(0,0,0,0.6)"]}
-            style={StyleSheet.absoluteFillObject}
-          />
-          {exercise.videoUrl && (
-            <Pressable
-              style={[styles.playCta, { backgroundColor: hexToRgba(theme.colors.accent, 0.95) }]}
-              onPress={() => setVideoModalVisible(true)}
-            >
-              <Icon name="video" size={24} color={theme.colors.background} />
-              <Text weight="bold" style={[styles.playCtaLabel, { color: theme.colors.background }]}>
-                Play video
-              </Text>
-            </Pressable>
-          )}
-          {!exercise.imageUrl && !exercise.videoUrl && (
+          {!exercise.videoUrl && !exercise.imageUrl && (
             <View style={styles.heroPlaceholder}>
               <Icon name="video" size={48} color={theme.colors.textMuted} />
             </View>
@@ -180,7 +228,7 @@ export default function ExerciseDetailScreen() {
                     style={[styles.pillText, { color: theme.colors.text }]}
                     numberOfLines={1}
                   >
-                    {muscle}
+                    {formatSlugToLabel(muscle)}
                   </Text>
                 </View>
               ))}
@@ -213,7 +261,7 @@ export default function ExerciseDetailScreen() {
                     style={[styles.pillText, { color: theme.colors.textMuted }]}
                     numberOfLines={1}
                   >
-                    {item}
+                    {formatSlugToLabel(item)}
                   </Text>
                 </View>
               ))}
@@ -243,55 +291,6 @@ export default function ExerciseDetailScreen() {
             </Text>
           </View>
         )}
-
-        {/* Media – compact row / CTA */}
-        <View
-          style={[
-            styles.cardBlock,
-            {
-              backgroundColor: theme.colors.surface2,
-              borderColor: theme.colors.border,
-            },
-          ]}
-        >
-          <Text
-            weight="bold"
-            style={[styles.sectionLabel, { color: theme.colors.textMuted }]}
-          >
-            Media
-          </Text>
-          {exercise.videoUrl ? (
-            <Pressable
-              onPress={() => setVideoModalVisible(true)}
-              style={({ pressed }) => [
-                styles.mediaCta,
-                {
-                  backgroundColor: hexToRgba(theme.colors.accent, 0.15),
-                  borderColor: hexToRgba(theme.colors.accent, 0.35),
-                  opacity: pressed ? 0.9 : 1,
-                },
-              ]}
-            >
-              <Icon name="video" size={20} color={theme.colors.accent} />
-              <Text weight="bold" style={[styles.mediaCtaLabel, { color: theme.colors.accent }]}>
-                Play video
-              </Text>
-            </Pressable>
-          ) : null}
-          {exercise.imageUrl && (
-            <Text
-              style={[styles.caption, { color: theme.colors.textMuted }]}
-              numberOfLines={2}
-            >
-              Image attached
-            </Text>
-          )}
-          {!exercise.imageUrl && !exercise.videoUrl && (
-            <Text style={[styles.caption, { color: theme.colors.textMuted }]}>
-              No media
-            </Text>
-          )}
-        </View>
 
         {/* Details – metadata card */}
         <View
@@ -331,6 +330,7 @@ export default function ExerciseDetailScreen() {
         videoUrl={exercise.videoUrl}
         title={exercise.title}
         onClose={() => setVideoModalVisible(false)}
+        variant="exerciseDetail"
       />
     </View>
   );
@@ -379,21 +379,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  playCta: {
-    position: "absolute",
-    bottom: 16,
-    left: 16,
-    right: 16,
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "flex-start",
+    alignItems: "flex-end",
+    paddingTop: 14,
+    paddingRight: 14,
+  },
+  heroOverlayButtons: {
     flexDirection: "row",
+    gap: 10,
+  },
+  heroOverlayButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 14,
   },
-  playCtaLabel: {
-    fontSize: 15,
+  heroSpeedLabel: {
+    fontSize: 14,
   },
   pageTitle: {
     fontSize: 22,
@@ -448,18 +453,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 6,
     gap: 12,
-  },
-  mediaCta: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignSelf: "flex-start",
-  },
-  mediaCtaLabel: {
-    fontSize: 14,
   },
 });

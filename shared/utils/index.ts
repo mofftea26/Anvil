@@ -1,0 +1,1 @@
+export { formatSlugToLabel } from "./formatSlugToLabel";

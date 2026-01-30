@@ -261,8 +261,10 @@
       "setTypeFallback": "Type de série",
       "tempoInfo": {
         "title": "Tempo expliqué",
-        "body": "Le tempo est : Excentrique / Pause bas / Concentrique / Pause haut\n\nExemple 3/0/1/0 :\n• 3 s descente\n• 0 s pause\n• 1 s montée\n• 0 s pause"
-      }
+        "body": "Le tempo est : Excentrique / Allongé / Concentrique / Raccourci\n\nExemple 3/0/1/0 :\n• 3 s descente\n• 0 s allongé\n• 1 s montée\n• 0 s raccourci"
+      },
+      "tempoLengthened": "All.",
+      "tempoShortened": "Racc."
     },
     "workoutDetails": {
       "defaultTitle": "Séance",

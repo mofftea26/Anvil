@@ -1,20 +1,20 @@
 import React, { useMemo, useState } from "react";
 import {
-    Alert,
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    TextInput,
-    View,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
 } from "react-native";
 
 import type { SetTypeRow } from "@/features/library/types/setTypes";
 import type { ExerciseSet, SeriesExercise } from "../types";
 import { getSetTypeIconName } from "../utils/setTypeIcons";
 import { SetTypePickerSheet } from "./SetTypePickerSheet";
+import { hexToRgba } from "@/features/profile/utils/trainerProfileUtils";
 
-import { Button, HStack, Icon, Text, useTheme } from "@/shared/ui";
+import { Button, HStack, Icon, Text, useAppAlert, useTheme } from "@/shared/ui";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 
 type Props = {
@@ -34,6 +34,7 @@ export function SetsEditorSheet({
 }: Props) {
   const { t } = useAppTranslation();
   const theme = useTheme();
+  const alert = useAppAlert();
 
   const [local, setLocal] = useState<SeriesExercise | null>(exercise);
   const [isSetTypeSheetOpen, setIsSetTypeSheetOpen] = useState(false);
@@ -96,20 +97,19 @@ export function SetsEditorSheet({
   }
 
   function openTempoInfo() {
-    Alert.alert(
-      t("builder.setsEditor.tempoInfo.title"),
-      t("builder.setsEditor.tempoInfo.body")
-    );
+    alert.show({
+      title: t("builder.setsEditor.tempoInfo.title"),
+      message: t("builder.setsEditor.tempoInfo.body"),
+      buttons: [{ text: t("common.gotIt", "Got it"), variant: "primary" }],
+    });
   }
 
   const activeSet = activeSetId
     ? local.sets.find((s) => s.id === activeSetId) ?? null
     : null;
 
-
-
   return (
-    <Modal visible={visible} transparent animationType="fade">
+    <Modal visible={visible} transparent animationType="slide">
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
 
@@ -122,87 +122,135 @@ export function SetsEditorSheet({
             },
           ]}
         >
+          {/* Handle bar */}
+          <View style={styles.handleWrap}>
+            <View
+              style={[styles.handle, { backgroundColor: theme.colors.textMuted }]}
+            />
+          </View>
+
           {/* Header */}
-          <View style={styles.header}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.headerTitle}>{local.title}</Text>
-              <Text style={{ opacity: 0.7, marginTop: 2 }}>
+          <View style={[styles.header, { borderBottomColor: theme.colors.border }]}>
+            <View style={styles.headerTextWrap}>
+              <Text weight="bold" style={[styles.headerTitle, { color: theme.colors.text }]}>
+                {local.title}
+              </Text>
+              <Text style={[styles.headerSubtitle, { color: theme.colors.textMuted }]}>
                 {t("builder.setsEditor.subtitle")}
               </Text>
             </View>
-
             <Pressable
               onPress={onClose}
-              style={[
+              style={({ pressed }) => [
                 styles.closeBtn,
-                { backgroundColor: theme.colors.surface3 },
+                {
+                  backgroundColor: hexToRgba(theme.colors.surface3, 1),
+                  borderColor: theme.colors.border,
+                  opacity: pressed ? 0.9 : 1,
+                },
               ]}
             >
-              <Icon name="close" size={18} color={theme.colors.text} />
+              <Icon name="close" size={20} color={theme.colors.text} />
             </Pressable>
           </View>
 
-          <ScrollView contentContainerStyle={{ paddingBottom: 28 }}>
-            {/* Tempo */}
-            <View style={[styles.block, { borderColor: theme.colors.border }]}>
-              <View style={styles.blockHeader}>
-                <Text style={{ fontWeight: "900" }}>
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Tempo – card block */}
+            <View
+              style={[
+                styles.card,
+                {
+                  backgroundColor: theme.colors.surface3,
+                  borderColor: theme.colors.border,
+                },
+              ]}
+            >
+              <View style={styles.cardHeader}>
+                <Text
+                  weight="bold"
+                  style={[styles.sectionLabel, { color: theme.colors.textMuted }]}
+                >
                   {t("builder.setsEditor.tempoTitle")}
                 </Text>
-
-                <Pressable onPress={openTempoInfo} style={styles.infoBtn}>
-                  <Icon
-                    name="information-circle"
-                    size={18}
-                    color="white"
-                  />
+                <Pressable
+                  onPress={openTempoInfo}
+                  style={({ pressed }) => [
+                    styles.infoBtn,
+                    {
+                      backgroundColor: hexToRgba(theme.colors.accent2, 0.2),
+                      opacity: pressed ? 0.8 : 1,
+                    },
+                  ]}
+                >
+                  <Icon name="information-circle" size={18} color={theme.colors.accent2} />
                 </Pressable>
               </View>
-
               <View style={styles.tempoRow}>
-                <TempoInput
+                <TempoCell
+                  label="E"
                   value={local.tempo.eccentric}
-                  onChangeText={(v) => updateTempo("eccentric", v)}
+                  onChange={(v) => updateTempo("eccentric", v)}
+                  theme={theme}
                 />
-                <Text style={styles.slash}>/</Text>
-                <TempoInput
+                <Text style={[styles.slash, { color: theme.colors.textMuted }]}>/</Text>
+                <TempoCell
+                  label={t("builder.setsEditor.tempoLengthened", "Len")}
                   value={local.tempo.bottom}
-                  onChangeText={(v) => updateTempo("bottom", v)}
+                  onChange={(v) => updateTempo("bottom", v)}
+                  theme={theme}
                 />
-                <Text style={styles.slash}>/</Text>
-                <TempoInput
+                <Text style={[styles.slash, { color: theme.colors.textMuted }]}>/</Text>
+                <TempoCell
+                  label="C"
                   value={local.tempo.concentric}
-                  onChangeText={(v) => updateTempo("concentric", v)}
+                  onChange={(v) => updateTempo("concentric", v)}
+                  theme={theme}
                 />
-                <Text style={styles.slash}>/</Text>
-                <TempoInput
+                <Text style={[styles.slash, { color: theme.colors.textMuted }]}>/</Text>
+                <TempoCell
+                  label={t("builder.setsEditor.tempoShortened", "Short")}
                   value={local.tempo.top}
-                  onChangeText={(v) => updateTempo("top", v)}
+                  onChange={(v) => updateTempo("top", v)}
+                  theme={theme}
                 />
               </View>
             </View>
 
             {/* Notes */}
-            <View style={{ paddingHorizontal: 14, marginTop: 12 }}>
+            <View style={styles.section}>
               {!showNotes ? (
                 <Button
                   variant="secondary"
                   fullWidth
                   onPress={() => setShowNotes(true)}
+                  style={[
+                    styles.addNotesBtn,
+                    {
+                      backgroundColor: hexToRgba(theme.colors.accent, 0.1),
+                      borderColor: hexToRgba(theme.colors.accent, 0.25),
+                    },
+                  ]}
                 >
                   {t("builder.workoutBuilder.addTrainerNotes")}
                 </Button>
               ) : (
                 <View
                   style={[
-                    styles.notesBox,
+                    styles.notesCard,
                     {
                       backgroundColor: theme.colors.surface3,
                       borderColor: theme.colors.border,
                     },
                   ]}
                 >
-                  <Text style={{ fontWeight: "900", marginBottom: 8 }}>
+                  <Text
+                    weight="bold"
+                    style={[styles.sectionLabel, { color: theme.colors.textMuted }]}
+                  >
                     {t("builder.workoutBuilder.trainerNotes")}
                   </Text>
                   <TextInput
@@ -212,11 +260,15 @@ export function SetsEditorSheet({
                       commit({ ...local, notes: v });
                     }}
                     placeholder={t("builder.setsEditor.notesPlaceholder")}
-                    placeholderTextColor="rgba(255,255,255,0.45)"
+                    placeholderTextColor={theme.colors.textMuted}
                     multiline
                     style={[
                       styles.notesInput,
-                      { color: theme.colors.text },
+                      {
+                        color: theme.colors.text,
+                        backgroundColor: theme.colors.surface2,
+                        borderColor: theme.colors.border,
+                      },
                     ]}
                   />
                 </View>
@@ -224,100 +276,122 @@ export function SetsEditorSheet({
             </View>
 
             {/* Sets */}
-            <View style={styles.setsHeader}>
-              <Text style={{ fontWeight: "900", fontSize: 16 }}>
-                {t("builder.setsEditor.setsTitle")}
-              </Text>
-              <Button variant="ghost" onPress={addSet}>
-                {t("builder.workoutBuilder.addSet")}
-              </Button>
-            </View>
+            <View style={styles.section}>
+              <View style={styles.setsHeader}>
+                <Text
+                  weight="bold"
+                  style={[styles.sectionLabel, { color: theme.colors.textMuted }]}
+                >
+                  {t("builder.setsEditor.setsTitle")}
+                </Text>
+                <Pressable
+                  onPress={addSet}
+                  style={({ pressed }) => [
+                    styles.addSetBtn,
+                    {
+                      backgroundColor: hexToRgba(theme.colors.accent, 0.2),
+                      borderColor: hexToRgba(theme.colors.accent, 0.4),
+                      opacity: pressed ? 0.9 : 1,
+                    },
+                  ]}
+                >
+                  <Icon name="add" size={18} color={theme.colors.accent} />
+                  <Text weight="bold" style={{ color: theme.colors.accent, fontSize: 14 }}>
+                    {t("builder.workoutBuilder.addSet")}
+                  </Text>
+                </Pressable>
+              </View>
 
-            <View style={{ gap: 10 }}>
-              {local.sets.map((s) => {
-                const st = s.setTypeId ? setTypeMap.get(s.setTypeId) : null;
-                const icon = getSetTypeIconName(st?.key);
+              <View style={styles.setsList}>
+                {local.sets.map((s) => {
+                  const st = s.setTypeId ? setTypeMap.get(s.setTypeId) : null;
+                  const icon = getSetTypeIconName(st?.key);
 
-                return (
-                  <View
-                    key={s.id}
-                    style={[
-                      styles.setRow,
-                      {
-                        backgroundColor: theme.colors.surface3,
-                        borderColor: theme.colors.border,
-                      },
-                    ]}
-                  >
-                    {/* Set type picker */}
-                    <Pressable
-                      onPress={() => {
-                        setActiveSetId(s.id);
-                        setIsSetTypeSheetOpen(true);
-                      }}
-                      style={styles.typeChip}
+                  return (
+                    <View
+                      key={s.id}
+                      style={[
+                        styles.setCard,
+                        {
+                          backgroundColor: theme.colors.surface3,
+                          borderColor: theme.colors.border,
+                        },
+                      ]}
                     >
-                      <Icon name={icon} size={14} color="white" />
-                      <Text
-                        style={{ color: "white", fontWeight: "900" }}
-                        numberOfLines={1}
+                      <Pressable
+                        onPress={() => {
+                          setActiveSetId(s.id);
+                          setIsSetTypeSheetOpen(true);
+                        }}
+                        style={({ pressed }) => [
+                          styles.typeChip,
+                          {
+                            backgroundColor: hexToRgba(theme.colors.accent2, 0.15),
+                            borderColor: hexToRgba(theme.colors.accent2, 0.3),
+                            opacity: pressed ? 0.9 : 1,
+                          },
+                        ]}
                       >
-                        {st?.title ?? t("builder.setsEditor.setTypeFallback")}
-                      </Text>
-                      <Icon
-                        name="chevron-down"
-                        size={14}
-                        color="rgba(255,255,255,0.7)"
-                      />
-                    </Pressable>
+                        <Icon name={icon} size={16} color={theme.colors.accent2} />
+                        <Text
+                          weight="bold"
+                          style={[styles.typeChipText, { color: theme.colors.text }]}
+                          numberOfLines={1}
+                        >
+                          {st?.title ?? t("builder.setsEditor.setTypeFallback")}
+                        </Text>
+                        <Icon name="chevron-down" size={14} color={theme.colors.textMuted} />
+                      </Pressable>
 
-                    {/* Reps input */}
-                    <HStack style={{ flex: 1, justifyContent: "space-between",alignItems: "center",gap: 10 }}>
-                    <IconInput
-                      icon="fitness"
-                      value={String(s.reps)}
-                      onChange={(v) => {
-                        const n = parseInt(v || "0", 10);
-                        updateSet(s.id, { reps: Number.isFinite(n) ? n.toString() : "0" });
-                      }}
-                      suffix="reps"
-                    />
-
-                    {/* Rest input */}
-                    <IconInput
-                      icon="hourglass-outline"
-                      value={String(s.restSec)}
-                      onChange={(v) => {
-                        const n = parseInt(v || "0", 10);
-                        updateSet(s.id, {
-                          restSec: Number.isFinite(n) ? n.toString() : "0",
-                        });
-                      }}
-                      suffix="s"
-                    />
-
-                    {/* Remove */}
-                    <Pressable
-                      onPress={() => removeSet(s.id)}
-                      style={styles.trash}
-                    >
-                      <Icon
-                        name="trash"
-                        size={16}
-                        color="rgba(255,255,255,0.9)"
-                      />
-                    </Pressable>
-                    </HStack>
-                  </View>
-                );
-              })}
+                      <HStack style={styles.setRow}>
+                        <IconInput
+                          icon="fitness"
+                          value={String(s.reps)}
+                          onChange={(v) => {
+                            const n = parseInt(v || "0", 10);
+                            updateSet(s.id, {
+                              reps: Number.isFinite(n) ? n.toString() : "0",
+                            });
+                          }}
+                          suffix={t("builder.setsEditor.repsSuffix", "reps")}
+                          theme={theme}
+                        />
+                        <IconInput
+                          icon="timer"
+                          value={String(s.restSec)}
+                          onChange={(v) => {
+                            const n = parseInt(v || "0", 10);
+                            updateSet(s.id, {
+                              restSec: Number.isFinite(n) ? n.toString() : "0",
+                            });
+                          }}
+                          suffix={t("builder.setsEditor.restSuffix", "s")}
+                          theme={theme}
+                        />
+                        <Pressable
+                          onPress={() => removeSet(s.id)}
+                          style={({ pressed }) => [
+                            styles.deleteBtn,
+                            {
+                              backgroundColor: hexToRgba(theme.colors.danger, 0.15),
+                              borderColor: hexToRgba(theme.colors.danger, 0.3),
+                              opacity: pressed ? 0.9 : 1,
+                            },
+                          ]}
+                        >
+                          <Icon name="trash" size={18} color={theme.colors.danger} />
+                        </Pressable>
+                      </HStack>
+                    </View>
+                  );
+                })}
+              </View>
             </View>
 
-            <View style={{ height: 18 }} />
+            <View style={{ height: 32 }} />
           </ScrollView>
         </View>
 
-        {/* Set type picker sheet */}
         <SetTypePickerSheet
           visible={isSetTypeSheetOpen}
           setTypes={setTypes}
@@ -336,31 +410,38 @@ export function SetsEditorSheet({
   );
 }
 
-function TempoInput({
+function TempoCell({
+  label,
   value,
-  onChangeText,
+  onChange,
+  theme,
 }: {
+  label: string;
   value: string;
-  onChangeText: (v: string) => void;
+  onChange: (v: string) => void;
+  theme: ReturnType<typeof useTheme>;
 }) {
-  const theme = useTheme();
-
   return (
-    <TextInput
-      value={value}
-      onChangeText={onChangeText}
-      placeholder="-"
-      placeholderTextColor="rgba(255,255,255,0.35)"
-      keyboardType="default"
-      style={[
-        styles.tempoInput,
-        {
-          backgroundColor: theme.colors.surface3,
-          borderColor: theme.colors.border,
-          color: theme.colors.text,
-        },
-      ]}
-    />
+    <View style={styles.tempoCellWrap}>
+      <Text style={[styles.tempoCellLabel, { color: theme.colors.textMuted }]}>
+        {label}
+      </Text>
+      <TextInput
+        value={value}
+        onChangeText={onChange}
+        placeholder="-"
+        placeholderTextColor={theme.colors.textMuted}
+        keyboardType="number-pad"
+        style={[
+          styles.tempoInput,
+          {
+            backgroundColor: theme.colors.surface2,
+            borderColor: theme.colors.border,
+            color: theme.colors.text,
+          },
+        ]}
+      />
+    </View>
   );
 }
 
@@ -369,31 +450,40 @@ function IconInput({
   value,
   onChange,
   suffix,
+  theme,
 }: {
-  icon: any;
+  icon: string;
   value: string;
   onChange: (v: string) => void;
   suffix: string;
+  theme: ReturnType<typeof useTheme>;
 }) {
   return (
-    <View style={styles.iconInputWrap}>
-      <Icon name={icon} size={14} color="white" />
+    <View
+      style={[
+        styles.iconInputWrap,
+        {
+          backgroundColor: theme.colors.surface2,
+          borderColor: theme.colors.border,
+        },
+      ]}
+    >
+      <Icon name={icon} size={16} color={theme.colors.textMuted} />
       <TextInput
         value={value}
         onChangeText={(v) => onChange(v.replace(/[^\d]/g, ""))}
-        keyboardType="numeric"
+        keyboardType="number-pad"
         placeholder="0"
-        placeholderTextColor="rgba(255,255,255,0.35)"
-        style={styles.iconInput}
+        placeholderTextColor={theme.colors.textMuted}
+        style={[styles.iconInput, { color: theme.colors.text }]}
       />
-      <Text style={{ color: "rgba(255,255,255,0.7)", fontWeight: "800" }}>
+      <Text style={[styles.iconInputSuffix, { color: theme.colors.textMuted }]}>
         {suffix}
       </Text>
     </View>
   );
 }
 
-// local id generator
 function cryptoRandomId() {
   return `id_${Math.random().toString(16).slice(2)}_${Date.now()}`;
 }
@@ -401,135 +491,207 @@ function cryptoRandomId() {
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "flex-end",
   },
   sheet: {
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     borderWidth: 1,
-    maxHeight: "88%",
+    height: "90%",
+    maxHeight: "90%",
     overflow: "hidden",
   },
+  handleWrap: {
+    alignItems: "center",
+    paddingVertical: 12,
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    opacity: 0.5,
+  },
   header: {
-    padding: 14,
-    flexDirection: "row",
-    gap: 12,
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: "900",
-  },
-  closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  block: {
-    paddingHorizontal: 14,
-    paddingBottom: 14,
-    borderTopWidth: 1,
-  },
-  blockHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 10,
-    paddingBottom: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+  },
+  headerTextWrap: {
+    flex: 1,
+    minWidth: 0,
+  },
+  headerTitle: {
+    fontSize: 18,
+    lineHeight: 24,
+  },
+  headerSubtitle: {
+    fontSize: 13,
+    marginTop: 2,
+  },
+  closeBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+  card: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 20,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  sectionLabel: {
+    fontSize: 12,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   infoBtn: {
-    padding: 6,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
   },
   tempoRow: {
     flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  tempoCellWrap: {
+    flex: 1,
     alignItems: "center",
   },
+  tempoCellLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
   tempoInput: {
-    width: 50,
+    width: "100%",
+    maxWidth: 56,
     height: 44,
     borderRadius: 12,
     borderWidth: 1,
     textAlign: "center",
-    fontWeight: "900",
-    fontSize: 14,
+    fontWeight: "700",
+    fontSize: 15,
   },
   slash: {
-    width: 14,
-    textAlign: "center",
-    opacity: 0.6,
-    fontWeight: "900",
+    fontSize: 16,
+    fontWeight: "700",
+    paddingBottom: 10,
   },
-  notesBox: {
+  section: {
+    marginBottom: 20,
+  },
+  addNotesBtn: {
+    borderWidth: 1,
+    borderRadius: 14,
+  },
+  notesCard: {
     borderRadius: 16,
     borderWidth: 1,
-    padding: 12,
+    padding: 16,
   },
   notesInput: {
-    minHeight: 70,
-    fontSize: 14,
-    fontWeight: "600",
+    minHeight: 88,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 12,
+    fontSize: 15,
+    textAlignVertical: "top",
   },
   setsHeader: {
-    paddingHorizontal: 14,
-    paddingTop: 16,
-    paddingBottom: 8,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    marginBottom: 12,
   },
-  setRow: {
-    marginHorizontal: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 10,
+  addSetBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    flexWrap: "wrap",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  setsList: {
+    gap: 12,
+  },
+  setCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 14,
+    gap: 12,
   },
   typeChip: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: "rgba(0,0,0,0.28)",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    width: "100%",
   },
-  iconInputWrap: {
-    flexDirection: "row",
+  typeChipText: {
+    flex: 1,
+    fontSize: 14,
+  },
+  setRow: {
     flex: 1,
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 0,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: "rgba(0,0,0,0.28)",
+    gap: 10,
+    flexWrap: "wrap",
+  },
+  iconInputWrap: {
+    flex: 1,
+    minWidth: 100,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
   },
   iconInput: {
-    width: 44,
-    color: "white",
-    fontWeight: "900",
+    flex: 1,
+    minWidth: 40,
+    fontSize: 15,
+    fontWeight: "700",
     paddingVertical: 0,
-    paddingHorizontal: 6,
     textAlign: "center",
   },
-  trash: {
-    marginLeft: "auto",
-    width: 34,
-    height: 34,
+  iconInputSuffix: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  deleteBtn: {
+    width: 44,
+    height: 44,
     borderRadius: 12,
-    backgroundColor: "rgba(255,0,0,0.18)",
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
   },

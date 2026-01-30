@@ -76,6 +76,7 @@
     "back": "Back",
     "continue": "Continue",
     "done": "Done",
+    "gotIt": "Got it",
     "cancel": "Cancel",
     "close": "Close",
     "save": "Save",
@@ -264,8 +265,10 @@
       "setTypeFallback": "Set type",
       "tempoInfo": {
         "title": "Tempo explained",
-        "body": "Tempo is: Eccentric / Bottom Pause / Concentric / Top Pause\n\nExample 3/0/1/0:\n• 3 sec lowering\n• 0 sec pause\n• 1 sec lifting\n• 0 sec pause"
-      }
+        "body": "Tempo is: Eccentric / Lengthened / Concentric / Shortened\n\nExample 3/0/1/0:\n• 3 sec lowering\n• 0 sec lengthened\n• 1 sec lifting\n• 0 sec shortened"
+      },
+      "tempoLengthened": "Len",
+      "tempoShortened": "Short"
     },
     "workoutDetails": {
       "defaultTitle": "Workout",

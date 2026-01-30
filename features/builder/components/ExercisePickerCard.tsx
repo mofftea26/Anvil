@@ -5,6 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import type { Exercise } from "../types/exercise";
 import { hexToRgba } from "@/features/profile/utils/trainerProfileUtils";
+import { formatSlugToLabel } from "@/shared/utils";
 
 import { Icon, Text, useTheme } from "@/shared/ui";
 
@@ -63,11 +64,6 @@ export function ExercisePickerCard({
           colors={["transparent", "rgba(0,0,0,0.5)"]}
           style={styles.imageOverlay}
         />
-        {exercise.videoUrl && (
-          <View style={[styles.playBadge, { backgroundColor: hexToRgba(theme.colors.accent, 0.9) }]}>
-            <Icon name="video" size={14} color={theme.colors.background} />
-          </View>
-        )}
         {/* Add / selected button – top right */}
         <Pressable
           onPress={(e) => {
@@ -123,7 +119,7 @@ export function ExercisePickerCard({
                   style={[styles.pillText, { color: theme.colors.textMuted }]}
                   numberOfLines={1}
                 >
-                  {muscle}
+                  {formatSlugToLabel(muscle)}
                 </Text>
               </View>
             ))}
@@ -171,16 +167,6 @@ const styles = StyleSheet.create({
   },
   imageOverlay: {
     ...StyleSheet.absoluteFillObject,
-  },
-  playBadge: {
-    position: "absolute",
-    bottom: 10,
-    left: 14,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
   },
   addButton: {
     position: "absolute",
