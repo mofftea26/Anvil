@@ -12,6 +12,7 @@ export const iconMap: Record<string, string> = {
   // Actions
   "add-circle-outline": "AddCircleIcon",
   "add": "Add01Icon",
+  "remove": "MinusIcon",
   "close": "Cancel01Icon",
   "close-circle": "CancelCircleIcon",
   "checkmark-circle": "CheckmarkCircle01Icon",
@@ -88,6 +89,8 @@ export const iconMap: Record<string, string> = {
   "mail": "Mail01Icon",
   "lock": "LockIcon",
   "password": "LockIcon",
+  "ellipsis-vertical": "MoreVerticalIcon",
+  "ellipsis-horizontal": "MoreHorizontalIcon",
 };
 
 /**

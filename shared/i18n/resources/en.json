@@ -284,11 +284,33 @@
   },
   "library": {
     "createProgram": {
-      "title": "Create program",
-      "subtitle": "Design complete training phases with intelligent weekly planning."
+      "title": "New program template",
+      "subtitle": "Set title, difficulty, and duration. You'll assign workouts to days next.",
+      "titleLabel": "Title",
+      "titlePlaceholder": "Program name",
+      "difficultyLabel": "Difficulty",
+      "durationWeeks": "Duration (weeks)",
+      "descriptionLabel": "Description (optional)",
+      "descriptionPlaceholder": "Brief description",
+      "createAndEdit": "Create & Edit"
     },
     "programsScreen": {
-      "subtitle": "Manage your training programs with powerful search and sharing tools."
+      "title": "Program templates",
+      "subtitle": "Manage your training programs with powerful search and sharing tools.",
+      "empty": "No programs yet.",
+      "newProgram": "New Program",
+      "weeks": "{{count}} week",
+      "weeks_other": "{{count}} weeks",
+      "filterAll": "All",
+      "difficultyBeginner": "Beginner",
+      "difficultyIntermediate": "Intermediate",
+      "difficultyAdvanced": "Advanced",
+      "menuDuplicate": "Duplicate",
+      "menuArchive": "Archive",
+      "menuDelete": "Delete",
+      "archiveConfirm": "Archive this program?",
+      "deleteConfirm": "Delete this program? This cannot be undone.",
+      "lastEdited": "Edited"
     },
     "workoutsScreen": {
       "subtitle": "Build sophisticated training blocks with structured series progression."

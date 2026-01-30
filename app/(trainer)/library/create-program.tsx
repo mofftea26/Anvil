@@ -1,6 +1,6 @@
-import CreateProgramScreen from "@/features/library/screens/CreateProgramScreen";
+import CreateProgramTemplateScreen from "@/features/library/screens/CreateProgramTemplateScreen";
 import React from "react";
 
 export default function Screen() {
-  return <CreateProgramScreen />;
+  return <CreateProgramTemplateScreen />;
 }

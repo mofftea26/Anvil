@@ -11,8 +11,10 @@ import {
   View,
 } from "react-native";
 
+import { addWorkoutToProgramDay } from "@/features/library/api/programTemplates.api";
 import { useSetTypesDictionary } from "@/features/library/hooks/useSetTypesDictionary";
 import type { SetTypeRow } from "@/features/library/types/setTypes";
+import { consumePendingProgramDayAttachment } from "@/features/library/utils/programDayAttachmentBridge";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import { AnimatedArrow, appToast, DurationCircle, HStack, Icon, Text, useTheme } from "@/shared/ui";
 
@@ -202,6 +204,27 @@ export function WorkoutBuilderScreen({ mode }: Props) {
     const res = await save();
     if (!res) {
       appToast.error(error ?? t("auth.errors.generic"));
+      return;
+    }
+
+    const pendingProgramDay = mode === "new" ? consumePendingProgramDayAttachment() : null;
+    if (pendingProgramDay) {
+      try {
+        await addWorkoutToProgramDay(
+          pendingProgramDay.programId,
+          pendingProgramDay.weekIndex,
+          pendingProgramDay.dayIndex,
+          res.workoutId,
+          title.trim() || "Workout"
+        );
+        appToast.success(t("builder.toasts.workoutPublished"));
+        router.replace(
+          `/(trainer)/library/program-templates/${pendingProgramDay.programId}` as Parameters<typeof router.replace>[0]
+        );
+      } catch (e: unknown) {
+        appToast.error(e instanceof Error ? e.message : "Failed to attach workout");
+        router.back();
+      }
       return;
     }
 
