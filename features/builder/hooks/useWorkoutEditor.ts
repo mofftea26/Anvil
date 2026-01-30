@@ -80,7 +80,7 @@ function normalizeLoadedState(raw: any, fallbackSeries: WorkoutSeries[]): Workou
                 trainerNotes: ex.trainerNotes ?? null,
               };
             });
-            return mapped.filter((ex): ex is SeriesExercise => ex !== null);
+            return mapped.filter((ex: SeriesExercise | null): ex is SeriesExercise => ex !== null);
           })()
         : [];
 

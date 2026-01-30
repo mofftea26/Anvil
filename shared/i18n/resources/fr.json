@@ -229,7 +229,8 @@
       "title": "Choisir des exercices",
       "searchPlaceholder": "Rechercher des exercices…",
       "tapToSelect": "Appuyez pour sélectionner",
-      "tapToUnselect": "Appuyez pour désélectionner"
+      "tapToUnselect": "Appuyez pour désélectionner",
+      "filterByMuscle": "Muscle ciblé"
     },
     "setTypePicker": {
       "title": "Choisir un type de série",

@@ -248,7 +248,8 @@
       "title": "Pick exercises",
       "searchPlaceholder": "Search exercises...",
       "tapToSelect": "Tap to select",
-      "tapToUnselect": "Tap to unselect"
+      "tapToUnselect": "Tap to unselect",
+      "filterByMuscle": "Target muscle"
     },
     "setTypePicker": {
       "title": "Pick set type",

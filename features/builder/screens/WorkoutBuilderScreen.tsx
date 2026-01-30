@@ -103,19 +103,23 @@ export function WorkoutBuilderScreen({ mode }: Props) {
       const pending = consumePendingExercisePick();
       if (!pending) return;
 
-      const pickById = (id: string) => MOCK_LIBRARY_EXERCISES.find((x) => x.id === id) ?? null;
-      const picked = pending.exerciseIds
-        .map((id) => pickById(id))
-        .filter(Boolean)
-        .map((x) => ({
-          id: cryptoRandomId(),
-          title: x!.title,
-          videoUrl: x!.videoUrl ?? null,
-          notes: null,
-          tempo: { eccentric: "3", bottom: "0", concentric: "1", top: "0" },
-          sets: [],
-          trainerNotes: null,
-        }));
+      const sourceList =
+        pending.exercises && pending.exercises.length > 0
+          ? pending.exercises
+          : pending.exerciseIds
+              .map((id) => MOCK_LIBRARY_EXERCISES.find((x) => x.id === id))
+              .filter(Boolean)
+              .map((x) => ({ id: x!.id, title: x!.title, videoUrl: x!.videoUrl ?? null }));
+
+      const picked = sourceList.map((x) => ({
+        id: cryptoRandomId(),
+        title: x.title,
+        videoUrl: x.videoUrl,
+        notes: null,
+        tempo: { eccentric: "3", bottom: "0", concentric: "1", top: "0" },
+        sets: [],
+        trainerNotes: null,
+      }));
 
       if (!picked.length) return;
 

@@ -229,7 +229,8 @@
       "title": "اختيار التمارين",
       "searchPlaceholder": "ابحث عن تمارين…",
       "tapToSelect": "اضغط للاختيار",
-      "tapToUnselect": "اضغط لإلغاء الاختيار"
+      "tapToUnselect": "اضغط لإلغاء الاختيار",
+      "filterByMuscle": "العضلة المستهدفة"
     },
     "setTypePicker": {
       "title": "اختيار نوع المجموعة",
