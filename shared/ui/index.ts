@@ -13,6 +13,7 @@ export { Chip } from "./components/Chip";
 export { ColorPickerField } from "./components/ColorPickerField";
 export { Divider } from "./components/Divider";
 export { DurationCircle } from "./components/DurationCircle";
+export { ExerciseLibraryCard } from "./components/ExerciseLibraryCard";
 export { Icon } from "./components/Icon";
 export { IconButton } from "./components/IconButton";
 export type { IconButtonProps } from "./components/IconButton";

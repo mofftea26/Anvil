@@ -11,10 +11,10 @@ import {
 } from "react-native";
 
 import { fetchExercises } from "../api/exercises.api";
-import { ExercisePickerCard } from "../components/ExercisePickerCard";
 import { StickySaveBar } from "../components/StickySaveBar";
 import type { Exercise } from "../types/exercise";
 import { setPendingExercisePick } from "../utils/exercisePickerBridge";
+import { ExerciseLibraryCard } from "@/shared/ui";
 
 import { Chip, Icon, StickyHeader, Text, useTheme } from "@/shared/ui";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
@@ -222,8 +222,9 @@ export default function ExercisePickerScreen() {
           contentContainerStyle={styles.listContent}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
           renderItem={({ item }) => (
-            <ExercisePickerCard
+            <ExerciseLibraryCard
               exercise={item}
+              isBuilder
               selected={Boolean(selected[item.id])}
               onCardPress={() => onCardPress(item.id)}
               onAddPress={() => toggle(item.id)}

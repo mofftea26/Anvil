@@ -301,7 +301,7 @@
     "programs": "Programs",
     "programsDesc": "Design complete training phases with weekly planning",
     "workouts": "Workouts",
-    "exercises": "Exercises",
+    "exercises": "Exercise Library",
     "exercisesDesc": "Access thousands of exercises + create your own",
     "setTypes": "Set Types Dictionary",
     "setTypesDesc": "Master advanced techniques: Warm-up, Drop sets, Density & more",
@@ -310,7 +310,10 @@
       "updatedAt": "Updated:"
     },
     "exercisesScreen": {
-      "subtitle": "Explore an extensive exercise library with smart filters and customization."
+      "title": "Exercise library",
+      "subtitle": "Explore an extensive exercise library with smart filters and customization.",
+      "searchPlaceholder": "Search exercises...",
+      "filterByMuscle": "Target muscle"
     },
     "setTypesDictionaryScreen": {
       "loadError": "Error loading set types.",

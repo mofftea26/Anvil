@@ -58,7 +58,7 @@ export default function LibraryHomeScreen() {
         />
 
         <LibraryCard
-          title={t("library.exercises", "Exercises")}
+          title={t("library.exercises", "Exercise Library")}
           subtitle={t("library.exercisesDesc", "Stock + your custom exercises")}
           icon="list-outline"
           onPress={onExercises}

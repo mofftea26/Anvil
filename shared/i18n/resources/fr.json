@@ -297,7 +297,7 @@
     "programs": "Programmes",
     "programsDesc": "Concevez des phases d'entraînement complètes avec planification hebdomadaire",
     "workouts": "Séances",
-    "exercises": "Exercices",
+    "exercises": "Bibliothèque d'exercices",
     "exercisesDesc": "Accédez à des milliers d'exercices + créez les vôtres",
     "setTypes": "Dictionnaire des Types de Séries",
     "setTypesDesc": "Maîtrisez les techniques avancées : Échauffement, Drop sets, Densité & plus",
@@ -306,6 +306,7 @@
       "updatedAt": "Mis à jour :"
     },
     "exercisesScreen": {
+      "title": "Bibliothèque d'exercices",
       "subtitle": "À venir : liste + filtres + création d’exercices personnalisés."
     },
     "setTypesDictionaryScreen": {

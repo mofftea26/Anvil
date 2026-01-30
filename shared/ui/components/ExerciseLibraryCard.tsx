@@ -3,7 +3,7 @@ import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
-import type { Exercise } from "../types/exercise";
+import type { Exercise } from "@/shared/types/exercise";
 import { hexToRgba } from "@/features/profile/utils/trainerProfileUtils";
 import { formatSlugToLabel } from "@/shared/utils";
 
@@ -11,14 +11,17 @@ import { Icon, Text, useTheme } from "@/shared/ui";
 
 type Props = {
   exercise: Exercise;
-  selected: boolean;
+  /** Builder context: show add button and selection state. Library: no add button, no selection. */
+  isBuilder: boolean;
+  selected?: boolean;
   onCardPress: () => void;
-  onAddPress: () => void;
+  onAddPress?: () => void;
 };
 
-export function ExercisePickerCard({
+export function ExerciseLibraryCard({
   exercise,
-  selected,
+  isBuilder,
+  selected = false,
   onCardPress,
   onAddPress,
 }: Props) {
@@ -31,8 +34,8 @@ export function ExercisePickerCard({
         styles.card,
         {
           backgroundColor: theme.colors.surface2,
-          borderColor: selected ? theme.colors.accent : theme.colors.border,
-          borderWidth: selected ? 2 : 1,
+          borderColor: isBuilder && selected ? theme.colors.accent : theme.colors.border,
+          borderWidth: isBuilder && selected ? 2 : 1,
           overflow: "hidden",
         },
       ]}
@@ -64,29 +67,31 @@ export function ExercisePickerCard({
           colors={["transparent", "rgba(0,0,0,0.5)"]}
           style={styles.imageOverlay}
         />
-        {/* Add / selected button – top right */}
-        <Pressable
-          onPress={(e) => {
-            e.stopPropagation();
-            onAddPress();
-          }}
-          style={({ pressed }) => [
-            styles.addButton,
-            {
-              backgroundColor: selected
-                ? theme.colors.accent
-                : hexToRgba(theme.colors.surface, 0.95),
-              borderColor: selected ? theme.colors.accent : "rgba(255,255,255,0.2)",
-              opacity: pressed ? 0.9 : 1,
-            },
-          ]}
-        >
-          <Icon
-            name={selected ? "checkmark" : "add"}
-            size={22}
-            color={selected ? theme.colors.background : theme.colors.text}
-          />
-        </Pressable>
+        {/* Add / selected button – only in builder */}
+        {isBuilder && (
+          <Pressable
+            onPress={(e) => {
+              e.stopPropagation();
+              onAddPress?.();
+            }}
+            style={({ pressed }) => [
+              styles.addButton,
+              {
+                backgroundColor: selected
+                  ? theme.colors.accent
+                  : hexToRgba(theme.colors.surface, 0.95),
+                borderColor: selected ? theme.colors.accent : "rgba(255,255,255,0.2)",
+                opacity: pressed ? 0.9 : 1,
+              },
+            ]}
+          >
+            <Icon
+              name={selected ? "checkmark" : "add"}
+              size={22}
+              color={selected ? theme.colors.background : theme.colors.text}
+            />
+          </Pressable>
+        )}
       </Pressable>
 
       {/* Content */}
