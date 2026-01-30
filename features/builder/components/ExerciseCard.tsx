@@ -13,11 +13,14 @@ import { hexToRgba } from "@/features/profile/utils/trainerProfileUtils";
 type Props = {
   code: string; // A1, A2...
   exercise: SeriesExercise;
+  /** Series accent color (e.g. theme accent for A, palette color for B, C...). */
+  accentColor?: string;
   onEdit: () => void;
 };
 
-export function ExerciseCard({ code, exercise, onEdit }: Props) {
+export function ExerciseCard({ code, exercise, accentColor, onEdit }: Props) {
   const theme = useTheme();
+  const color = accentColor ?? theme.colors.accent;
   const { thumbnailUri } = useVideoThumbnail(exercise.videoUrl ?? null);
   const [showVideo, setShowVideo] = useState(false);
 
@@ -87,9 +90,10 @@ export function ExerciseCard({ code, exercise, onEdit }: Props) {
           />
         )}
 
-        {/* Subtle Overlay */}
+        {/* Overlay: light top, stronger bottom so stats text stays readable */}
         <LinearGradient
-          colors={["rgba(0,0,0,0.2)", "rgba(0,0,0,0.4)"]}
+          colors={["rgba(0,0,0,0.15)", "rgba(0,0,0,0.35)", "rgba(0,0,0,0.75)"]}
+          locations={[0, 0.45, 1]}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
           style={StyleSheet.absoluteFillObject}
@@ -106,12 +110,12 @@ export function ExerciseCard({ code, exercise, onEdit }: Props) {
             style={({ pressed }) => [
               styles.editButton,
               {
-                backgroundColor: hexToRgba(theme.colors.accent, 0.25),
+                backgroundColor: hexToRgba(color, 0.25),
                 opacity: pressed ? 0.7 : 1,
               },
             ]}
           >
-            <Icon name="edit" size={16} color={theme.colors.accent} />
+            <Icon name="edit" size={16} color={color} />
           </Pressable>
 
           {/* Top Row: Code and Title */}
@@ -120,14 +124,14 @@ export function ExerciseCard({ code, exercise, onEdit }: Props) {
               style={[
                 styles.codeBadge,
                 {
-                  backgroundColor: hexToRgba(theme.colors.accent, 0.2),
-                  borderColor: hexToRgba(theme.colors.accent, 0.35),
+                  backgroundColor: hexToRgba(color, 0.2),
+                  borderColor: hexToRgba(color, 0.35),
                 },
               ]}
             >
               <Text
                 weight="bold"
-                style={{ fontSize: 11, color: theme.colors.accent }}
+                style={{ fontSize: 11, color }}
               >
                 {code}
               </Text>
@@ -151,10 +155,10 @@ export function ExerciseCard({ code, exercise, onEdit }: Props) {
               <View
                 style={[
                   styles.playIconCircle,
-                  { backgroundColor: hexToRgba(theme.colors.accent, 0.3) },
+                  { backgroundColor: hexToRgba(color, 0.3) },
                 ]}
               >
-                <Icon name="play" size={32} color={theme.colors.accent} />
+                <Icon name="play" size={32} color={color} />
               </View>
             </View>
           )}

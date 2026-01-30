@@ -9,17 +9,41 @@ import { hexToRgba } from "@/features/profile/utils/trainerProfileUtils";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import { Button, Text, useTheme } from "@/shared/ui";
 
+/** Distinct colors for series B, C, D... (series A uses theme accent). */
+const SERIES_PALETTE = [
+  "#22D3EE", // cyan
+  "#A78BFA", // violet
+  "#F472B6", // pink
+  "#34D399", // emerald
+  "#FB923C", // orange
+  "#FACC15", // amber
+  "#2DD4BF", // teal
+  "#C084FC", // purple
+];
+
+function getSeriesColor(seriesIndex: number, themeAccent: string): string {
+  if (seriesIndex === 0) return themeAccent;
+  return SERIES_PALETTE[(seriesIndex - 1) % SERIES_PALETTE.length];
+}
+
 type Props = {
   series: WorkoutSeries;
+  seriesIndex?: number;
   onEditExercise: (exerciseId: string) => void;
   onAddExercise: (seriesId: string) => void;
 };
 
-export function SeriesPage({ series, onEditExercise, onAddExercise }: Props) {
+export function SeriesPage({
+  series,
+  seriesIndex = 0,
+  onEditExercise,
+  onAddExercise,
+}: Props) {
   const { t } = useAppTranslation();
   const theme = useTheme();
   const { height: screenHeight } = useWindowDimensions();
   const maxHeight = screenHeight - 180;
+  const seriesColor = getSeriesColor(seriesIndex, theme.colors.accent);
 
   return (
     <>
@@ -35,8 +59,8 @@ export function SeriesPage({ series, onEditExercise, onAddExercise }: Props) {
         <View style={styles.header}>
           <LinearGradient
             colors={[
-              hexToRgba(theme.colors.accent, 0.1),
-              hexToRgba(theme.colors.accent2, 0.05),
+              hexToRgba(seriesColor, 0.1),
+              hexToRgba(seriesColor, 0.05),
               "transparent",
             ]}
             start={{ x: 0, y: 0 }}
@@ -48,14 +72,14 @@ export function SeriesPage({ series, onEditExercise, onAddExercise }: Props) {
               style={[
                 styles.seriesBadge,
                 {
-                  backgroundColor: hexToRgba(theme.colors.accent, 0.15),
-                  borderColor: hexToRgba(theme.colors.accent, 0.25),
+                  backgroundColor: hexToRgba(seriesColor, 0.15),
+                  borderColor: hexToRgba(seriesColor, 0.25),
                 },
               ]}
             >
               <Text
                 weight="bold"
-                style={{ fontSize: 14, color: theme.colors.accent }}
+                style={{ fontSize: 14, color: seriesColor }}
               >
                 {series.label}
               </Text>
@@ -86,6 +110,7 @@ export function SeriesPage({ series, onEditExercise, onAddExercise }: Props) {
                   key={ex.id}
                   code={code}
                   exercise={ex}
+                  accentColor={seriesColor}
                   onEdit={() => onEditExercise(ex.id)}
                 />
               );

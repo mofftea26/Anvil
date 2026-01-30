@@ -333,6 +333,7 @@ export function WorkoutBuilderScreen({ mode }: Props) {
             <View style={{ width, paddingHorizontal: 14, height: "100%" }}>
                 <SeriesPage
                   series={s}
+                  seriesIndex={index}
                   onEditExercise={(exerciseId) => onEditExercise(s.id, exerciseId)}
                   onAddExercise={onAddExercise}
                 />
