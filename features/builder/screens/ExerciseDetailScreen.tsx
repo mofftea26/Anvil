@@ -1,5 +1,6 @@
-import { Video, ResizeMode } from "expo-av";
+import { ResizeMode, Video } from "expo-av";
 import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -9,13 +10,12 @@ import {
   StyleSheet,
   View,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 
+import { hexToRgba } from "@/features/profile/utils/trainerProfileUtils";
+import { formatSlugToLabel } from "@/shared/utils";
 import { fetchExerciseById } from "../api/exercises.api";
 import { VideoPlayerModal } from "../components/VideoPlayerModal";
 import type { Exercise } from "../types/exercise";
-import { hexToRgba } from "@/features/profile/utils/trainerProfileUtils";
-import { formatSlugToLabel } from "@/shared/utils";
 
 import { Icon, StickyHeader, Text, useTheme } from "@/shared/ui";
 
@@ -220,7 +220,6 @@ export default function ExerciseDetailScreen() {
                     styles.pill,
                     {
                       backgroundColor: hexToRgba(theme.colors.accent2, 0.15),
-                      borderColor: hexToRgba(theme.colors.accent2, 0.3),
                     },
                   ]}
                 >
@@ -253,7 +252,6 @@ export default function ExerciseDetailScreen() {
                     styles.pill,
                     {
                       backgroundColor: hexToRgba(theme.colors.textMuted, 0.12),
-                      borderColor: hexToRgba(theme.colors.textMuted, 0.22),
                     },
                   ]}
                 >
@@ -276,7 +274,6 @@ export default function ExerciseDetailScreen() {
               styles.cardBlock,
               {
                 backgroundColor: theme.colors.surface2,
-                borderColor: theme.colors.border,
               },
             ]}
           >
@@ -299,7 +296,6 @@ export default function ExerciseDetailScreen() {
             styles.metaBlock,
             {
               backgroundColor: theme.colors.surface2,
-              borderColor: theme.colors.border,
             },
           ]}
         >

@@ -1,10 +1,10 @@
 import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 
-import type { Exercise } from "@/shared/types/exercise";
 import { hexToRgba } from "@/features/profile/utils/trainerProfileUtils";
+import type { Exercise } from "@/shared/types/exercise";
 import { formatSlugToLabel } from "@/shared/utils";
 
 import { Icon, Text, useTheme } from "@/shared/ui";
@@ -35,7 +35,6 @@ export function ExerciseLibraryCard({
         {
           backgroundColor: theme.colors.surface2,
           borderColor: isBuilder && selected ? theme.colors.accent : theme.colors.border,
-          borderWidth: isBuilder && selected ? 2 : 1,
           overflow: "hidden",
         },
       ]}
