@@ -1,3 +1,5 @@
+import { RemoveCircleHalfDotIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -10,30 +12,38 @@ import {
   View,
 } from "react-native";
 
+import type { WorkoutRow } from "@/features/builder/api/workouts.api";
+import { fetchWorkoutsByTrainer } from "@/features/builder/api/workouts.api";
 import {
+  addPhase,
+  addPhaseWeek,
   archiveProgramTemplate,
   deleteProgramTemplate,
   duplicateProgramTemplate,
   fetchProgramTemplateById,
+  removePhase,
+  removePhaseWeek,
+  removeWorkoutFromDayAt,
+  setDayWorkoutFromTable,
   updateProgramTemplate,
 } from "@/features/library/api/programTemplates.api";
-import { DayPlannerSheet } from "@/features/library/components/program-templates/DayPlannerSheet";
 import { ChooseFromWorkoutsSheet } from "@/features/library/components/program-templates/ChooseFromWorkoutsSheet";
+import { DayPlannerSheet } from "@/features/library/components/program-templates/DayPlannerSheet";
 import type {
-  DayState,
-  DayWorkout,
+  ProgramDay,
   ProgramDifficulty,
   ProgramTemplate,
   ProgramTemplateState,
 } from "@/features/library/types/programTemplate";
-import { PROGRAM_DIFFICULTIES, STATE_VERSION } from "@/features/library/types/programTemplate";
+import { PROGRAM_DIFFICULTIES } from "@/features/library/types/programTemplate";
+import { hexToRgba } from "@/features/profile/utils/trainerProfileUtils";
+import { useAppSelector } from "@/shared/hooks/useAppSelector";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
-import { appToast } from "@/shared/ui";
 import {
+  appToast,
   Button,
   Chip,
   Icon,
-  StickyHeader,
   Text,
   useAppAlert,
   useTheme,
@@ -52,6 +62,7 @@ export default function ProgramTemplateEditorScreen() {
   const { t } = useAppTranslation();
   const theme = useTheme();
   const alert = useAppAlert();
+  const trainerId = useAppSelector((s) => s.auth.userId ?? "");
   const params = useLocalSearchParams<{ programId: string }>();
   const programId = params.programId ?? "";
 
@@ -60,16 +71,58 @@ export default function ProgramTemplateEditorScreen() {
   const [error, setError] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [difficulty, setDifficulty] = useState<ProgramDifficulty>("beginner");
-  const [state, setState] = useState<ProgramTemplateState>({ version: STATE_VERSION, weeks: [] });
-  const [selectedWeekIndex, setSelectedWeekIndex] = useState(0); // 0-based index into state.weeks
-  const [dayPlannerOpen, setDayPlannerOpen] = useState<{ weekIndex: number; dayIndex: number } | null>(null);
+  const [state, setState] = useState<ProgramTemplateState | null>(null);
+  const [selectedPhaseIndex, setSelectedPhaseIndex] = useState(0);
+  const [selectedWeekIndex, setSelectedWeekIndex] = useState(0);
+  const [dayPlannerOpen, setDayPlannerOpen] = useState<{
+    phaseIndex: number;
+    weekIndex: number;
+    dayOrder: number;
+  } | null>(null);
   const [chooseWorkoutsOpen, setChooseWorkoutsOpen] = useState(false);
-  const [replaceAtIndex, setReplaceAtIndex] = useState<number | null>(null);
+  const [replaceMode, setReplaceMode] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [workoutRowsMap, setWorkoutRowsMap] = useState<
+    Record<string, WorkoutRow>
+  >({});
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const phaseCount = state?.phases?.length ?? 0;
+  const clampedPhaseIndex = Math.min(
+    Math.max(0, selectedPhaseIndex),
+    Math.max(0, phaseCount - 1)
+  );
+  const currentPhase = state?.phases?.[clampedPhaseIndex] ?? null;
+  const phaseWeeksCount = currentPhase?.weeks?.length ?? 0;
+  const clampedWeekIndex = Math.min(
+    Math.max(0, selectedWeekIndex),
+    Math.max(0, phaseWeeksCount - 1)
+  );
+  const currentWeek = currentPhase?.weeks?.[clampedWeekIndex] ?? null;
+  const durationWeeks = state?.durationWeeks ?? 0;
+
+  const getDayWorkoutTitles = useCallback(
+    (day: ProgramDay): string[] => {
+      const list = day.workouts ?? (day.workoutRef ? [day.workoutRef] : []);
+      return list.map((ref) => {
+        if (!ref) return "Workout";
+        if (ref.source === "workoutsTable")
+          return workoutRowsMap[ref.workoutId]?.title ?? "Workout";
+        const inline = state?.workoutLibrary?.inlineWorkouts?.find(
+          (w) => w.id === ref.inlineWorkoutId
+        );
+        return inline?.title ?? "Workout";
+      });
+    },
+    [workoutRowsMap, state?.workoutLibrary?.inlineWorkouts]
+  );
+
   const persist = useCallback(
-    async (patch: { title?: string; difficulty?: ProgramDifficulty; state?: ProgramTemplateState }) => {
+    async (patch: {
+      title?: string;
+      difficulty?: ProgramDifficulty;
+      state?: ProgramTemplateState;
+    }) => {
       if (!programId) return;
       try {
         const updated = await updateProgramTemplate(programId, patch);
@@ -80,9 +133,6 @@ export default function ProgramTemplateEditorScreen() {
       } catch (e: unknown) {
         if (__DEV__) {
           console.warn("[ProgramTemplateEditor] update failed:", e);
-          if (e && typeof e === "object" && "message" in e) {
-            console.warn("[ProgramTemplateEditor] error.message:", (e as { message?: string }).message);
-          }
         }
         appToast.error(e instanceof Error ? e.message : "Failed to save");
       }
@@ -91,7 +141,11 @@ export default function ProgramTemplateEditorScreen() {
   );
 
   const schedulePersist = useCallback(
-    (patch: { title?: string; difficulty?: ProgramDifficulty; state?: ProgramTemplateState }) => {
+    (patch: {
+      title?: string;
+      difficulty?: ProgramDifficulty;
+      state?: ProgramTemplateState;
+    }) => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
         debounceRef.current = null;
@@ -112,11 +166,15 @@ export default function ProgramTemplateEditorScreen() {
       setLoading(true);
       setError(null);
       try {
-        const row = await fetchProgramTemplateById(programId);
+        const [row, workouts] = await Promise.all([
+          fetchProgramTemplateById(programId),
+          trainerId ? fetchWorkoutsByTrainer(trainerId) : Promise.resolve([]),
+        ]);
         if (!mounted) return;
         if (!row) {
           setError("Program not found");
           setTemplate(null);
+          setState(null);
           setLoading(false);
           return;
         }
@@ -125,10 +183,17 @@ export default function ProgramTemplateEditorScreen() {
         setDifficulty(row.difficulty);
         setState(row.state);
         setSelectedWeekIndex(0);
+        const ids = row.state?.workoutLibrary?.linkedWorkoutIds ?? [];
+        const map: Record<string, WorkoutRow> = {};
+        workouts.forEach((w) => {
+          if (ids.includes(w.id)) map[w.id] = w;
+        });
+        setWorkoutRowsMap(map);
       } catch (e: unknown) {
         if (!mounted) return;
         setError(e instanceof Error ? e.message : "Failed to load");
         setTemplate(null);
+        setState(null);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -138,10 +203,7 @@ export default function ProgramTemplateEditorScreen() {
       mounted = false;
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [programId]);
-
-  const currentWeek = state.weeks[selectedWeekIndex] ?? null;
-  const durationWeeks = state.weeks.length;
+  }, [programId, trainerId]);
 
   const handleTitleBlur = () => {
     if (title.trim().length >= 2) schedulePersist({ title: title.trim() });
@@ -152,85 +214,76 @@ export default function ProgramTemplateEditorScreen() {
     schedulePersist({ difficulty: d });
   };
 
+  const handleAddPhase = () => {
+    if (!state) return;
+    const next = addPhase(state);
+    setState(next);
+    schedulePersist({ state: next });
+    setSelectedPhaseIndex(next.phases.length - 1);
+    setSelectedWeekIndex(0);
+  };
+
   const handleAddWeek = () => {
-    const newWeekIndex = state.weeks.length + 1;
-    const newWeek: { weekIndex: number; days: DayState[] } = {
-      weekIndex: newWeekIndex,
-      days: Array.from({ length: 7 }, (_, i) => ({ dayIndex: i + 1, workouts: [] })),
-    };
-    const newWeeks = [...state.weeks, newWeek];
-    setState({ version: state.version, weeks: newWeeks });
-    schedulePersist({
-      state: { version: state.version, weeks: newWeeks },
-    });
-    setTemplate((prev) =>
-      prev ? { ...prev, durationWeeks: newWeeks.length, state: { version: state.version, weeks: newWeeks } } : null
-    );
-    setSelectedWeekIndex(newWeeks.length - 1);
+    if (!state) return;
+    const next = addPhaseWeek(state, clampedPhaseIndex);
+    setState(next);
+    schedulePersist({ state: next });
+    const newLen = next.phases[clampedPhaseIndex]?.weeks.length ?? 0;
+    setSelectedWeekIndex(Math.max(0, newLen - 1));
   };
 
   const handleRemoveWeek = () => {
-    if (state.weeks.length <= 1) return;
-    const newWeeks = state.weeks.slice(0, -1);
-    setState({ version: state.version, weeks: newWeeks });
-    schedulePersist({
-      state: { version: state.version, weeks: newWeeks },
-    });
-    setTemplate((prev) =>
-      prev ? { ...prev, durationWeeks: newWeeks.length, state: { version: state.version, weeks: newWeeks } } : null
+    if (!state) return;
+    const next = removePhaseWeek(state, clampedPhaseIndex);
+    setState(next);
+    schedulePersist({ state: next });
+    const newLen = next.phases[clampedPhaseIndex]?.weeks.length ?? 0;
+    setSelectedWeekIndex(Math.min(clampedWeekIndex, Math.max(0, newLen - 1)));
+  };
+
+  const handleAddWorkoutToDay = (workoutId: string) => {
+    if (!state || !dayPlannerOpen) return;
+    const next = setDayWorkoutFromTable(
+      state,
+      dayPlannerOpen.phaseIndex,
+      dayPlannerOpen.weekIndex,
+      dayPlannerOpen.dayOrder,
+      workoutId
     );
-    setSelectedWeekIndex(Math.min(selectedWeekIndex, newWeeks.length - 1));
-  };
-
-  const getDayForWeek = (weekIndex: number, dayIndex: number): DayState | null => {
-    const week = state.weeks.find((w) => w.weekIndex === weekIndex);
-    return week?.days.find((d) => d.dayIndex === dayIndex) ?? null;
-  };
-
-  const updateDayWorkouts = useCallback(
-    (weekIndex: number, dayIndex: number, workouts: DayWorkout[]) => {
-      const newWeeks = state.weeks.map((w) => {
-        if (w.weekIndex !== weekIndex) return w;
-        return {
-          ...w,
-          days: w.days.map((d) =>
-            d.dayIndex === dayIndex ? { ...d, workouts } : d
-          ),
-        };
-      });
-      setState({ version: state.version, weeks: newWeeks });
-      schedulePersist({ state: { version: state.version, weeks: newWeeks } });
-    },
-    [state.weeks, state.version, schedulePersist]
-  );
-
-  const handleAddWorkoutToDay = (workoutId: string, workoutTitle: string) => {
-    if (!dayPlannerOpen) return;
-    const day = getDayForWeek(dayPlannerOpen.weekIndex, dayPlannerOpen.dayIndex);
-    const current = day?.workouts ?? [];
-    const newWorkout = { workoutId, source: "workouts" as const, title: workoutTitle };
-    let next: DayWorkout[];
-    if (replaceAtIndex !== null && replaceAtIndex >= 0 && replaceAtIndex < current.length) {
-      next = current.map((w, i) => (i === replaceAtIndex ? newWorkout : w));
-      setReplaceAtIndex(null);
-    } else {
-      next = [...current, newWorkout];
-    }
-    updateDayWorkouts(dayPlannerOpen.weekIndex, dayPlannerOpen.dayIndex, next);
+    setState(next);
+    schedulePersist({ state: next });
     setChooseWorkoutsOpen(false);
+    setReplaceMode(false);
+    fetchWorkoutsByTrainer(trainerId).then((list) => {
+      const row = list.find((w) => w.id === workoutId);
+      if (row) setWorkoutRowsMap((prev) => ({ ...prev, [workoutId]: row }));
+    });
   };
 
-  const handleReplaceWorkoutInDay = (index: number) => {
-    setReplaceAtIndex(index);
+  const handleRemoveWorkoutFromDayAt = (workoutIndex: number) => {
+    if (!state || !dayPlannerOpen) return;
+    const next = removeWorkoutFromDayAt(
+      state,
+      dayPlannerOpen.phaseIndex,
+      dayPlannerOpen.weekIndex,
+      dayPlannerOpen.dayOrder,
+      workoutIndex
+    );
+    setState(next);
+    schedulePersist({ state: next });
+  };
+
+  const handleRemovePhase = () => {
+    if (!state || phaseCount <= 1) return;
+    const next = removePhase(state, clampedPhaseIndex);
+    setState(next);
+    schedulePersist({ state: next });
+    setSelectedPhaseIndex(Math.min(clampedPhaseIndex, next.phases.length - 1));
+  };
+
+  const handleReplaceWorkout = () => {
+    setReplaceMode(true);
     setChooseWorkoutsOpen(true);
-  };
-
-  const handleRemoveWorkoutFromDay = (index: number) => {
-    if (!dayPlannerOpen) return;
-    const day = getDayForWeek(dayPlannerOpen.weekIndex, dayPlannerOpen.dayIndex);
-    const current = day?.workouts ?? [];
-    const next = current.filter((_, i) => i !== index);
-    updateDayWorkouts(dayPlannerOpen.weekIndex, dayPlannerOpen.dayIndex, next);
   };
 
   const handleDuplicate = async () => {
@@ -239,7 +292,9 @@ export default function ProgramTemplateEditorScreen() {
       const created = await duplicateProgramTemplate(programId);
       appToast.success(t("library.programsScreen.menuDuplicate") + " – done");
       router.replace(
-        `/(trainer)/library/program-templates/${created.id}` as Parameters<typeof router.replace>[0]
+        `/(trainer)/library/program-templates/${created.id}` as Parameters<
+          typeof router.replace
+        >[0]
       );
     } catch (e: unknown) {
       appToast.error(e instanceof Error ? e.message : "Duplicate failed");
@@ -249,7 +304,10 @@ export default function ProgramTemplateEditorScreen() {
   const handleArchive = () => {
     setMenuOpen(false);
     alert.confirm({
-      title: t("library.programsScreen.archiveConfirm", "Archive this program?"),
+      title: t(
+        "library.programsScreen.archiveConfirm",
+        "Archive this program?"
+      ),
       confirmText: t("library.programsScreen.menuArchive", "Archive"),
       cancelText: t("common.cancel", "Cancel"),
       onConfirm: async () => {
@@ -263,7 +321,10 @@ export default function ProgramTemplateEditorScreen() {
   const handleDelete = () => {
     setMenuOpen(false);
     alert.confirm({
-      title: t("library.programsScreen.deleteConfirm", "Delete this program? This cannot be undone."),
+      title: t(
+        "library.programsScreen.deleteConfirm",
+        "Delete this program? This cannot be undone."
+      ),
       confirmText: t("library.programsScreen.menuDelete", "Delete"),
       cancelText: t("common.cancel", "Cancel"),
       destructive: true,
@@ -277,8 +338,33 @@ export default function ProgramTemplateEditorScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.screen, { backgroundColor: theme.colors.background }]}>
-        <StickyHeader title="…" showBackButton />
+      <View
+        style={[styles.screen, { backgroundColor: theme.colors.background }]}
+      >
+        <View
+          style={[
+            styles.headerBar,
+            { paddingTop: 10, backgroundColor: theme.colors.background },
+          ]}
+        >
+          <Button
+            variant="icon"
+            height={36}
+            onPress={() => router.back()}
+            left={
+              <Icon name="chevron-back" size={22} color={theme.colors.text} />
+            }
+          />
+          <Text
+            style={[
+              styles.headerTitlePlaceholder,
+              { color: theme.colors.textMuted },
+            ]}
+          >
+            …
+          </Text>
+          <View style={{ width: 36 }} />
+        </View>
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={theme.colors.accent} />
         </View>
@@ -286,164 +372,430 @@ export default function ProgramTemplateEditorScreen() {
     );
   }
 
-  if (error || !template) {
+  if (error || !template || !state) {
     return (
-      <View style={[styles.screen, { backgroundColor: theme.colors.background }]}>
-        <StickyHeader title="Program" showBackButton />
+      <View
+        style={[styles.screen, { backgroundColor: theme.colors.background }]}
+      >
+        <View
+          style={[
+            styles.headerBar,
+            { paddingTop: 10, backgroundColor: theme.colors.background },
+          ]}
+        >
+          <Button
+            variant="icon"
+            height={36}
+            onPress={() => router.back()}
+            left={
+              <Icon name="chevron-back" size={22} color={theme.colors.text} />
+            }
+          />
+          <Text
+            style={[
+              styles.headerTitlePlaceholder,
+              { color: theme.colors.text },
+            ]}
+          >
+            Program
+          </Text>
+          <View style={{ width: 36 }} />
+        </View>
         <View style={styles.centered}>
-          <Text style={{ color: theme.colors.danger }}>{error ?? "Not found"}</Text>
+          <Text style={{ color: theme.colors.danger }}>
+            {error ?? "Not found"}
+          </Text>
         </View>
       </View>
     );
   }
 
-  const dayPlannerDay = dayPlannerOpen
-    ? getDayForWeek(dayPlannerOpen.weekIndex, dayPlannerOpen.dayIndex)
-    : null;
-  const dayPlannerWorkouts = dayPlannerDay?.workouts ?? [];
+  const plannerPhase =
+    dayPlannerOpen != null ? state?.phases?.[dayPlannerOpen.phaseIndex] : null;
+  const openDay =
+    dayPlannerOpen && plannerPhase
+      ? plannerPhase.weeks[dayPlannerOpen.weekIndex]?.days.find(
+          (d) => d.order === dayPlannerOpen.dayOrder
+        )
+      : null;
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.colors.background }]}>
-      <StickyHeader
-        title=""
-        showBackButton
-        rightButton={{
-          icon: <Icon name="ellipsis-vertical" size={22} color={theme.colors.text} />,
-          variant: "icon",
-          onPress: () => setMenuOpen(true),
-        }}
-      />
-
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { padding: theme.spacing.lg }]}
-        showsVerticalScrollIndicator={false}
+      {/* Header: back + editable title + cog */}
+      <View
+        style={[
+          styles.headerBar,
+          { paddingTop: 10, backgroundColor: theme.colors.background },
+        ]}
       >
-        {/* Inline title */}
+        <Button
+          variant="icon"
+          height={40}
+          onPress={() => router.back()}
+          left={
+            <Icon name="chevron-back" size={24} color={theme.colors.text} />
+          }
+        />
         <TextInput
           value={title}
           onChangeText={setTitle}
           onBlur={handleTitleBlur}
-          placeholder={t("library.createProgram.titlePlaceholder", "Program name")}
+          placeholder={t(
+            "library.createProgram.titlePlaceholder",
+            "Program name"
+          )}
           placeholderTextColor={theme.colors.textMuted}
-          style={[styles.titleInput, { color: theme.colors.text }]}
+          style={[styles.headerTitleInput, { color: theme.colors.text }]}
           maxLength={100}
         />
+        <Button
+          variant="icon"
+          height={40}
+          onPress={() => setMenuOpen(true)}
+          left={<Icon name="cog" size={22} color={theme.colors.text} />}
+        />
+      </View>
 
-        {/* Difficulty pill row */}
-        <View style={[styles.pillRow, { marginTop: theme.spacing.sm }]}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Difficulty: no divider */}
+        <View style={styles.difficultyRow}>
           {PROGRAM_DIFFICULTIES.map((d) => (
-            <Chip
-              key={d}
-              label={t(DIFFICULTY_KEYS[d])}
-              isActive={difficulty === d}
-              onPress={() => handleDifficultyChange(d)}
-              style={styles.difficultyChip}
-            />
+            <View key={d} style={styles.difficultyChipWrap}>
+              <Chip
+                label={t(DIFFICULTY_KEYS[d])}
+                isActive={difficulty === d}
+                onPress={() => handleDifficultyChange(d)}
+                style={styles.difficultyChipFlex}
+              />
+            </View>
           ))}
         </View>
 
-        {/* Week tabs + duration controls */}
-        <View style={[styles.weekRow, { borderBottomColor: theme.colors.border, marginTop: theme.spacing.lg }]}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.weekScroll}>
-            {state.weeks.map((w, i) => (
-              <Pressable
-                key={w.weekIndex}
-                onPress={() => setSelectedWeekIndex(i)}
-                style={[
-                  styles.weekTab,
-                  {
-                    backgroundColor: selectedWeekIndex === i ? theme.colors.accent : theme.colors.surface2,
-                    borderColor: theme.colors.border,
-                  },
-                ]}
+        {/* Phases: divider below */}
+        {phaseCount > 0 && (
+          <View
+            style={[
+              styles.compactSection,
+              { borderBottomColor: theme.colors.border },
+            ]}
+          >
+            <Text
+              weight="semibold"
+              style={[styles.compactLabel, { color: theme.colors.textMuted }]}
+            >
+              {t("library.programsScreen.phase", "Phase")}
+            </Text>
+            <View style={styles.tabRow}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.phaseScrollView}
+                contentContainerStyle={styles.phaseScroll}
               >
-                <Text
-                  style={[
-                    styles.weekTabText,
-                    { color: selectedWeekIndex === i ? theme.colors.background : theme.colors.text },
+                {state.phases.map((phase, i) => (
+                  <Pressable
+                    key={phase.id}
+                    onPress={() => setSelectedPhaseIndex(i)}
+                    style={({ pressed }) => [
+                      styles.compactTab,
+                      {
+                        backgroundColor:
+                          clampedPhaseIndex === i
+                            ? theme.colors.accent
+                            : hexToRgba(theme.colors.text, 0.06),
+                        opacity: pressed ? 0.9 : 1,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.compactTabText,
+                        {
+                          color:
+                            clampedPhaseIndex === i
+                              ? theme.colors.background
+                              : theme.colors.text,
+                        },
+                      ]}
+                    >
+                      {phase.title}
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+              <View style={styles.phaseControlsVertical}>
+                <Pressable
+                  onPress={handleRemovePhase}
+                  disabled={phaseCount <= 1}
+                  style={({ pressed }) => [
+                    styles.iconBtnTiny,
+                    { opacity: phaseCount <= 1 ? 0.5 : pressed ? 0.8 : 1 },
                   ]}
                 >
-                  Week {w.weekIndex}
-                </Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-          <View style={styles.weekControls}>
-            <Pressable
-              onPress={handleRemoveWeek}
-              disabled={durationWeeks <= 1}
-              style={({ pressed }) => [styles.weekBtn, { opacity: durationWeeks <= 1 ? 0.5 : pressed ? 0.8 : 1 }]}
-            >
-              <Icon name="remove" size={20} color={theme.colors.text} />
-            </Pressable>
-            <Pressable
-              onPress={handleAddWeek}
-              disabled={durationWeeks >= 52}
-              style={({ pressed }) => [styles.weekBtn, { opacity: durationWeeks >= 52 ? 0.5 : pressed ? 0.8 : 1 }]}
-            >
-              <Icon name="add" size={20} color={theme.colors.text} />
-            </Pressable>
-          </View>
-        </View>
-
-        {/* 7 day cards for selected week */}
-        {currentWeek && (
-          <View style={[styles.daysGrid, { marginTop: theme.spacing.lg, gap: theme.spacing.md }]}>
-            {currentWeek.days.map((day) => {
-              const workoutCount = day.workouts.length;
-              const firstTwo = day.workouts.slice(0, 2);
-              const more = workoutCount > 2 ? workoutCount - 2 : 0;
-              const dayLabel = DAY_LABELS[day.dayIndex - 1] ?? `Day ${day.dayIndex}`;
-              return (
+                  <HugeiconsIcon
+                    icon={RemoveCircleHalfDotIcon}
+                    size={18}
+                    color={theme.colors.text}
+                  />
+                </Pressable>
                 <Pressable
-                  key={day.dayIndex}
-                  onPress={() => setDayPlannerOpen({ weekIndex: currentWeek.weekIndex, dayIndex: day.dayIndex })}
+                  onPress={handleAddPhase}
                   style={({ pressed }) => [
-                    styles.dayCard,
+                    styles.iconBtnTiny,
+                    { opacity: pressed ? 0.8 : 1 },
+                  ]}
+                >
+                  <Icon
+                    name="add-circle-outline"
+                    size={18}
+                    color={theme.colors.accent}
+                  />
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Weeks: divider below */}
+        <View
+          style={[
+            styles.compactSection,
+            { borderBottomColor: theme.colors.border },
+          ]}
+        >
+          <Text
+            weight="semibold"
+            style={[styles.compactLabel, { color: theme.colors.textMuted }]}
+          >
+            {t("library.programsScreen.weeksSection", "Weeks")}
+          </Text>
+          <View style={styles.tabRow}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.phaseScrollView}
+              contentContainerStyle={styles.phaseScroll}
+            >
+              {currentPhase?.weeks.map((w, i) => (
+                <Pressable
+                  key={w.index}
+                  onPress={() => setSelectedWeekIndex(i)}
+                  style={({ pressed }) => [
+                    styles.compactTab,
                     {
-                      backgroundColor: theme.colors.surface2,
-                      borderColor: theme.colors.border,
-                      opacity: pressed ? 0.95 : 1,
+                      backgroundColor:
+                        clampedWeekIndex === i
+                          ? theme.colors.accent
+                          : hexToRgba(theme.colors.text, 0.06),
+                      opacity: pressed ? 0.9 : 1,
                     },
                   ]}
                 >
-                  <Text weight="semibold" style={[styles.dayLabel, { color: theme.colors.textMuted }]}>
-                    {dayLabel}
+                  <Text
+                    style={[
+                      styles.compactTabText,
+                      {
+                        color:
+                          clampedWeekIndex === i
+                            ? theme.colors.background
+                            : theme.colors.text,
+                      },
+                    ]}
+                  >
+                    {w.label}
                   </Text>
-                  {workoutCount === 0 ? (
-                    <Text style={[styles.dayHint, { color: theme.colors.textMuted }]}>Add workout</Text>
-                  ) : (
-                    <>
-                      {firstTwo.map((w, i) => (
-                        <Text key={`${w.workoutId}-${i}`} numberOfLines={1} style={[styles.dayWorkout, { color: theme.colors.text }]}>
-                          {w.title ?? "Workout"}
-                        </Text>
-                      ))}
-                      {more > 0 && (
-                        <Text style={[styles.dayMore, { color: theme.colors.textMuted }]}>+{more} more</Text>
-                      )}
-                    </>
-                  )}
                 </Pressable>
-              );
-            })}
+              ))}
+            </ScrollView>
+            <View style={styles.phaseControlsVertical}>
+              <Pressable
+                onPress={handleRemoveWeek}
+                disabled={phaseWeeksCount <= 1}
+                style={({ pressed }) => [
+                  styles.iconBtnTiny,
+                  { opacity: phaseWeeksCount <= 1 ? 0.5 : pressed ? 0.8 : 1 },
+                ]}
+              >
+                <HugeiconsIcon
+                  icon={RemoveCircleHalfDotIcon}
+                  size={18}
+                  color={theme.colors.text}
+                />
+              </Pressable>
+              <Pressable
+                onPress={handleAddWeek}
+                disabled={phaseWeeksCount >= 52}
+                style={({ pressed }) => [
+                  styles.iconBtnTiny,
+                  { opacity: phaseWeeksCount >= 52 ? 0.5 : pressed ? 0.8 : 1 },
+                ]}
+              >
+                <Icon
+                  name="add-circle-outline"
+                  size={18}
+                  color={theme.colors.accent}
+                />
+              </Pressable>
+            </View>
+          </View>
+        </View>
+
+        {/* Week schedule (Days): divider below */}
+        {currentWeek && (
+          <View
+            style={[
+              styles.section,
+              { borderBottomColor: theme.colors.border },
+            ]}
+          >
+            <Text
+              weight="semibold"
+              style={[styles.sectionLabel, { color: theme.colors.textMuted }]}
+            >
+              {currentPhase?.title} · {currentWeek.label}
+            </Text>
+            <View style={styles.daysList}>
+              {currentWeek.days.map((day) => {
+                const titles = getDayWorkoutTitles(day);
+                const dayLabel = DAY_LABELS[day.order] ?? day.label;
+                const hasWorkouts = titles.length > 0;
+                return (
+                  <Pressable
+                    key={day.id}
+                    onPress={() =>
+                      setDayPlannerOpen({
+                        phaseIndex: clampedPhaseIndex,
+                        weekIndex: clampedWeekIndex,
+                        dayOrder: day.order,
+                      })
+                    }
+                    style={({ pressed }) => [
+                      styles.dayRow,
+                      {
+                        backgroundColor:
+                          theme.colors.surface3 ?? theme.colors.background,
+                        opacity: pressed ? 0.92 : 1,
+                      },
+                    ]}
+                  >
+                    <Text
+                      weight="semibold"
+                      style={[
+                        styles.dayRowLabel,
+                        { color: theme.colors.textMuted },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {dayLabel}
+                    </Text>
+                    <View style={styles.dayRowChips}>
+                      {!hasWorkouts ? (
+                        <View
+                          style={[
+                            styles.workoutChip,
+                            {
+                              backgroundColor: hexToRgba(
+                                theme.colors.textMuted,
+                                0.12
+                              ),
+                            },
+                          ]}
+                        >
+                          <Icon
+                            name="barbell-outline"
+                            size={14}
+                            color={theme.colors.textMuted}
+                          />
+                          <Text
+                            style={[
+                              styles.workoutChipText,
+                              { color: theme.colors.textMuted },
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {t(
+                              "library.programsScreen.addWorkoutDay",
+                              "Add workout"
+                            )}
+                          </Text>
+                        </View>
+                      ) : (
+                        titles.map((workoutTitle, idx) => (
+                          <View
+                            key={idx}
+                            style={[
+                              styles.workoutChip,
+                              {
+                                backgroundColor: hexToRgba(
+                                  theme.colors.accent,
+                                  0.15
+                                ),
+                              },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.workoutChipText,
+                                { color: theme.colors.text },
+                              ]}
+                              numberOfLines={1}
+                            >
+                              {workoutTitle}
+                            </Text>
+                          </View>
+                        ))
+                      )}
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
         )}
       </ScrollView>
 
-      {/* 3-dot menu modal */}
+      {/* Settings menu modal */}
       <Modal visible={menuOpen} transparent animationType="fade">
-        <Pressable style={styles.menuOverlay} onPress={() => setMenuOpen(false)}>
-          <View style={[styles.menuCard, { backgroundColor: theme.colors.surface2 }]}>
-            <Pressable style={[styles.menuItem, { borderBottomColor: theme.colors.border }]} onPress={handleDuplicate}>
-              <Text style={{ color: theme.colors.text }}>{t("library.programsScreen.menuDuplicate")}</Text>
+        <Pressable
+          style={styles.menuOverlay}
+          onPress={() => setMenuOpen(false)}
+        >
+          <View
+            style={[
+              styles.menuCard,
+              { backgroundColor: theme.colors.surface2 },
+            ]}
+          >
+            <Pressable
+              style={[
+                styles.menuItem,
+                { borderBottomColor: theme.colors.border },
+              ]}
+              onPress={handleDuplicate}
+            >
+              <Text style={{ color: theme.colors.text }}>
+                {t("library.programsScreen.menuDuplicate")}
+              </Text>
             </Pressable>
-            <Pressable style={[styles.menuItem, { borderBottomColor: theme.colors.border }]} onPress={handleArchive}>
-              <Text style={{ color: theme.colors.text }}>{t("library.programsScreen.menuArchive")}</Text>
+            <Pressable
+              style={[
+                styles.menuItem,
+                { borderBottomColor: theme.colors.border },
+              ]}
+              onPress={handleArchive}
+            >
+              <Text style={{ color: theme.colors.text }}>
+                {t("library.programsScreen.menuArchive")}
+              </Text>
             </Pressable>
             <Pressable style={styles.menuItem} onPress={handleDelete}>
-              <Text style={{ color: theme.colors.danger }}>{t("library.programsScreen.menuDelete")}</Text>
+              <Text style={{ color: theme.colors.danger }}>
+                {t("library.programsScreen.menuDelete")}
+              </Text>
             </Pressable>
           </View>
         </Pressable>
@@ -451,25 +803,31 @@ export default function ProgramTemplateEditorScreen() {
 
       <DayPlannerSheet
         visible={dayPlannerOpen !== null}
-        weekIndex={dayPlannerOpen?.weekIndex ?? 1}
-        dayIndex={dayPlannerOpen?.dayIndex ?? 1}
-        workouts={dayPlannerWorkouts}
+        weekIndex={dayPlannerOpen?.weekIndex ?? 0}
+        dayLabel={openDay ? DAY_LABELS[openDay.order] ?? openDay.label : "Day"}
+        day={openDay ?? null}
+        state={state}
+        workoutRowsMap={workoutRowsMap}
         onClose={() => setDayPlannerOpen(null)}
         onAddWorkout={() => {
-          setReplaceAtIndex(null);
+          setReplaceMode(false);
           setChooseWorkoutsOpen(true);
         }}
-        onRemoveWorkout={handleRemoveWorkoutFromDay}
-        onReplaceWorkout={handleReplaceWorkoutInDay}
+        onRemoveWorkoutAt={handleRemoveWorkoutFromDayAt}
       />
 
       <ChooseFromWorkoutsSheet
         visible={chooseWorkoutsOpen}
         onClose={() => setChooseWorkoutsOpen(false)}
-        onSelectWorkout={handleAddWorkoutToDay}
+        onSelectWorkout={(workoutId) => handleAddWorkoutToDay(workoutId)}
         pendingDay={
           dayPlannerOpen
-            ? { programId, weekIndex: dayPlannerOpen.weekIndex, dayIndex: dayPlannerOpen.dayIndex }
+            ? {
+                programId,
+                phaseIndex: dayPlannerOpen.phaseIndex,
+                weekIndex: dayPlannerOpen.weekIndex,
+                dayOrder: dayPlannerOpen.dayOrder,
+              }
             : null
         }
       />
@@ -479,59 +837,141 @@ export default function ProgramTemplateEditorScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  scroll: { flex: 1 },
-  scrollContent: { paddingBottom: 32 },
   centered: { flex: 1, alignItems: "center", justifyContent: "center" },
-  titleInput: {
-    fontSize: 22,
-    fontWeight: "700",
-    paddingVertical: 4,
-  },
-  pillRow: { flexDirection: "row", gap: 8 },
-  difficultyChip: { marginRight: 0 },
-  weekRow: {
+  headerBar: {
     flexDirection: "row",
     alignItems: "center",
+    paddingHorizontal: 12,
+    paddingBottom: 14,
+    paddingTop: 10,
+    gap: 10,
+  },
+  headerTitleInput: {
+    flex: 1,
+    fontSize: 19,
+    fontWeight: "600",
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+  },
+  headerTitlePlaceholder: {
+    flex: 1,
+    fontSize: 19,
+    fontWeight: "600",
+    paddingVertical: 10,
+  },
+  scroll: { flex: 1 },
+  scrollContent: { paddingHorizontal: 12, paddingBottom: 40 },
+  difficultyRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+    marginBottom: 6,
+    paddingBottom: 6,
+    gap: 8,
+  },
+  difficultyChipWrap: { flex: 1 },
+  difficultyChipFlex: {
+    marginRight: 0,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  compactSection: {
+    paddingHorizontal: 0,
+    paddingTop: 0,
+    paddingBottom: 4,
+    marginBottom: 4,
     borderBottomWidth: 1,
-    paddingBottom: 12,
   },
-  weekScroll: { flex: 1, flexDirection: "row", gap: 8, paddingRight: 8 },
-  weekTab: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1,
+  compactLabel: {
+    fontSize: 10,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginBottom: 0,
+    marginTop: 0,
   },
-  weekTabText: { fontSize: 14, fontWeight: "600" },
-  weekControls: { flexDirection: "row", gap: 4 },
-  weekBtn: { padding: 8 },
-  daysGrid: { flexDirection: "row", flexWrap: "wrap" },
-  dayCard: {
-    width: "47%",
-    padding: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    minHeight: 80,
+  tabRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 0,
   },
-  dayLabel: { fontSize: 12, marginBottom: 4 },
-  dayHint: { fontSize: 14 },
-  dayWorkout: { fontSize: 13, marginTop: 2 },
-  dayMore: { fontSize: 12, marginTop: 2 },
+  section: {
+    paddingHorizontal: 0,
+    paddingTop: 2,
+    paddingBottom: 8,
+    marginBottom: 8,
+    borderBottomWidth: 1,
+    gap: 8,
+  },
+  sectionLabel: {
+    fontSize: 12,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: 0,
+    marginTop: 0,
+  },
+  phaseScroll: { flexDirection: "row", gap: 8, paddingRight: 6 },
+  phaseScrollView: { flex: 1 },
+  compactTab: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  compactTabText: { fontSize: 13, fontWeight: "600" },
+  phaseControlsVertical: {
+    flexDirection: "column",
+    gap: 2,
+  },
+  iconBtnTiny: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "transparent",
+  },
+  daysList: { gap: 6, marginTop: 0 },
+  dayRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    gap: 12,
+  },
+  dayRowLabel: {
+    fontSize: 13,
+    width: 32,
+  },
+  dayRowChips: {
+    flex: 1,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    alignItems: "center",
+  },
+  workoutChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    maxWidth: "100%",
+  },
+  workoutChipText: { fontSize: 12, fontWeight: "500", flexShrink: 1 },
   menuOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: "rgba(0,0,0,0.45)",
     justifyContent: "center",
     alignItems: "center",
     padding: 24,
   },
-  menuCard: {
-    borderRadius: 16,
-    minWidth: 200,
-    overflow: "hidden",
-  },
+  menuCard: { borderRadius: 20, minWidth: 240, overflow: "hidden" },
   menuItem: {
-    paddingVertical: 14,
-    paddingHorizontal: 18,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
   },
 });

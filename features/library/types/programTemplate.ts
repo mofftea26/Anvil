@@ -3,39 +3,77 @@
  */
 export type ProgramDifficulty = "beginner" | "intermediate" | "advanced";
 
-/**
- * Workout reference in a day (state.weeks[].days[].workouts).
- * title is optional for display when resolved from workouts list.
- */
-export type DayWorkout = {
-  workoutId: string;
-  source?: string;
-  title?: string;
+/** Workout ref for a day: from workouts table or inline. */
+export type DayWorkoutRef =
+  | { source: "workoutsTable"; workoutId: string }
+  | { source: "inline"; inlineWorkoutId: string }
+  | null;
+
+/** Single day in a week (new state shape). Multiple workouts per day supported via workouts[]. */
+export type ProgramDay = {
+  id: string;
+  order: number;
+  label: string;
+  type: "workout" | "rest";
+  /** @deprecated Use workouts[]; kept for backward compat. */
+  workoutRef: DayWorkoutRef;
+  /** Workouts assigned to this day (order preserved). Empty = rest day. */
+  workouts: DayWorkoutRef[];
+  notes: string | null;
+};
+
+/** Week in a phase. */
+export type ProgramWeek = {
+  index: number;
+  label: string;
+  days: ProgramDay[];
+};
+
+/** Phase groups weeks. */
+export type ProgramPhase = {
+  id: string;
+  title: string;
+  description: string | null;
+  order: number;
+  durationWeeks: number;
+  weeks: ProgramWeek[];
+};
+
+/** Inline workout (no DB id yet). */
+export type InlineWorkout = {
+  id: string;
+  title: string;
+  state: unknown;
+};
+
+/** Workout library in state: linked IDs + inline workouts. */
+export type WorkoutLibrary = {
+  linkedWorkoutIds: string[];
+  inlineWorkouts: InlineWorkout[];
+};
+
+/** Optional UI state. */
+export type ProgramTemplateUI = {
+  selectedPhaseId: string | null;
+  selectedWeekIndex: number;
+  selectedDayId: string | null;
 };
 
 /**
- * Single day in a week (dayIndex 1–7).
+ * Program template state (jsonb) – the only allowed shape.
+ * jsonStateVersion: 1
  */
-export type DayState = {
-  dayIndex: number;
-  workouts: DayWorkout[];
+export type ProgramTemplateStateV1 = {
+  jsonStateVersion: 1;
+  difficulty: ProgramDifficulty;
+  durationWeeks: number;
+  phases: ProgramPhase[];
+  workoutLibrary: WorkoutLibrary;
+  ui?: ProgramTemplateUI;
 };
 
-/**
- * Single week (weekIndex 1-based).
- */
-export type WeekState = {
-  weekIndex: number;
-  days: DayState[];
-};
-
-/**
- * Program template state (jsonb). Versioned; durationWeeks controls weeks length.
- */
-export type ProgramTemplateState = {
-  version: 1;
-  weeks: WeekState[];
-};
+/** Program template state (current version only). */
+export type ProgramTemplateState = ProgramTemplateStateV1;
 
 /**
  * Row from public.programTemplates (published-only in app).
@@ -61,4 +99,5 @@ export const PROGRAM_DIFFICULTIES: ProgramDifficulty[] = [
   "advanced",
 ];
 
-export const STATE_VERSION = 1;
+export const JSON_STATE_VERSION = 1;
+export const DEFAULT_PHASE_ID = "phase_default";

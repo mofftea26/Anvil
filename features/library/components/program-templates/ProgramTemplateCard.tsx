@@ -1,11 +1,14 @@
 import React, { useState } from "react";
 import { Modal, Pressable, StyleSheet, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
 import type { ProgramDifficulty, ProgramTemplate } from "@/features/library/types/programTemplate";
 import { formatShortDate } from "@/features/library/utils/formatShortDate";
 import { hexToRgba } from "@/features/profile/utils/trainerProfileUtils";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
-import { Card, Icon, Text, useTheme } from "@/shared/ui";
+import { Icon, Text, useTheme } from "@/shared/ui";
+
+const CARD_BORDER_RADIUS = 20;
 
 const DIFFICULTY_KEYS: Record<ProgramDifficulty, string> = {
   beginner: "library.programsScreen.difficultyBeginner",
@@ -16,6 +19,7 @@ const DIFFICULTY_KEYS: Record<ProgramDifficulty, string> = {
 type Props = {
   template: ProgramTemplate;
   lastEditedLabel: string;
+  isArchived?: boolean;
   onPress: () => void;
   onDuplicate: () => void;
   onArchive: () => void;
@@ -25,6 +29,7 @@ type Props = {
 export function ProgramTemplateCard({
   template,
   lastEditedLabel,
+  isArchived = false,
   onPress,
   onDuplicate,
   onArchive,
@@ -35,7 +40,7 @@ export function ProgramTemplateCard({
   const [menuOpen, setMenuOpen] = useState(false);
 
   const difficultyLabel = t(DIFFICULTY_KEYS[template.difficulty]);
-  const weeks = template.durationWeeks ?? 0;
+  const weeks = template.durationWeeks ?? template.state?.durationWeeks ?? 0;
   const weeksLabel = t("library.programsScreen.weeks", { count: weeks });
   const editedDate = formatShortDate(template.lastEditedAt ?? template.updatedAt);
 
@@ -56,59 +61,79 @@ export function ProgramTemplateCard({
 
   return (
     <>
-      <Pressable onPress={onPress} style={({ pressed }) => [{ opacity: pressed ? 0.96 : 1 }]}>
-        <Card
-          padded
-          style={[
-            styles.card,
-            {
-              borderRadius: theme.radii.lg,
-              borderColor: hexToRgba(theme.colors.accent, 0.15),
-            },
-          ]}
-        >
-          <View style={styles.row}>
-            <View style={{ flex: 1 }}>
-              <Text weight="bold" style={[styles.title, { color: theme.colors.text }]} numberOfLines={2}>
-                {template.title}
-              </Text>
-              <View style={[styles.pillRow, { marginTop: theme.spacing.xs }]}>
-                <View
-                  style={[
-                    styles.pill,
-                    {
-                      backgroundColor: hexToRgba(theme.colors.accent2, 0.15),
-                      borderColor: hexToRgba(theme.colors.accent2, 0.3),
-                    },
-                  ]}
-                >
-                  <Text style={[styles.pillText, { color: theme.colors.textMuted }]}>
-                    {difficultyLabel}
-                  </Text>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [
+          styles.wrapper,
+          { opacity: pressed ? 0.97 : 1, transform: [{ scale: pressed ? 0.99 : 1 }] },
+        ]}
+      >
+        <View style={[styles.card, { borderRadius: CARD_BORDER_RADIUS, overflow: "hidden" }]}>
+          <LinearGradient
+            colors={[
+              hexToRgba(theme.colors.accent, 0.14),
+              hexToRgba(theme.colors.accent2, 0.08),
+              hexToRgba(theme.colors.accent, 0.03),
+              theme.colors.surface2,
+            ]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />
+          <View style={[styles.borderWrap, { borderColor: hexToRgba(theme.colors.accent, 0.18) }]}>
+            <View style={styles.row}>
+              <View style={[styles.iconWrap, { backgroundColor: hexToRgba(theme.colors.accent, 0.22) }]}>
+                <Icon name="calendar-outline" size={26} color={theme.colors.accent} />
+              </View>
+              <View style={styles.content}>
+                <Text weight="bold" style={[styles.title, { color: theme.colors.text }]} numberOfLines={2}>
+                  {template.title}
+                </Text>
+                <View style={styles.pillRow}>
+                  <View
+                    style={[
+                      styles.pill,
+                      {
+                        backgroundColor: hexToRgba(theme.colors.accent2, 0.22),
+                        borderColor: hexToRgba(theme.colors.accent2, 0.35),
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.pillText, { color: theme.colors.text }]}>
+                      {difficultyLabel}
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.pill,
+                      {
+                        backgroundColor: hexToRgba(theme.colors.text, 0.08),
+                        borderColor: hexToRgba(theme.colors.text, 0.15),
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.pillText, { color: theme.colors.textMuted }]}>
+                      {weeksLabel}
+                    </Text>
+                  </View>
                 </View>
                 <Text style={[styles.meta, { color: theme.colors.textMuted }]}>
-                  {weeksLabel}
+                  {lastEditedLabel} {editedDate}
                 </Text>
               </View>
-              <Text style={[styles.meta, { color: theme.colors.textMuted, marginTop: 4 }]}>
-                {lastEditedLabel} {editedDate}
-              </Text>
+              <Pressable
+                onPress={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen(true);
+                }}
+                style={({ pressed }) => [styles.menuBtn, { opacity: pressed ? 0.7 : 1 }]}
+                hitSlop={8}
+              >
+                <Icon name="ellipsis-vertical" size={20} color={theme.colors.textMuted} />
+              </Pressable>
             </View>
-            <Pressable
-              onPress={(e) => {
-                e.stopPropagation();
-                setMenuOpen(true);
-              }}
-              style={({ pressed }) => [
-                styles.menuBtn,
-                { opacity: pressed ? 0.7 : 1 },
-              ]}
-              hitSlop={8}
-            >
-              <Icon name="ellipsis-vertical" size={20} color={theme.colors.textMuted} />
-            </Pressable>
           </View>
-        </Card>
+        </View>
       </Pressable>
 
       <Modal visible={menuOpen} transparent animationType="fade">
@@ -131,25 +156,51 @@ export function ProgramTemplateCard({
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    marginBottom: 4,
+  },
   card: {
     borderWidth: 1,
+    borderColor: "transparent",
+  },
+  borderWrap: {
+    borderWidth: 1,
+    borderRadius: CARD_BORDER_RADIUS - 1,
+    margin: 1,
+    overflow: "hidden",
   },
   row: {
     flexDirection: "row",
     alignItems: "flex-start",
+    padding: 18,
+  },
+  iconWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 16,
+  },
+  content: {
+    flex: 1,
+    minWidth: 0,
   },
   title: {
-    fontSize: 18,
-    lineHeight: 24,
+    fontSize: 19,
+    lineHeight: 25,
+    marginBottom: 10,
   },
   pillRow: {
     flexDirection: "row",
     alignItems: "center",
+    flexWrap: "wrap",
     gap: 8,
+    marginBottom: 8,
   },
   pill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 11,
+    paddingVertical: 6,
     borderRadius: 999,
     borderWidth: 1,
   },
@@ -159,6 +210,7 @@ const styles = StyleSheet.create({
   },
   meta: {
     fontSize: 12,
+    letterSpacing: 0.2,
   },
   menuBtn: {
     padding: 8,

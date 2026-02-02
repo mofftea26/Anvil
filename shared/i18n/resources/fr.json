@@ -284,7 +284,11 @@
       "subtitle": "Concevez des phases d'entraînement complètes avec planification hebdomadaire intelligente."
     },
     "programsScreen": {
-      "subtitle": "Gérez vos programmes d'entraînement avec des outils de recherche et de partage puissants."
+      "subtitle": "Gérez vos programmes d'entraînement avec des outils de recherche et de partage puissants.",
+      "phase": "Phase",
+      "addPhase": "Ajouter une phase",
+      "phaseN": "Phase {{n}}",
+      "addWorkoutDay": "Ajouter une séance"
     },
     "workoutsScreen": {
       "subtitle": "Construisez des blocs d'entraînement sophistiqués avec progression de séries structurée."

@@ -20,9 +20,9 @@ import { Icon, Text, useTheme } from "@/shared/ui";
 type Props = {
   visible: boolean;
   onClose: () => void;
-  onSelectWorkout: (workoutId: string, title: string) => void;
+  onSelectWorkout: (workoutId: string) => void;
   /** When provided, "Create workout now" will set bridge and navigate to builder; after save, workout is attached to this day. */
-  pendingDay?: { programId: string; weekIndex: number; dayIndex: number } | null;
+  pendingDay?: { programId: string; phaseIndex: number; weekIndex: number; dayOrder: number } | null;
 };
 
 export function ChooseFromWorkoutsSheet({
@@ -69,7 +69,7 @@ export function ChooseFromWorkoutsSheet({
   }, [rows, query]);
 
   const handleSelect = (workout: WorkoutRow) => {
-    onSelectWorkout(workout.id, workout.title ?? "Workout");
+    onSelectWorkout(workout.id);
     onClose();
   };
 
@@ -77,8 +77,9 @@ export function ChooseFromWorkoutsSheet({
     if (pendingDay) {
       setPendingProgramDayAttachment({
         programId: pendingDay.programId,
+        phaseIndex: pendingDay.phaseIndex,
         weekIndex: pendingDay.weekIndex,
-        dayIndex: pendingDay.dayIndex,
+        dayOrder: pendingDay.dayOrder,
       });
     }
     onClose();

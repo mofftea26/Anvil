@@ -4,6 +4,7 @@ import { RefreshControl, ScrollView, View } from "react-native";
 import { ProgramTemplateCard } from "@/features/library/components/program-templates/ProgramTemplateCard";
 import { useProgramTemplatesList } from "@/features/library/hooks/program-templates/useProgramTemplatesList";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
+import { hexToRgba } from "@/features/profile/utils/trainerProfileUtils";
 import {
   Chip,
   Icon,
@@ -48,7 +49,7 @@ export default function ProgramTemplatesListScreen() {
         }}
       />
 
-      {/* Filter chips */}
+      {/* Filter chips: All, difficulty, Archived (different color) */}
       <View style={[styles.filterRow, { borderBottomColor: theme.colors.border }]}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScroll}>
           <Chip
@@ -74,6 +75,23 @@ export default function ProgramTemplatesListScreen() {
             isActive={filter === "advanced"}
             onPress={() => setFilter("advanced")}
             style={styles.chip}
+          />
+          <Chip
+            label={t("library.programsScreen.filterArchived", "Archived")}
+            isActive={filter === "archived"}
+            onPress={() => setFilter("archived")}
+            style={[
+              styles.chip,
+              styles.archivedChip,
+              {
+                backgroundColor: filter === "archived"
+                  ? hexToRgba(theme.colors.textMuted, 0.35)
+                  : hexToRgba(theme.colors.textMuted, 0.12),
+                borderColor: filter === "archived"
+                  ? hexToRgba(theme.colors.textMuted, 0.5)
+                  : hexToRgba(theme.colors.textMuted, 0.25),
+              },
+            ]}
           />
         </ScrollView>
       </View>
@@ -114,6 +132,7 @@ export default function ProgramTemplatesListScreen() {
                 key={template.id}
                 template={template}
                 lastEditedLabel={lastEditedLabel}
+                isArchived={filter === "archived"}
                 onPress={() => onOpenProgram(template.id)}
                 onDuplicate={() => onDuplicate(template.id)}
                 onArchive={() => {
@@ -155,6 +174,9 @@ const styles = {
   },
   chip: {
     marginRight: 0,
+  },
+  archivedChip: {
+    // Distinct style so Archived stands out from difficulty filters
   },
   empty: {
     alignItems: "center" as const,

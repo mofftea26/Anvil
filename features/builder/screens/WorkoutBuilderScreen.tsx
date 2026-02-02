@@ -212,10 +212,10 @@ export function WorkoutBuilderScreen({ mode }: Props) {
       try {
         await addWorkoutToProgramDay(
           pendingProgramDay.programId,
+          pendingProgramDay.phaseIndex,
           pendingProgramDay.weekIndex,
-          pendingProgramDay.dayIndex,
-          res.workoutId,
-          title.trim() || "Workout"
+          pendingProgramDay.dayOrder,
+          res.workoutId
         );
         appToast.success(t("builder.toasts.workoutPublished"));
         router.replace(

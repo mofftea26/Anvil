@@ -11,7 +11,7 @@ import {
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import { appToast } from "@/shared/ui";
 
-type Filter = "all" | ProgramDifficulty;
+export type ProgramListFilter = "all" | "archived" | ProgramDifficulty;
 
 export function useProgramTemplatesList() {
   const { t } = useAppTranslation();
@@ -19,14 +19,17 @@ export function useProgramTemplatesList() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useState<ProgramListFilter>("all");
 
   const fetchList = useCallback(async () => {
     setError(null);
     try {
+      const includeArchived = filter === "archived";
+      const difficulty =
+        filter !== "all" && filter !== "archived" ? filter : undefined;
       const list = await listProgramTemplates({
-        includeArchived: false,
-        difficulty: filter === "all" ? undefined : filter,
+        includeArchived,
+        difficulty,
       });
       setRows(list);
     } catch (e: unknown) {
@@ -63,14 +66,16 @@ export function useProgramTemplatesList() {
     async (id: string) => {
       try {
         const created = await duplicateProgramTemplate(id);
-        setRows((prev) => [created, ...prev]);
+        if (filter !== "archived") {
+          setRows((prev) => [created, ...prev]);
+        }
         appToast.success(t("library.programsScreen.menuDuplicate") + " – done");
         onOpenProgram(created.id);
       } catch (e: unknown) {
         appToast.error(e instanceof Error ? e.message : "Duplicate failed");
       }
     },
-    [t, onOpenProgram]
+    [t, filter, onOpenProgram]
   );
 
   const onArchive = useCallback(

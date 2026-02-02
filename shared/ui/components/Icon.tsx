@@ -1,6 +1,6 @@
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import React from "react";
 import type { ComponentProps } from "react";
+import React from "react";
 
 import { getHugeiconName } from "../utils/iconMapping";
 
@@ -8,6 +8,7 @@ import { getHugeiconName } from "../utils/iconMapping";
 import {
   Add01Icon,
   AddCircleIcon,
+  AiNetworkIcon,
   Alert01Icon,
   Analytics01Icon,
   AnalyticsDownIcon,
@@ -16,7 +17,6 @@ import {
   ArrowRight01Icon,
   ArrowUp01Icon,
   Award01Icon,
-  AiNetworkIcon,
   Book01Icon,
   Calendar01Icon,
   Cancel01Icon,
@@ -111,12 +111,20 @@ type IconProps = {
  * Icon component that maps Ionicons-style names to Hugeicons
  * Usage: <Icon name="search" size={24} color="red" />
  */
-export function Icon({ name, size = 24, color = "currentColor", strokeWidth = 1.5, ...props }: IconProps) {
+export function Icon({
+  name,
+  size = 24,
+  color = "currentColor",
+  strokeWidth = 1.5,
+  ...props
+}: IconProps) {
   const hugeiconName = getHugeiconName(name);
   const IconComponent = iconComponents[hugeiconName];
 
   if (!IconComponent) {
-    console.warn(`Icon "${name}" (mapped to "${hugeiconName}") not found. Using QuestionIcon.`);
+    console.warn(
+      `Icon "${name}" (mapped to "${hugeiconName}") not found. Using QuestionIcon.`
+    );
     return (
       <HugeiconsIcon
         icon={QuestionIcon}

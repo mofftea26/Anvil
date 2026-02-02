@@ -302,6 +302,7 @@
       "weeks": "{{count}} week",
       "weeks_other": "{{count}} weeks",
       "filterAll": "All",
+      "filterArchived": "Archived",
       "difficultyBeginner": "Beginner",
       "difficultyIntermediate": "Intermediate",
       "difficultyAdvanced": "Advanced",
@@ -310,7 +311,21 @@
       "menuDelete": "Delete",
       "archiveConfirm": "Archive this program?",
       "deleteConfirm": "Delete this program? This cannot be undone.",
-      "lastEdited": "Edited"
+      "lastEdited": "Edited",
+      "phase": "Phase",
+      "addPhase": "Add phase",
+      "phaseN": "Phase {{n}}",
+      "weeksSection": "Weeks",
+      "addWorkoutDay": "Add workout",
+      "weekDayHeader": "Week {{week}} · {{day}}",
+      "oneWorkout": "1 workout",
+      "workoutCount": "{{count}} workout",
+      "workoutCount_other": "{{count}} workouts",
+      "noWorkoutsThisDay": "No workouts this day",
+      "replaceWorkout": "Replace",
+      "removeWorkout": "Remove",
+      "workoutNotFound": "Workout not found.",
+      "more": "more"
     },
     "workoutsScreen": {
       "subtitle": "Build sophisticated training blocks with structured series progression."
