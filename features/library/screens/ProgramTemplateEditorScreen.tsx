@@ -32,8 +32,10 @@ import { DayPlannerSheet } from "@/features/library/components/program-templates
 import type {
   ProgramDay,
   ProgramDifficulty,
+  ProgramPhase,
   ProgramTemplate,
   ProgramTemplateState,
+  ProgramWeek,
 } from "@/features/library/types/programTemplate";
 import { PROGRAM_DIFFICULTIES } from "@/features/library/types/programTemplate";
 import { hexToRgba } from "@/features/profile/utils/trainerProfileUtils";
@@ -57,6 +59,18 @@ const DIFFICULTY_KEYS: Record<ProgramDifficulty, string> = {
 
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const DEBOUNCE_MS = 600;
+
+function phaseHasData(phase: ProgramPhase): boolean {
+  return phase.weeks.some((w) =>
+    w.days.some((d) => (d.workouts?.length ?? 0) > 0 || d.workoutRef != null)
+  );
+}
+
+function weekHasData(week: ProgramWeek): boolean {
+  return week.days.some(
+    (d) => (d.workouts?.length ?? 0) > 0 || d.workoutRef != null
+  );
+}
 
 export default function ProgramTemplateEditorScreen() {
   const { t } = useAppTranslation();
@@ -233,12 +247,32 @@ export default function ProgramTemplateEditorScreen() {
   };
 
   const handleRemoveWeek = () => {
-    if (!state) return;
-    const next = removePhaseWeek(state, clampedPhaseIndex);
-    setState(next);
-    schedulePersist({ state: next });
-    const newLen = next.phases[clampedPhaseIndex]?.weeks.length ?? 0;
-    setSelectedWeekIndex(Math.min(clampedWeekIndex, Math.max(0, newLen - 1)));
+    if (!state || !currentPhase) return;
+    const weekToRemove = currentPhase.weeks[clampedWeekIndex];
+    if (!weekToRemove) return;
+
+    const doRemove = () => {
+      const next = removePhaseWeek(state, clampedPhaseIndex, clampedWeekIndex);
+      setState(next);
+      schedulePersist({ state: next });
+      const newLen = next.phases[clampedPhaseIndex]?.weeks.length ?? 0;
+      setSelectedWeekIndex(Math.min(clampedWeekIndex, Math.max(0, newLen - 1)));
+    };
+
+    if (weekHasData(weekToRemove)) {
+      alert.confirm({
+        title: t(
+          "library.programsScreen.removeWeekConfirm",
+          "Remove this week? It contains workouts."
+        ),
+        confirmText: t("library.programsScreen.remove", "Remove"),
+        cancelText: t("common.cancel", "Cancel"),
+        destructive: true,
+        onConfirm: doRemove,
+      });
+    } else {
+      doRemove();
+    }
   };
 
   const handleAddWorkoutToDay = (workoutId: string) => {
@@ -274,11 +308,31 @@ export default function ProgramTemplateEditorScreen() {
   };
 
   const handleRemovePhase = () => {
-    if (!state || phaseCount <= 1) return;
-    const next = removePhase(state, clampedPhaseIndex);
-    setState(next);
-    schedulePersist({ state: next });
-    setSelectedPhaseIndex(Math.min(clampedPhaseIndex, next.phases.length - 1));
+    if (!state || phaseCount <= 1 || !currentPhase) return;
+
+    const doRemove = () => {
+      const next = removePhase(state, clampedPhaseIndex);
+      setState(next);
+      schedulePersist({ state: next });
+      setSelectedPhaseIndex(
+        Math.min(clampedPhaseIndex, next.phases.length - 1)
+      );
+    };
+
+    if (phaseHasData(currentPhase)) {
+      alert.confirm({
+        title: t(
+          "library.programsScreen.removePhaseConfirm",
+          "Remove this phase? It contains workouts."
+        ),
+        confirmText: t("library.programsScreen.remove", "Remove"),
+        cancelText: t("common.cancel", "Cancel"),
+        destructive: true,
+        onConfirm: doRemove,
+      });
+    } else {
+      doRemove();
+    }
   };
 
   const handleReplaceWorkout = () => {
@@ -647,10 +701,7 @@ export default function ProgramTemplateEditorScreen() {
         {/* Week schedule (Days): divider below */}
         {currentWeek && (
           <View
-            style={[
-              styles.section,
-              { borderBottomColor: theme.colors.border },
-            ]}
+            style={[styles.section, { borderBottomColor: theme.colors.border }]}
           >
             <Text
               weight="semibold"

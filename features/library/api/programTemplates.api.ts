@@ -1,15 +1,14 @@
 import { supabase } from "@/shared/supabase/client";
 import type {
+  ProgramDay,
   ProgramDifficulty,
+  ProgramPhase,
   ProgramTemplate,
   ProgramTemplateState,
   ProgramTemplateStateV1,
-  ProgramPhase,
   ProgramWeek,
-  ProgramDay,
-  WorkoutLibrary,
 } from "../types/programTemplate";
-import { JSON_STATE_VERSION, DEFAULT_PHASE_ID } from "../types/programTemplate";
+import { DEFAULT_PHASE_ID, JSON_STATE_VERSION } from "../types/programTemplate";
 
 async function requireUserId(): Promise<string> {
   const { data, error } = await supabase.auth.getUser();
@@ -20,7 +19,11 @@ async function requireUserId(): Promise<string> {
 }
 
 /** Generate stable day id: p{phaseIndex}_w{weekIndex}_d{dayIndex} (0-based). */
-function dayId(phaseIndex: number, weekIndex: number, dayIndex: number): string {
+function dayId(
+  phaseIndex: number,
+  weekIndex: number,
+  dayIndex: number
+): string {
   return `p${phaseIndex}_w${weekIndex}_d${dayIndex}`;
 }
 
@@ -87,14 +90,18 @@ function normalizeState(raw: unknown): ProgramTemplateState {
       obj.workoutLibrary &&
       typeof obj.workoutLibrary === "object"
     ) {
-      const lib = obj.workoutLibrary as { linkedWorkoutIds?: unknown[]; inlineWorkouts?: unknown[] };
+      const lib = obj.workoutLibrary as {
+        linkedWorkoutIds?: unknown[];
+        inlineWorkouts?: unknown[];
+      };
       return {
         jsonStateVersion: 1,
         difficulty:
           obj.difficulty === "intermediate" || obj.difficulty === "advanced"
             ? (obj.difficulty as ProgramDifficulty)
             : "beginner",
-        durationWeeks: typeof obj.durationWeeks === "number" ? obj.durationWeeks : 6,
+        durationWeeks:
+          typeof obj.durationWeeks === "number" ? obj.durationWeeks : 6,
         phases: (obj.phases as ProgramPhase[]).map((p: ProgramPhase) => ({
           ...p,
           weeks: (p.weeks ?? []).map((wk: ProgramWeek) => ({
@@ -103,8 +110,8 @@ function normalizeState(raw: unknown): ProgramTemplateState {
               const workouts = Array.isArray(d.workouts)
                 ? d.workouts
                 : d.workoutRef
-                  ? [d.workoutRef]
-                  : [];
+                ? [d.workoutRef]
+                : [];
               return {
                 id: d.id ?? "",
                 order: typeof d.order === "number" ? d.order : 0,
@@ -118,8 +125,12 @@ function normalizeState(raw: unknown): ProgramTemplateState {
           })),
         })),
         workoutLibrary: {
-          linkedWorkoutIds: Array.isArray(lib.linkedWorkoutIds) ? lib.linkedWorkoutIds : [],
-          inlineWorkouts: Array.isArray(lib.inlineWorkouts) ? lib.inlineWorkouts : [],
+          linkedWorkoutIds: Array.isArray(lib.linkedWorkoutIds)
+            ? lib.linkedWorkoutIds
+            : [],
+          inlineWorkouts: Array.isArray(lib.inlineWorkouts)
+            ? lib.inlineWorkouts
+            : [],
         },
         ui: obj.ui as ProgramTemplateState["ui"],
       };
@@ -133,37 +144,51 @@ function normalizeState(raw: unknown): ProgramTemplateState {
           description: null,
           order: 0,
           durationWeeks: (obj.weeks as unknown[]).length,
-          weeks: (obj.weeks as Array<{ weekIndex?: number; days?: Array<{ dayIndex?: number; workouts?: Array<{ workoutId: string; title?: string }> }> }>).map(
-            (w, wi) => ({
-              index: wi,
-              label: `Week ${(w.weekIndex ?? wi) + 1}`,
-              days: Array.from({ length: 7 }, (_, di) => {
-                const day = w.days?.[di];
-                const workouts = day?.workouts ?? [];
-                const first = workouts[0];
-                const ref = first
-                  ? { source: "workoutsTable" as const, workoutId: first.workoutId }
-                  : null;
-                const workoutRefs = first ? [ref!] : [];
-                return {
-                  id: dayId(0, wi, di),
-                  order: di,
-                  label: `Day ${di + 1}`,
-                  type: first ? "workout" : "rest",
-                  workoutRef: ref,
-                  workouts: workoutRefs,
-                  notes: null,
-                };
-              }),
-            })
-          ),
+          weeks: (
+            obj.weeks as Array<{
+              weekIndex?: number;
+              days?: Array<{
+                dayIndex?: number;
+                workouts?: Array<{ workoutId: string; title?: string }>;
+              }>;
+            }>
+          ).map((w, wi) => ({
+            index: wi,
+            label: `Week ${(w.weekIndex ?? wi) + 1}`,
+            days: Array.from({ length: 7 }, (_, di) => {
+              const day = w.days?.[di];
+              const workouts = day?.workouts ?? [];
+              const first = workouts[0];
+              const ref = first
+                ? {
+                    source: "workoutsTable" as const,
+                    workoutId: first.workoutId,
+                  }
+                : null;
+              const workoutRefs = first ? [ref!] : [];
+              return {
+                id: dayId(0, wi, di),
+                order: di,
+                label: `Day ${di + 1}`,
+                type: first ? "workout" : "rest",
+                workoutRef: ref,
+                workouts: workoutRefs,
+                notes: null,
+              };
+            }),
+          })),
         },
       ];
       const linkedIds: string[] = [];
-      (obj.weeks as Array<{ days?: Array<{ workouts?: Array<{ workoutId: string }> }> }>).forEach((w) =>
+      (
+        obj.weeks as Array<{
+          days?: Array<{ workouts?: Array<{ workoutId: string }> }>;
+        }>
+      ).forEach((w) =>
         w.days?.forEach((d) =>
           d.workouts?.forEach((x) => {
-            if (x.workoutId && !linkedIds.includes(x.workoutId)) linkedIds.push(x.workoutId);
+            if (x.workoutId && !linkedIds.includes(x.workoutId))
+              linkedIds.push(x.workoutId);
           })
         )
       );
@@ -268,7 +293,10 @@ export async function createProgramTemplate(
   payload: CreateProgramTemplatePayload
 ): Promise<ProgramTemplate> {
   const ownerTrainerId = await requireUserId();
-  const state = buildInitialProgramState(payload.durationWeeks, payload.difficulty);
+  const state = buildInitialProgramState(
+    payload.durationWeeks,
+    payload.difficulty
+  );
 
   const insertPayload = {
     ownerTrainerId,
@@ -315,8 +343,10 @@ export async function updateProgramTemplate(
   const userId = await requireUserId();
   const payload: Record<string, unknown> = {};
   if (patch.title !== undefined) payload.title = patch.title.trim();
-  if (patch.description !== undefined) payload.description = patch.description ?? null;
-  if (patch.durationWeeks !== undefined) payload.durationWeeks = patch.durationWeeks;
+  if (patch.description !== undefined)
+    payload.description = patch.description ?? null;
+  if (patch.durationWeeks !== undefined)
+    payload.durationWeeks = patch.durationWeeks;
   if (patch.difficulty !== undefined) payload.difficulty = patch.difficulty;
   if (patch.state !== undefined) payload.state = patch.state;
   payload.status = "published";
@@ -354,7 +384,9 @@ export async function deleteProgramTemplate(id: string): Promise<void> {
   if (error) throw error;
 }
 
-export async function archiveProgramTemplate(id: string): Promise<ProgramTemplate> {
+export async function archiveProgramTemplate(
+  id: string
+): Promise<ProgramTemplate> {
   const userId = await requireUserId();
   const { data, error } = await supabase
     .from("programTemplates")
@@ -387,7 +419,10 @@ export function setDayWorkoutFromTable(
           ...w,
           days: w.days.map((d) => {
             if (d.order !== dayOrder) return d;
-            const workouts = [...(d.workouts ?? (d.workoutRef ? [d.workoutRef] : [])), ref];
+            const workouts = [
+              ...(d.workouts ?? (d.workoutRef ? [d.workoutRef] : [])),
+              ref,
+            ];
             return {
               ...d,
               type: "workout",
@@ -505,7 +540,10 @@ export function addPhase(state: ProgramTemplateState): ProgramTemplateState {
 }
 
 /** Add a week to the given phase (and bump state.durationWeeks). */
-export function addPhaseWeek(state: ProgramTemplateState, phaseIndex: number): ProgramTemplateState {
+export function addPhaseWeek(
+  state: ProgramTemplateState,
+  phaseIndex: number
+): ProgramTemplateState {
   const phase = state.phases[phaseIndex];
   if (!phase) return state;
   const newWeekIndex = phase.weeks.length;
@@ -524,7 +562,9 @@ export function addPhaseWeek(state: ProgramTemplateState, phaseIndex: number): P
   };
   const newWeeks = [...phase.weeks, newWeek];
   const newPhases = state.phases.map((p, i) =>
-    i === phaseIndex ? { ...p, weeks: newWeeks, durationWeeks: newWeeks.length } : p
+    i === phaseIndex
+      ? { ...p, weeks: newWeeks, durationWeeks: newWeeks.length }
+      : p
   );
   const totalWeeks = newPhases.reduce((sum, p) => sum + p.durationWeeks, 0);
   return {
@@ -534,13 +574,26 @@ export function addPhaseWeek(state: ProgramTemplateState, phaseIndex: number): P
   };
 }
 
-/** Remove last week from the given phase. */
-export function removePhaseWeek(state: ProgramTemplateState, phaseIndex: number): ProgramTemplateState {
+/** Remove week at weekIndex from the given phase, then renumber weeks (Week 1, 2, 3...). */
+export function removePhaseWeek(
+  state: ProgramTemplateState,
+  phaseIndex: number,
+  weekIndex: number
+): ProgramTemplateState {
   const phase = state.phases[phaseIndex];
   if (!phase || phase.weeks.length <= 1) return state;
-  const newWeeks = phase.weeks.slice(0, -1);
+  if (weekIndex < 0 || weekIndex >= phase.weeks.length) return state;
+  const newWeeks = phase.weeks
+    .filter((_, i) => i !== weekIndex)
+    .map((w, i) => ({
+      ...w,
+      index: i,
+      label: `Week ${i + 1}`,
+    }));
   const newPhases = state.phases.map((p, i) =>
-    i === phaseIndex ? { ...p, weeks: newWeeks, durationWeeks: newWeeks.length } : p
+    i === phaseIndex
+      ? { ...p, weeks: newWeeks, durationWeeks: newWeeks.length }
+      : p
   );
   const totalWeeks = newPhases.reduce((sum, p) => sum + p.durationWeeks, 0);
   return {
@@ -550,10 +603,19 @@ export function removePhaseWeek(state: ProgramTemplateState, phaseIndex: number)
   };
 }
 
-/** Remove phase at index. Only if more than one phase. */
-export function removePhase(state: ProgramTemplateState, phaseIndex: number): ProgramTemplateState {
+/** Remove phase at index, then renumber phases (Phase 1, 2, 3...). Only if more than one phase. */
+export function removePhase(
+  state: ProgramTemplateState,
+  phaseIndex: number
+): ProgramTemplateState {
   if (state.phases.length <= 1) return state;
-  const newPhases = state.phases.filter((_, i) => i !== phaseIndex);
+  const newPhases = state.phases
+    .filter((_, i) => i !== phaseIndex)
+    .map((p, i) => ({
+      ...p,
+      order: i,
+      title: `Phase ${i + 1}`,
+    }));
   const totalWeeks = newPhases.reduce((sum, p) => sum + p.durationWeeks, 0);
   return {
     ...state,
@@ -625,7 +687,9 @@ export function removeDayWorkout(
   return clearDayWorkout(state, phaseIndex, weekIndex, dayOrder);
 }
 
-export async function duplicateProgramTemplate(id: string): Promise<ProgramTemplate> {
+export async function duplicateProgramTemplate(
+  id: string
+): Promise<ProgramTemplate> {
   const template = await fetchProgramTemplateById(id);
   if (!template) throw new Error("Program template not found");
 

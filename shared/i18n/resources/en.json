@@ -65,7 +65,7 @@
     "profileCardRole": "Role",
     "profileSignOut": "Sign out"
   },
-    "common": {
+  "common": {
     "duration": {
       "mins": "MINS",
       "notAvailable": "N/A"
@@ -322,8 +322,13 @@
       "workoutCount": "{{count}} workout",
       "workoutCount_other": "{{count}} workouts",
       "noWorkoutsThisDay": "No workouts this day",
+      "tapAddToAddWorkout": "Tap + above to add a workout",
       "replaceWorkout": "Replace",
+      "remove": "Remove",
       "removeWorkout": "Remove",
+      "removeWorkoutConfirm": "Remove workout from this day?",
+      "removePhaseConfirm": "Remove this phase? It contains workouts.",
+      "removeWeekConfirm": "Remove this week? It contains workouts.",
       "workoutNotFound": "Workout not found.",
       "more": "more"
     },
