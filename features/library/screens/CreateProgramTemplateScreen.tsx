@@ -9,15 +9,24 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { createProgramTemplate } from "@/features/library/api/programTemplates.api";
 import type { ProgramDifficulty } from "@/features/library/types/programTemplate";
 import { PROGRAM_DIFFICULTIES } from "@/features/library/types/programTemplate";
-import { hexToRgba } from "@/features/profile/utils/trainerProfileUtils";
+import {
+  DIFFICULTY_ICONS,
+  getDifficultyColors,
+} from "@/features/library/utils/programColors";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
-import { appToast } from "@/shared/ui";
-import { Button, Icon, StickyHeader, Text, useTheme } from "@/shared/ui";
+import {
+  appToast,
+  Button,
+  Icon,
+  StickyHeader,
+  Text,
+  useTheme,
+} from "@/shared/ui";
 
 const DIFFICULTY_KEYS: Record<ProgramDifficulty, string> = {
   beginner: "library.programsScreen.difficultyBeginner",
@@ -28,17 +37,34 @@ const DIFFICULTY_KEYS: Record<ProgramDifficulty, string> = {
 const DEFAULT_DURATION_WEEKS = 6;
 const MIN_WEEKS = 1;
 const MAX_WEEKS = 52;
+const MIN_PHASES = 1;
+const MAX_PHASES = 12;
 const MIN_TITLE_LENGTH = 2;
+
+/** Split total weeks across phases (first phases get +1 when remainder). */
+function getWeeksPerPhase(totalWeeks: number, phaseCount: number): number[] {
+  const count = Math.max(1, Math.min(phaseCount, totalWeeks));
+  const base = Math.floor(totalWeeks / count);
+  const remainder = totalWeeks % count;
+  return Array.from(
+    { length: count },
+    (_, i) => base + (i < remainder ? 1 : 0)
+  );
+}
 
 export default function CreateProgramTemplateScreen() {
   const { t } = useAppTranslation();
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const [title, setTitle] = useState("");
   const [difficulty, setDifficulty] = useState<ProgramDifficulty>("beginner");
   const [durationWeeks, setDurationWeeks] = useState(DEFAULT_DURATION_WEEKS);
+  const [phaseCount, setPhaseCount] = useState(1);
   const [description, setDescription] = useState("");
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const weeksPerPhase = getWeeksPerPhase(durationWeeks, phaseCount);
 
   const canSubmit =
     title.trim().length >= MIN_TITLE_LENGTH &&
@@ -54,19 +80,27 @@ export default function CreateProgramTemplateScreen() {
         description: description.trim() || null,
         durationWeeks,
         difficulty,
+        phaseCount,
       });
       appToast.success(t("library.createProgram.createAndEdit") + " – done");
       router.replace(
-        `/(trainer)/library/program-templates/${created.id}` as Parameters<typeof router.replace>[0]
+        `/(trainer)/library/program-templates/${created.id}` as Parameters<
+          typeof router.replace
+        >[0]
       );
     } catch (e: unknown) {
       if (__DEV__) {
         console.warn("[CreateProgramTemplate] create failed:", e);
         if (e && typeof e === "object" && "message" in e) {
-          console.warn("[CreateProgramTemplate] error.message:", (e as { message?: string }).message);
+          console.warn(
+            "[CreateProgramTemplate] error.message:",
+            (e as { message?: string }).message
+          );
         }
       }
-      appToast.error(e instanceof Error ? e.message : "Failed to create program");
+      appToast.error(
+        e instanceof Error ? e.message : "Failed to create program"
+      );
     } finally {
       setSaving(false);
     }
@@ -85,166 +119,334 @@ export default function CreateProgramTemplateScreen() {
         keyboardVerticalOffset={80}
       >
         <ScrollView
-          contentContainerStyle={[styles.scroll, { padding: theme.spacing.lg }]}
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              padding: theme.spacing.lg,
+              paddingBottom: theme.spacing.lg,
+            },
+          ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Hero / intro */}
-          <View style={[styles.hero, { marginBottom: theme.spacing.lg }]}>
-            <LinearGradient
-              colors={[
-                hexToRgba(theme.colors.accent, 0.1),
-                hexToRgba(theme.colors.accent2, 0.05),
-                "transparent",
-              ]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[styles.heroGradient, { borderRadius: theme.radii.xl }]}
-            />
-            <View style={[styles.heroIconWrap, { backgroundColor: hexToRgba(theme.colors.accent, 0.2) }]}>
-              <Icon name="calendar-outline" size={32} color={theme.colors.accent} strokeWidth={1.5} />
-            </View>
-            <Text style={[styles.heroText, { color: theme.colors.textMuted }]}>
-              Set a name, difficulty, and duration. You’ll assign workouts to days in the next step.
-            </Text>
-          </View>
-
-          {/* Title */}
-          <View style={[styles.section, { backgroundColor: theme.colors.surface2, borderColor: theme.colors.border }]}>
-            <View style={styles.sectionHeader}>
-              <Icon name="create-outline" size={20} color={theme.colors.accent} strokeWidth={1.5} />
-              <Text style={[styles.label, { color: theme.colors.text }]}>
+          <View
+            style={[styles.formCard, { backgroundColor: theme.colors.surface }]}
+          >
+            {/* Title */}
+            <View style={styles.field}>
+              <Text
+                style={[styles.fieldLabel, { color: theme.colors.textMuted }]}
+              >
                 {t("library.createProgram.titleLabel", "Title")} *
               </Text>
+              <TextInput
+                value={title}
+                onChangeText={setTitle}
+                placeholder={t(
+                  "library.createProgram.titlePlaceholder",
+                  "Program name"
+                )}
+                placeholderTextColor={theme.colors.textMuted}
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: theme.colors.background,
+                    color: theme.colors.text,
+                  },
+                ]}
+                maxLength={100}
+              />
+              {title.length > 0 && title.length < MIN_TITLE_LENGTH && (
+                <Text style={[styles.hint, { color: theme.colors.danger }]}>
+                  Min {MIN_TITLE_LENGTH} characters
+                </Text>
+              )}
             </View>
-            <TextInput
-              value={title}
-              onChangeText={setTitle}
-              placeholder={t("library.createProgram.titlePlaceholder", "Program name")}
-              placeholderTextColor={theme.colors.textMuted}
-              style={[
-                styles.input,
-                {
-                  backgroundColor: theme.colors.surface3,
-                  borderColor: theme.colors.border,
-                  color: theme.colors.text,
-                },
-              ]}
-              maxLength={100}
-            />
-            {title.length > 0 && title.length < MIN_TITLE_LENGTH && (
-              <Text style={[styles.hint, { color: theme.colors.danger }]}>
-                Min {MIN_TITLE_LENGTH} characters
-              </Text>
-            )}
-          </View>
 
-          {/* Difficulty */}
-          <View style={[styles.section, { backgroundColor: theme.colors.surface2, borderColor: theme.colors.border, marginTop: theme.spacing.md }]}>
-            <View style={styles.sectionHeader}>
-              <Icon name="barbell-outline" size={20} color={theme.colors.accent2} strokeWidth={1.5} />
-              <Text style={[styles.label, { color: theme.colors.text }]}>
+            {/* Difficulty */}
+            <View style={styles.field}>
+              <Text
+                style={[styles.fieldLabel, { color: theme.colors.textMuted }]}
+              >
                 {t("library.createProgram.difficultyLabel", "Difficulty")}
               </Text>
+              <View style={styles.difficultyRow}>
+                {PROGRAM_DIFFICULTIES.map((d) => {
+                  const diffColors = getDifficultyColors(d);
+                  const isSelected = difficulty === d;
+                  return (
+                    <Pressable
+                      key={d}
+                      onPress={() => setDifficulty(d)}
+                      style={[
+                        styles.difficultyOption,
+                        {
+                          backgroundColor: isSelected
+                            ? diffColors.bg
+                            : theme.colors.background,
+                        },
+                      ]}
+                    >
+                      <Icon
+                        name={DIFFICULTY_ICONS[d]}
+                        size={22}
+                        color={diffColors.main}
+                        strokeWidth={1.5}
+                      />
+                      <Text
+                        style={[
+                          styles.difficultyOptionLabel,
+                          {
+                            color: isSelected
+                              ? theme.colors.text
+                              : theme.colors.textMuted,
+                          },
+                        ]}
+                      >
+                        {t(DIFFICULTY_KEYS[d])}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
             </View>
-            <View style={styles.segmentedRow}>
-              {PROGRAM_DIFFICULTIES.map((d) => (
-                <Pressable
-                  key={d}
-                  onPress={() => setDifficulty(d)}
-                  style={[
-                    styles.segmentedBtn,
-                    {
-                      backgroundColor: difficulty === d ? theme.colors.accent : theme.colors.surface3,
-                      borderColor: difficulty === d ? theme.colors.accent : theme.colors.border,
-                    },
-                  ]}
-                >
-                  <Text
+
+            {/* Phases & Duration */}
+            <View style={styles.field}>
+              <Text
+                style={[styles.fieldLabel, { color: theme.colors.textMuted }]}
+              >
+                {t(
+                  "library.createProgram.durationAndPhases",
+                  "Phases & duration"
+                )}
+              </Text>
+              <View style={styles.stepperRowWrap}>
+                <View style={styles.stepperBlock}>
+                  <View style={styles.stepperLabelRow}>
+                    <Icon
+                      name="cells"
+                      size={14}
+                      color={theme.colors.textMuted}
+                      strokeWidth={1.5}
+                    />
+                    <Text
+                      style={[
+                        styles.stepperSubLabel,
+                        { color: theme.colors.textMuted },
+                      ]}
+                    >
+                      {t("library.createProgram.phases", "Phases")}
+                    </Text>
+                  </View>
+                  <View
                     style={[
-                      styles.segmentedLabel,
-                      { color: difficulty === d ? theme.colors.background : theme.colors.text },
+                      styles.stepperRow,
+                      { backgroundColor: theme.colors.background },
                     ]}
                   >
-                    {t(DIFFICULTY_KEYS[d])}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-
-          {/* Duration weeks */}
-          <View style={[styles.section, { backgroundColor: theme.colors.surface2, borderColor: theme.colors.border, marginTop: theme.spacing.md }]}>
-            <View style={styles.sectionHeader}>
-              <Icon name="timer-outline" size={20} color={theme.colors.accent2} strokeWidth={1.5} />
-              <Text style={[styles.label, { color: theme.colors.text }]}>
-                {t("library.createProgram.durationWeeks", "Duration (weeks)")}
+                    <Pressable
+                      onPress={() =>
+                        setPhaseCount((p) => Math.max(MIN_PHASES, p - 1))
+                      }
+                      style={styles.stepperBtn}
+                      disabled={phaseCount <= MIN_PHASES}
+                    >
+                      <Icon
+                        name="remove"
+                        size={20}
+                        color={
+                          phaseCount <= MIN_PHASES
+                            ? theme.colors.textMuted
+                            : theme.colors.text
+                        }
+                      />
+                    </Pressable>
+                    <Text
+                      style={[
+                        styles.stepperValue,
+                        { color: theme.colors.text },
+                      ]}
+                    >
+                      {phaseCount}
+                    </Text>
+                    <Pressable
+                      onPress={() =>
+                        setPhaseCount((p) => Math.min(MAX_PHASES, p + 1))
+                      }
+                      style={styles.stepperBtn}
+                      disabled={phaseCount >= MAX_PHASES}
+                    >
+                      <Icon
+                        name="add"
+                        size={20}
+                        color={
+                          phaseCount >= MAX_PHASES
+                            ? theme.colors.textMuted
+                            : theme.colors.text
+                        }
+                      />
+                    </Pressable>
+                  </View>
+                </View>
+                <View style={styles.stepperBlock}>
+                  <View style={styles.stepperLabelRow}>
+                    <Icon
+                      name="calendar-03"
+                      size={14}
+                      color={theme.colors.textMuted}
+                      strokeWidth={1.5}
+                    />
+                    <Text
+                      style={[
+                        styles.stepperSubLabel,
+                        { color: theme.colors.textMuted },
+                      ]}
+                    >
+                      {t("library.createProgram.weeks", "Weeks")}
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.stepperRow,
+                      { backgroundColor: theme.colors.background },
+                    ]}
+                  >
+                    <Pressable
+                      onPress={() =>
+                        setDurationWeeks((w) => Math.max(MIN_WEEKS, w - 1))
+                      }
+                      style={styles.stepperBtn}
+                      disabled={durationWeeks <= MIN_WEEKS}
+                    >
+                      <Icon
+                        name="remove"
+                        size={20}
+                        color={
+                          durationWeeks <= MIN_WEEKS
+                            ? theme.colors.textMuted
+                            : theme.colors.text
+                        }
+                      />
+                    </Pressable>
+                    <Text
+                      style={[
+                        styles.stepperValue,
+                        { color: theme.colors.text },
+                      ]}
+                    >
+                      {durationWeeks}
+                    </Text>
+                    <Pressable
+                      onPress={() =>
+                        setDurationWeeks((w) => Math.min(MAX_WEEKS, w + 1))
+                      }
+                      style={styles.stepperBtn}
+                      disabled={durationWeeks >= MAX_WEEKS}
+                    >
+                      <Icon
+                        name="add"
+                        size={20}
+                        color={
+                          durationWeeks >= MAX_WEEKS
+                            ? theme.colors.textMuted
+                            : theme.colors.text
+                        }
+                      />
+                    </Pressable>
+                  </View>
+                </View>
+              </View>
+              <Text
+                style={[
+                  styles.phaseBreakdown,
+                  { color: theme.colors.textMuted, marginTop: 10 },
+                ]}
+                numberOfLines={2}
+              >
+                {weeksPerPhase
+                  .map((wks, i) =>
+                    t(
+                      "library.createProgram.phaseWeeks",
+                      "Phase {{n}} ({{w}} wks)",
+                      { n: i + 1, w: wks }
+                    )
+                  )
+                  .join(" · ")}
               </Text>
             </View>
-            <View style={[styles.stepperRow, { backgroundColor: theme.colors.surface3, borderColor: theme.colors.border }]}>
+
+            {/* Description (optional) */}
+            <View style={styles.field}>
               <Pressable
-                onPress={() => setDurationWeeks((w) => Math.max(MIN_WEEKS, w - 1))}
-                style={styles.stepperBtn}
-                disabled={durationWeeks <= MIN_WEEKS}
+                onPress={() => setDescriptionExpanded((e) => !e)}
+                style={styles.expandRow}
               >
-                <Icon name="remove" size={22} color={durationWeeks <= MIN_WEEKS ? theme.colors.textMuted : theme.colors.text} />
+                <Text
+                  style={[
+                    styles.fieldLabel,
+                    { color: theme.colors.textMuted, marginBottom: 0 },
+                  ]}
+                >
+                  {t(
+                    "library.createProgram.descriptionLabel",
+                    "Description (optional)"
+                  )}
+                </Text>
+                <Icon
+                  name={descriptionExpanded ? "chevron-up" : "chevron-down"}
+                  size={18}
+                  color={theme.colors.textMuted}
+                />
               </Pressable>
-              <Text style={[styles.stepperValue, { color: theme.colors.text }]}>{durationWeeks}</Text>
-              <Pressable
-                onPress={() => setDurationWeeks((w) => Math.min(MAX_WEEKS, w + 1))}
-                style={styles.stepperBtn}
-                disabled={durationWeeks >= MAX_WEEKS}
-              >
-                <Icon name="add" size={22} color={durationWeeks >= MAX_WEEKS ? theme.colors.textMuted : theme.colors.text} />
-              </Pressable>
+              {descriptionExpanded && (
+                <TextInput
+                  value={description}
+                  onChangeText={setDescription}
+                  placeholder={t(
+                    "library.createProgram.descriptionPlaceholder",
+                    "Brief description"
+                  )}
+                  placeholderTextColor={theme.colors.textMuted}
+                  style={[
+                    styles.input,
+                    styles.textArea,
+                    {
+                      backgroundColor: theme.colors.background,
+                      color: theme.colors.text,
+                      marginTop: 10,
+                    },
+                  ]}
+                  multiline
+                  numberOfLines={3}
+                  maxLength={500}
+                />
+              )}
             </View>
           </View>
+        </ScrollView>
 
-          {/* Description (optional, expandable) */}
-          <Pressable
-            onPress={() => setDescriptionExpanded((e) => !e)}
-            style={[styles.expandHeader, { borderColor: theme.colors.border, marginTop: theme.spacing.lg }]}
-          >
-            <Text style={{ color: theme.colors.textMuted }}>
-              {t("library.createProgram.descriptionLabel", "Description (optional)")}
-            </Text>
-            <Icon
-              name={descriptionExpanded ? "chevron-up" : "chevron-down"}
-              size={20}
-              color={theme.colors.textMuted}
-            />
-          </Pressable>
-          {descriptionExpanded && (
-            <TextInput
-              value={description}
-              onChangeText={setDescription}
-              placeholder={t("library.createProgram.descriptionPlaceholder", "Brief description")}
-              placeholderTextColor={theme.colors.textMuted}
-              style={[
-                styles.input,
-                styles.textArea,
-                {
-                  backgroundColor: theme.colors.surface2,
-                  borderColor: theme.colors.border,
-                  color: theme.colors.text,
-                  marginTop: theme.spacing.sm,
-                },
-              ]}
-              multiline
-              numberOfLines={3}
-              maxLength={500}
-            />
-          )}
-
+        <View
+          style={[
+            styles.ctaFooter,
+            {
+              paddingHorizontal: theme.spacing.lg,
+              paddingTop: theme.spacing.md,
+              paddingBottom: Math.max(insets.bottom, theme.spacing.lg),
+              backgroundColor: theme.colors.background,
+            },
+          ]}
+        >
           <Button
             onPress={handleSubmit}
             disabled={!canSubmit || saving}
             isLoading={saving}
-            style={{ marginTop: theme.spacing.xl }}
+            style={styles.cta}
           >
             {t("library.createProgram.createAndEdit", "Create & Edit")}
           </Button>
-        </ScrollView>
+        </View>
       </KeyboardAvoidingView>
     </View>
   );
@@ -253,74 +455,76 @@ export default function CreateProgramTemplateScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   flex: { flex: 1 },
-  scroll: { paddingBottom: 40 },
-  hero: {
-    padding: 18,
-    borderRadius: 20,
-    overflow: "hidden",
-    position: "relative",
-  },
-  heroGradient: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  heroIconWrap: {
-    width: 56,
-    height: 56,
+  scrollView: { flex: 1 },
+  scrollContent: { flexGrow: 1 },
+  ctaFooter: {},
+  formCard: {
     borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
+    padding: 20,
   },
-  heroText: {
-    fontSize: 14,
-    lineHeight: 20,
-    maxWidth: 280,
+  field: {
+    marginBottom: 20,
   },
-  section: {
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 8,
   },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 12,
-  },
-  label: { fontSize: 15, fontWeight: "600" },
   input: {
-    borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
   },
   hint: { fontSize: 12, marginTop: 6 },
-  segmentedRow: { flexDirection: "row", gap: 8 },
-  segmentedBtn: {
+  difficultyRow: { flexDirection: "row", gap: 10 },
+  difficultyOption: {
     flex: 1,
-    paddingVertical: 12,
     borderRadius: 12,
-    borderWidth: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
     alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
   },
-  segmentedLabel: { fontSize: 14, fontWeight: "600" },
+  difficultyOptionLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  stepperRowWrap: { flexDirection: "row", gap: 12 },
+  stepperBlock: { flex: 1 },
+  stepperLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 6,
+  },
+  stepperSubLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+  },
   stepperRow: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: 10,
     overflow: "hidden",
   },
-  stepperBtn: { padding: 14 },
-  stepperValue: { flex: 1, textAlign: "center", fontSize: 20, fontWeight: "700" },
-  expandHeader: {
+  stepperBtn: { padding: 10 },
+  stepperValue: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 17,
+    fontWeight: "700",
+  },
+  phaseBreakdown: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  expandRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 4,
-    borderBottomWidth: 1,
   },
   textArea: { minHeight: 88, textAlignVertical: "top" },
+  cta: { minHeight: 50 },
 });

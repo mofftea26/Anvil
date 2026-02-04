@@ -9,7 +9,16 @@ import {
   pickAvatarBg,
 } from "@/features/clients/utils/clientUi";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
-import { Button, Card, HStack, Icon, Text, useTheme, VStack } from "@/shared/ui";
+import {
+  Button,
+  Card,
+  HStack,
+  Icon,
+  Text,
+  useTheme,
+  VStack,
+} from "@/shared/ui";
+import { formatSlugToLabel } from "@/shared/utils/formatSlugToLabel";
 
 export type TrainerClientRow = {
   id: string;
@@ -32,7 +41,10 @@ export type TrainerClientRow = {
 type TrainerClientCardProps = {
   row: TrainerClientRow;
   onPressView: (clientId: string) => void;
-  onPressArchive: (clientId: string, isArchived: boolean) => void | Promise<void>;
+  onPressArchive: (
+    clientId: string,
+    isArchived: boolean
+  ) => void | Promise<void>;
   archiveLoading: boolean;
 };
 
@@ -54,9 +66,10 @@ export function TrainerClientCard({
   const isArchived = row.status === "archived";
 
   const target = c?.profile?.target ?? null;
-  const targetText = target
-    ? String(target)
-    : t("linking.clients.noTarget");
+  const targetText =
+    target && target.trim()
+      ? formatSlugToLabel(target)
+      : t("linking.clients.noTarget");
 
   const nextCheckIn = row.management?.nextCheckInAt ?? null;
   const checkInText = nextCheckIn ? formatCheckIn(nextCheckIn, t) : "—";
@@ -70,7 +83,9 @@ export function TrainerClientCard({
       }
     : {
         label: t(
-          `linking.management.status.${row.management?.clientStatus ?? "active"}`
+          `linking.management.status.${
+            row.management?.clientStatus ?? "active"
+          }`
         ),
         bg: "rgba(255,255,255,0.10)",
         border: "rgba(255,255,255,0.16)",
@@ -114,9 +129,7 @@ export function TrainerClientCard({
                   alignItems: "center",
                   justifyContent: "center",
                   overflow: "hidden",
-                  backgroundColor: hasImage
-                    ? "rgba(255,255,255,0.10)"
-                    : bg,
+                  backgroundColor: hasImage ? "rgba(255,255,255,0.10)" : bg,
                   borderWidth: 1,
                   borderColor: "rgba(255,255,255,0.14)",
                 }}
@@ -130,10 +143,7 @@ export function TrainerClientCard({
                     transition={1000}
                   />
                 ) : initials ? (
-                  <Text
-                    weight="bold"
-                    style={{ color: "white", fontSize: 14 }}
-                  >
+                  <Text weight="bold" style={{ color: "white", fontSize: 14 }}>
                     {initials}
                   </Text>
                 ) : (
@@ -141,11 +151,7 @@ export function TrainerClientCard({
                 )}
               </View>
               <VStack style={{ flex: 1 }}>
-                <Text
-                  weight="bold"
-                  numberOfLines={1}
-                  style={{ fontSize: 16 }}
-                >
+                <Text weight="bold" numberOfLines={1} style={{ fontSize: 16 }}>
                   {name}
                 </Text>
               </VStack>

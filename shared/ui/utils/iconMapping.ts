@@ -8,74 +8,75 @@ export const iconMap: Record<string, string> = {
   "chevron-forward": "ArrowRight01Icon",
   "chevron-down": "ArrowDown01Icon",
   "chevron-up": "ArrowUp01Icon",
-  
+
   // Actions
   "add-circle-outline": "AddCircleIcon",
-  "add": "Add01Icon",
-  "remove": "MinusIcon",
+  add: "Add01Icon",
+  remove: "MinusIcon",
   "minus-circle": "MinusIcon",
   "remove-circle": "MinusIcon",
-  "close": "Cancel01Icon",
+  close: "Cancel01Icon",
   "close-circle": "CancelCircleIcon",
   "checkmark-circle": "CheckmarkCircle01Icon",
   "create-outline": "Edit01Icon",
-  "pencil": "Edit01Icon",
-  "edit": "Edit01Icon",
-  
+  pencil: "Edit01Icon",
+  edit: "Edit01Icon",
+
   // People
-  "person": "UserIcon",
+  person: "UserIcon",
   "person-outline": "UserIcon",
-  
+
   // Search & Filter
-  "search": "Search01Icon",
+  search: "Search01Icon",
   "search-outline": "Search01Icon",
-  
+
   // Notifications
   "information-circle": "InformationCircleIcon",
-  "warning": "Alert01Icon",
-  
+  "information-circle-outline": "InformationCircleIcon",
+  warning: "Alert01Icon",
+
   // Files & Upload
   "cloud-upload-outline": "Upload01Icon",
-  
+
   // Common UI
-  "grid": "GridIcon",
+  grid: "GridIcon",
   "grid-outline": "GridIcon",
-  "barbell": "Dumbbell01Icon",
+  barbell: "Dumbbell01Icon",
   "barbell-outline": "Dumbbell01Icon",
   "list-outline": "ListViewIcon",
   "calendar-outline": "Calendar01Icon",
   "book-outline": "Book01Icon",
-  
+
   // Tab Icons
-  "analytics": "Analytics01Icon",
+  analytics: "Analytics01Icon",
   "analytics-outline": "Analytics01Icon",
-  "dashboard": "DashboardSpeed01Icon",
+  dashboard: "DashboardSpeed01Icon",
   "dashboard-outline": "DashboardSpeed01Icon",
-  "home": "GridIcon",
+  home: "GridIcon",
   "home-outline": "GridIcon",
-  "layers": "LayerIcon",
+  layers: "LayerIcon",
   "layers-outline": "LayerIcon",
-  "people": "UserGroupIcon",
+  people: "UserGroupIcon",
   "people-outline": "UserGroupIcon",
-  
+
   // Set Type Icons
-  "flame": "FireIcon",
-  "refresh": "Refresh01Icon",
-  "trophy": "Award01Icon",
+  flame: "FireIcon",
+  refresh: "Refresh01Icon",
+  trophy: "Award01Icon",
   "trending-down": "AnalyticsDownIcon",
   "pause-circle": "PauseCircleIcon",
   "git-network": "AiNetworkIcon",
-  "options": "Settings01Icon",
-  "cog": "Settings01Icon",
-  "settings": "Settings01Icon",
-  "pulse": "Pulse01Icon",
-  "flash": "FlashIcon",
+  options: "Settings01Icon",
+  cog: "Settings01Icon",
+  settings: "Settings01Icon",
+  pulse: "Pulse01Icon",
+  flash: "FlashIcon",
   "flash-outline": "FlashIcon",
-  "timer": "Timer01Icon",
-  "fitness": "Dumbbell01Icon",
-  
+  timer: "Timer01Icon",
+  fitness: "Dumbbell01Icon",
+
   // Other
-  "speedometer": "DashboardSpeed01Icon",
+  speedometer: "DashboardSpeed01Icon",
   "qr-code-outline": "QrCodeIcon",
   "key-outline": "Key01Icon",
   "copy-outline": "Copy01Icon",
@@ -84,17 +85,26 @@ export const iconMap: Record<string, string> = {
   "close-sharp": "Cancel01Icon",
   "hourglass-outline": "HourglassIcon",
   "timer-outline": "Timer01Icon",
-  "trash": "Delete01Icon",
-  "videocam": "Video01Icon",
-  "video": "Video01Icon",
-  "play": "Video01Icon",
-  "checkmark": "CheckmarkCircle01Icon",
-  "email": "Mail01Icon",
-  "mail": "Mail01Icon",
-  "lock": "LockIcon",
-  "password": "LockIcon",
+  trash: "Delete01Icon",
+  videocam: "Video01Icon",
+  video: "Video01Icon",
+  play: "Video01Icon",
+  checkmark: "CheckmarkCircle01Icon",
+  email: "Mail01Icon",
+  mail: "Mail01Icon",
+  lock: "LockIcon",
+  password: "LockIcon",
   "ellipsis-vertical": "MoreVerticalIcon",
   "ellipsis-horizontal": "MoreHorizontalIcon",
+
+  // Difficulty (signal bars)
+  "signal-low": "SignalLow02Icon",
+  "signal-medium": "SignalMedium02Icon",
+  "signal-full": "SignalFull02Icon",
+
+  // Program: phases & weeks
+  cells: "CellsIcon",
+  "calendar-03": "Calendar03Icon",
 };
 
 /**

@@ -1,15 +1,16 @@
-import { router } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
 import {
   archiveProgramTemplate,
   deleteProgramTemplate,
   duplicateProgramTemplate,
   listProgramTemplates,
-  type ProgramTemplate,
+  unarchiveProgramTemplate,
   type ProgramDifficulty,
+  type ProgramTemplate,
 } from "@/features/library/api/programTemplates.api";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import { appToast } from "@/shared/ui";
+import { router } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 
 export type ProgramListFilter = "all" | "archived" | ProgramDifficulty;
 
@@ -24,11 +25,12 @@ export function useProgramTemplatesList() {
   const fetchList = useCallback(async () => {
     setError(null);
     try {
-      const includeArchived = filter === "archived";
+      const archivedOnly = filter === "archived";
       const difficulty =
         filter !== "all" && filter !== "archived" ? filter : undefined;
       const list = await listProgramTemplates({
-        includeArchived,
+        archivedOnly,
+        includeArchived: archivedOnly,
         difficulty,
       });
       setRows(list);
@@ -53,12 +55,16 @@ export function useProgramTemplatesList() {
   }, [fetchList]);
 
   const onNewProgram = useCallback(() => {
-    router.push("/(trainer)/library/create-program" as Parameters<typeof router.push>[0]);
+    router.push(
+      "/(trainer)/library/create-program" as Parameters<typeof router.push>[0]
+    );
   }, []);
 
   const onOpenProgram = useCallback((id: string) => {
     router.push(
-      `/(trainer)/library/program-templates/${id}` as Parameters<typeof router.push>[0]
+      `/(trainer)/library/program-templates/${id}` as Parameters<
+        typeof router.push
+      >[0]
     );
   }, []);
 
@@ -78,31 +84,39 @@ export function useProgramTemplatesList() {
     [t, filter, onOpenProgram]
   );
 
-  const onArchive = useCallback(
+  const onArchive = useCallback(async (id: string) => {
+    try {
+      await archiveProgramTemplate(id);
+      setRows((prev) => prev.filter((r) => r.id !== id));
+      appToast.success("Archived");
+    } catch (e: unknown) {
+      appToast.error(e instanceof Error ? e.message : "Archive failed");
+    }
+  }, []);
+
+  const onUnarchive = useCallback(
     async (id: string) => {
       try {
-        await archiveProgramTemplate(id);
+        const updated = await unarchiveProgramTemplate(id);
         setRows((prev) => prev.filter((r) => r.id !== id));
-        appToast.success("Archived");
+        appToast.success("Unarchived");
+        onOpenProgram(updated.id);
       } catch (e: unknown) {
-        appToast.error(e instanceof Error ? e.message : "Archive failed");
+        appToast.error(e instanceof Error ? e.message : "Unarchive failed");
       }
     },
-    []
+    [onOpenProgram]
   );
 
-  const onDelete = useCallback(
-    async (id: string) => {
-      try {
-        await deleteProgramTemplate(id);
-        setRows((prev) => prev.filter((r) => r.id !== id));
-        appToast.success("Deleted");
-      } catch (e: unknown) {
-        appToast.error(e instanceof Error ? e.message : "Delete failed");
-      }
-    },
-    []
-  );
+  const onDelete = useCallback(async (id: string) => {
+    try {
+      await deleteProgramTemplate(id);
+      setRows((prev) => prev.filter((r) => r.id !== id));
+      appToast.success("Deleted");
+    } catch (e: unknown) {
+      appToast.error(e instanceof Error ? e.message : "Delete failed");
+    }
+  }, []);
 
   return {
     rows,
@@ -116,6 +130,7 @@ export function useProgramTemplatesList() {
     onOpenProgram,
     onDuplicate,
     onArchive,
+    onUnarchive,
     onDelete,
     refetch: fetchList,
   };

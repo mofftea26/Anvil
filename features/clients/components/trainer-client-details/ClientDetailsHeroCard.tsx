@@ -6,6 +6,7 @@ import { View } from "react-native";
 import { getInitials, pickAvatarBg } from "@/features/clients/utils/clientUi";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import { Card, Divider, HStack, Icon, Text, VStack } from "@/shared/ui";
+import { formatSlugToLabel } from "@/shared/utils/formatSlugToLabel";
 
 type ClientDetailsHeroCardProps = {
   clientUser: {
@@ -71,9 +72,7 @@ export function ClientDetailsHeroCard({
                   overflow: "hidden",
                   alignItems: "center",
                   justifyContent: "center",
-                  backgroundColor: hasImage
-                    ? "rgba(255,255,255,0.10)"
-                    : bg,
+                  backgroundColor: hasImage ? "rgba(255,255,255,0.10)" : bg,
                   borderWidth: 1,
                   borderColor: "rgba(255,255,255,0.14)",
                 }}
@@ -127,7 +126,11 @@ export function ClientDetailsHeroCard({
 
           <HStack align="center" justify="space-between">
             <Text muted>{t("profile.fields.target")}</Text>
-            <Text>{target ?? t("linking.clients.noTarget")}</Text>
+            <Text>
+              {target && target.trim()
+                ? formatSlugToLabel(target)
+                : t("linking.clients.noTarget")}
+            </Text>
           </HStack>
         </VStack>
       </View>

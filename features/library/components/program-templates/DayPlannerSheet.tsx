@@ -26,6 +26,8 @@ import {
   createAnimatedComponent,
   useAnimatedStyle,
   useSharedValue,
+  withRepeat,
+  withSequence,
   withSpring,
   withTiming,
 } from "react-native-reanimated";
@@ -94,6 +96,7 @@ export function DayPlannerSheet({
   const insets = useSafeAreaInsets();
   const [resolvedRows, setResolvedRows] = useState<(WorkoutRow | null)[]>([]);
   const sheetTranslateY = useSharedValue(0);
+  const swipeHintOffset = useSharedValue(0);
   const sheetHeight = Dimensions.get("window").height * SHEET_HEIGHT_RATIO;
 
   useEffect(() => {
@@ -102,6 +105,22 @@ export function DayPlannerSheet({
 
   const refs = day?.workouts ?? (day?.workoutRef ? [day.workoutRef] : []);
   const count = refs.length;
+
+  useEffect(() => {
+    if (!visible || count === 0) return;
+    swipeHintOffset.value = 0;
+    swipeHintOffset.value = withRepeat(
+      withSequence(
+        withTiming(-10, { duration: 500 }),
+        withTiming(0, { duration: 500 })
+      ),
+      -1,
+      true
+    );
+    return () => {
+      swipeHintOffset.value = 0;
+    };
+  }, [visible, count, swipeHintOffset]);
 
   useEffect(() => {
     if (!visible || !day) {
@@ -195,6 +214,10 @@ export function DayPlannerSheet({
 
   const sheetAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: sheetTranslateY.value }],
+  }));
+
+  const swipeHintArrowStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: swipeHintOffset.value }],
   }));
 
   const sheetPalette = {
@@ -328,19 +351,30 @@ export function DayPlannerSheet({
               />
               <View style={[styles.headerContent, { paddingHorizontal: 20 }]}>
                 <View style={styles.headerCenter}>
-                  <Text
-                    weight="bold"
-                    style={[styles.headerTitle, { color: sheetPalette.title }]}
-                  >
-                    {t(
-                      "library.programsScreen.weekDayHeader",
-                      "Week {{week}} · {{day}}",
-                      {
-                        week: weekIndex + 1,
-                        day: dayLabel,
-                      }
-                    )}
-                  </Text>
+                  <View style={styles.headerTitleRow}>
+                    <Icon
+                      name="calendar-03"
+                      size={18}
+                      color={sheetPalette.title}
+                      strokeWidth={1.5}
+                    />
+                    <Text
+                      weight="bold"
+                      style={[
+                        styles.headerTitle,
+                        { color: sheetPalette.title },
+                      ]}
+                    >
+                      {t(
+                        "library.programsScreen.weekDayHeader",
+                        "Week {{week}} · {{day}}",
+                        {
+                          week: weekIndex + 1,
+                          day: dayLabel,
+                        }
+                      )}
+                    </Text>
+                  </View>
                   <Text
                     style={[
                       styles.headerSubtitle,
@@ -361,9 +395,6 @@ export function DayPlannerSheet({
                   style={({ pressed }) => [
                     styles.addBtn,
                     {
-                      backgroundColor: sheetPalette.addBtnBg,
-                      borderWidth: 1,
-                      borderColor: sheetPalette.addBtnBorder,
                       opacity: pressed ? 0.9 : 1,
                       transform: [{ scale: pressed ? 0.96 : 1 }],
                     },
@@ -434,64 +465,99 @@ export function DayPlannerSheet({
                     </Text>
                   </View>
                 ) : (
-                  <View style={styles.cardList}>
-                    {refs.map((ref, index) => {
-                      const row = resolvedRows[index];
-                      const tableId =
-                        ref?.source === "workoutsTable" ? ref.workoutId : null;
-                      return (
-                        <Swipeable
-                          key={index}
-                          friction={2}
-                          rightThreshold={40}
-                          overshootRight={false}
-                          renderRightActions={renderRightActionsForIndex(index)}
-                        >
-                          <View style={styles.cardFullWidth}>
-                            {row ? (
-                              <WorkoutCard
-                                workout={row}
-                                updatedAtLabel={t(
-                                  "library.workoutsList.updatedAt"
-                                )}
-                                defaultTitle={t(
-                                  "builder.workoutDetails.defaultTitle",
-                                  "Untitled workout"
-                                )}
-                                onPress={() => {
-                                  if (tableId) handleCardPress(tableId);
-                                }}
-                              />
-                            ) : (
-                              <View
-                                style={[
-                                  styles.cardPlaceholder,
-                                  {
-                                    backgroundColor:
-                                      sheetPalette.cardPlaceholderBg,
-                                  },
-                                ]}
-                              >
-                                <ActivityIndicator
-                                  size="small"
-                                  color={theme.colors.accent}
-                                />
-                                <Text
-                                  style={{
-                                    color: theme.colors.textMuted,
-                                    marginTop: 8,
-                                    fontSize: 13,
-                                  }}
-                                >
-                                  Loading…
-                                </Text>
-                              </View>
+                  <>
+                    <View
+                      style={[
+                        styles.swipeHintRow,
+                        {
+                          backgroundColor: sheetPalette.emptyIconBg,
+                          marginBottom: 12,
+                        },
+                      ]}
+                    >
+                      <AnimatedView style={swipeHintArrowStyle}>
+                        <Icon
+                          name="chevron-back"
+                          size={18}
+                          color={sheetPalette.emptyIcon}
+                          strokeWidth={2}
+                        />
+                      </AnimatedView>
+                      <Text
+                        style={[
+                          styles.swipeHintText,
+                          { color: sheetPalette.emptyHint },
+                        ]}
+                      >
+                        {t(
+                          "library.programsScreen.swipeLeftToRemove",
+                          "Swipe left to remove"
+                        )}
+                      </Text>
+                    </View>
+                    <View style={styles.cardList}>
+                      {refs.map((ref, index) => {
+                        const row = resolvedRows[index];
+                        const tableId =
+                          ref?.source === "workoutsTable"
+                            ? ref.workoutId
+                            : null;
+                        return (
+                          <Swipeable
+                            key={index}
+                            friction={2}
+                            rightThreshold={40}
+                            overshootRight={false}
+                            renderRightActions={renderRightActionsForIndex(
+                              index
                             )}
-                          </View>
-                        </Swipeable>
-                      );
-                    })}
-                  </View>
+                          >
+                            <View style={styles.cardFullWidth}>
+                              {row ? (
+                                <WorkoutCard
+                                  workout={row}
+                                  updatedAtLabel={t(
+                                    "library.workoutsList.updatedAt"
+                                  )}
+                                  defaultTitle={t(
+                                    "builder.workoutDetails.defaultTitle",
+                                    "Untitled workout"
+                                  )}
+                                  onPress={() => {
+                                    if (tableId) handleCardPress(tableId);
+                                  }}
+                                />
+                              ) : (
+                                <View
+                                  style={[
+                                    styles.cardPlaceholder,
+                                    {
+                                      backgroundColor:
+                                        sheetPalette.cardPlaceholderBg,
+                                    },
+                                  ]}
+                                >
+                                  <ActivityIndicator
+                                    size="small"
+                                    color={theme.colors.accent}
+                                  />
+                                  <Text
+                                    style={{
+                                      color: theme.colors.textMuted,
+                                      marginTop: 8,
+                                      fontSize: 13,
+                                    }}
+                                  >
+                                    Loading…
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
+                          </Swipeable>
+                        );
+                      })}
+                    </View>
+                  </>
                 )}
               </View>
             </ScrollView>
@@ -536,6 +602,11 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     justifyContent: "flex-start",
+  },
+  headerTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   headerTitle: {
     fontSize: 22,
@@ -594,6 +665,19 @@ const styles = StyleSheet.create({
     marginTop: 10,
     textAlign: "center",
     lineHeight: 20,
+  },
+  swipeHintRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+  },
+  swipeHintText: {
+    fontSize: 13,
+    fontWeight: "500",
   },
   cardList: { gap: 16 },
   cardFullWidth: { width: "100%" },

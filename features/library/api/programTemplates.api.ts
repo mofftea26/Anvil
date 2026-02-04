@@ -1,5 +1,6 @@
 import { supabase } from "@/shared/supabase/client";
 import type {
+  DayWorkoutRef,
   ProgramDay,
   ProgramDifficulty,
   ProgramPhase,
@@ -8,7 +9,11 @@ import type {
   ProgramTemplateStateV1,
   ProgramWeek,
 } from "../types/programTemplate";
-import { DEFAULT_PHASE_ID, JSON_STATE_VERSION } from "../types/programTemplate";
+import { JSON_STATE_VERSION } from "../types/programTemplate";
+
+function phaseId(phaseIndex: number): string {
+  return `phase_${phaseIndex}`;
+}
 
 async function requireUserId(): Promise<string> {
   const { data, error } = await supabase.auth.getUser();
@@ -27,52 +32,69 @@ function dayId(
   return `p${phaseIndex}_w${weekIndex}_d${dayIndex}`;
 }
 
-/** Build default state on create: one phase, durationWeeks weeks, 7 days each as rest. */
+/**
+ * Build default state on create: phaseCount phases with durationWeeks split
+ * evenly (first phases get +1 week when remainder). Each week has 7 rest days.
+ */
 export function buildInitialProgramState(
   durationWeeks: number,
-  difficulty: ProgramDifficulty = "beginner"
+  difficulty: ProgramDifficulty = "beginner",
+  phaseCount: number = 1
 ): ProgramTemplateStateV1 {
-  const weeks: ProgramWeek[] = [];
-  for (let w = 0; w < durationWeeks; w++) {
-    const days: ProgramDay[] = [];
-    for (let d = 0; d < 7; d++) {
-      days.push({
-        id: dayId(0, w, d),
-        order: d,
-        label: `Day ${d + 1}`,
-        type: "rest",
-        workoutRef: null,
-        workouts: [],
-        notes: null,
-      });
-    }
-    weeks.push({
-      index: w,
-      label: `Week ${w + 1}`,
-      days,
-    });
+  const count = Math.max(1, Math.min(phaseCount, durationWeeks));
+  const baseWeeks = Math.floor(durationWeeks / count);
+  const remainder = durationWeeks % count;
+  const phaseWeekCounts: number[] = [];
+  for (let i = 0; i < count; i++) {
+    phaseWeekCounts.push(baseWeeks + (i < remainder ? 1 : 0));
   }
 
-  const phase: ProgramPhase = {
-    id: DEFAULT_PHASE_ID,
-    title: "Phase 1",
-    description: null,
-    order: 0,
-    durationWeeks,
-    weeks,
-  };
+  const phases: ProgramPhase[] = [];
+  let globalWeekIndex = 0;
+  for (let p = 0; p < count; p++) {
+    const phaseWeeks = phaseWeekCounts[p];
+    const weeks: ProgramWeek[] = [];
+    for (let w = 0; w < phaseWeeks; w++) {
+      const days: ProgramDay[] = [];
+      for (let d = 0; d < 7; d++) {
+        days.push({
+          id: dayId(p, w, d),
+          order: d,
+          label: `Day ${d + 1}`,
+          type: "rest",
+          workoutRef: null,
+          workouts: [],
+          notes: null,
+        });
+      }
+      weeks.push({
+        index: w,
+        label: `Week ${w + 1}`,
+        days,
+      });
+      globalWeekIndex++;
+    }
+    phases.push({
+      id: phaseId(p),
+      title: `Phase ${p + 1}`,
+      description: null,
+      order: p,
+      durationWeeks: phaseWeeks,
+      weeks,
+    });
+  }
 
   return {
     jsonStateVersion: JSON_STATE_VERSION,
     difficulty,
     durationWeeks,
-    phases: [phase],
+    phases,
     workoutLibrary: {
       linkedWorkoutIds: [],
       inlineWorkouts: [],
     },
     ui: {
-      selectedPhaseId: DEFAULT_PHASE_ID,
+      selectedPhaseId: phaseId(0),
       selectedWeekIndex: 0,
       selectedDayId: null,
     },
@@ -139,7 +161,7 @@ function normalizeState(raw: unknown): ProgramTemplateState {
     if (obj.version === 1 && Array.isArray(obj.weeks)) {
       const phases: ProgramPhase[] = [
         {
-          id: DEFAULT_PHASE_ID,
+          id: phaseId(0),
           title: "Phase 1",
           description: null,
           order: 0,
@@ -241,7 +263,10 @@ function toTemplate(row: RawRow): ProgramTemplate {
 
 export type ListProgramTemplatesParams = {
   difficulty?: ProgramDifficulty;
+  /** If true, include archived in the list (default: only non-archived). */
   includeArchived?: boolean;
+  /** If true, return only archived programs (e.g. for "Archived" tab). */
+  archivedOnly?: boolean;
 };
 
 export async function listProgramTemplates(
@@ -254,7 +279,9 @@ export async function listProgramTemplates(
     .eq("ownerTrainerId", userId)
     .order("updatedAt", { ascending: false });
 
-  if (params.includeArchived !== true) {
+  if (params.archivedOnly === true) {
+    q = q.eq("isArchived", true);
+  } else if (params.includeArchived !== true) {
     q = q.eq("isArchived", false);
   }
   if (params.difficulty) {
@@ -287,6 +314,8 @@ export type CreateProgramTemplatePayload = {
   description?: string | null;
   durationWeeks: number;
   difficulty: ProgramDifficulty;
+  /** Number of phases; weeks are split evenly. Default 1. */
+  phaseCount?: number;
 };
 
 export async function createProgramTemplate(
@@ -295,7 +324,8 @@ export async function createProgramTemplate(
   const ownerTrainerId = await requireUserId();
   const state = buildInitialProgramState(
     payload.durationWeeks,
-    payload.difficulty
+    payload.difficulty,
+    payload.phaseCount ?? 1
   );
 
   const insertPayload = {
@@ -400,6 +430,22 @@ export async function archiveProgramTemplate(
   return toTemplate(data as RawRow);
 }
 
+export async function unarchiveProgramTemplate(
+  id: string
+): Promise<ProgramTemplate> {
+  const userId = await requireUserId();
+  const { data, error } = await supabase
+    .from("programTemplates")
+    .update({ isArchived: false, status: "published" })
+    .eq("id", id)
+    .eq("ownerTrainerId", userId)
+    .select("*")
+    .single();
+
+  if (error) throw error;
+  return toTemplate(data as RawRow);
+}
+
 /** Append a workout to a day (from workouts table). */
 export function setDayWorkoutFromTable(
   state: ProgramTemplateState,
@@ -484,6 +530,78 @@ export function removeWorkoutFromDayAt(
     phases,
     workoutLibrary: { ...state.workoutLibrary, linkedWorkoutIds: linked },
   };
+}
+
+/** Append a workout ref to a day (for move/copy). */
+export function addRefToDay(
+  state: ProgramTemplateState,
+  phaseIndex: number,
+  weekIndex: number,
+  dayOrder: number,
+  ref: DayWorkoutRef
+): ProgramTemplateState {
+  if (!ref) return state;
+  const phases = state.phases.map((p, pi) => {
+    if (pi !== phaseIndex) return p;
+    return {
+      ...p,
+      weeks: p.weeks.map((w, wi) => {
+        if (wi !== weekIndex) return w;
+        return {
+          ...w,
+          days: w.days.map((d) => {
+            if (d.order !== dayOrder) return d;
+            const workouts = [
+              ...(d.workouts ?? (d.workoutRef ? [d.workoutRef] : [])),
+              ref,
+            ];
+            return {
+              ...d,
+              type: "workout",
+              workoutRef: workouts[0] ?? null,
+              workouts,
+            };
+          }),
+        };
+      }),
+    };
+  });
+  const workoutId = ref.source === "workoutsTable" ? ref.workoutId : null;
+  const linked =
+    workoutId && !state.workoutLibrary.linkedWorkoutIds.includes(workoutId)
+      ? [...state.workoutLibrary.linkedWorkoutIds, workoutId]
+      : state.workoutLibrary.linkedWorkoutIds;
+  return {
+    ...state,
+    phases,
+    workoutLibrary: { ...state.workoutLibrary, linkedWorkoutIds: linked },
+  };
+}
+
+/** Move a workout from one day to another (same phase/week). */
+export function moveWorkoutBetweenDays(
+  state: ProgramTemplateState,
+  phaseIndex: number,
+  weekIndex: number,
+  fromDayOrder: number,
+  workoutIndex: number,
+  toDayOrder: number
+): ProgramTemplateState {
+  const phase = state.phases[phaseIndex];
+  const week = phase?.weeks[weekIndex];
+  const fromDay = week?.days.find((d) => d.order === fromDayOrder);
+  const list =
+    fromDay?.workouts ?? (fromDay?.workoutRef ? [fromDay.workoutRef] : []);
+  const ref = list[workoutIndex] ?? null;
+  if (!ref) return state;
+  const removed = removeWorkoutFromDayAt(
+    state,
+    phaseIndex,
+    weekIndex,
+    fromDayOrder,
+    workoutIndex
+  );
+  return addRefToDay(removed, phaseIndex, weekIndex, toDayOrder, ref);
 }
 
 function collectLinkedWorkoutIds(phases: ProgramPhase[]): string[] {
@@ -616,6 +734,102 @@ export function removePhase(
       order: i,
       title: `Phase ${i + 1}`,
     }));
+  const totalWeeks = newPhases.reduce((sum, p) => sum + p.durationWeeks, 0);
+  return {
+    ...state,
+    durationWeeks: totalWeeks,
+    phases: newPhases,
+  };
+}
+
+/** Duplicate the week at weekIndex (same phase); inserted after it. All week labels renumbered as "Week 1", "Week 2", etc. */
+export function duplicateWeek(
+  state: ProgramTemplateState,
+  phaseIndex: number,
+  weekIndex: number
+): ProgramTemplateState {
+  const phase = state.phases[phaseIndex];
+  if (!phase || weekIndex < 0 || weekIndex >= phase.weeks.length) return state;
+  const sourceWeek = phase.weeks[weekIndex];
+  const newWeekIndex = weekIndex + 1;
+  const newWeek: ProgramWeek = {
+    index: newWeekIndex,
+    label: `Week ${newWeekIndex + 1}`,
+    days: sourceWeek.days.map((d, di) => ({
+      ...d,
+      id: `p${phaseIndex}_w${newWeekIndex}_d${di}`,
+      workouts: [...(d.workouts ?? (d.workoutRef ? [d.workoutRef] : []))],
+      workoutRef: d.workouts?.[0] ?? d.workoutRef ?? null,
+    })),
+  };
+  const reindexedWeeks = [
+    ...phase.weeks.slice(0, newWeekIndex),
+    newWeek,
+    ...phase.weeks.slice(newWeekIndex),
+  ].map((w, i) => ({
+    ...w,
+    index: i,
+    label: `Week ${i + 1}`,
+  }));
+  const newPhases = state.phases.map((p, i) =>
+    i === phaseIndex
+      ? { ...p, weeks: reindexedWeeks, durationWeeks: reindexedWeeks.length }
+      : p
+  );
+  const totalWeeks = newPhases.reduce((sum, p) => sum + p.durationWeeks, 0);
+  return {
+    ...state,
+    durationWeeks: totalWeeks,
+    phases: newPhases,
+  };
+}
+
+/** Reorder phases: move from fromIndex to toIndex. */
+export function reorderPhases(
+  state: ProgramTemplateState,
+  fromIndex: number,
+  toIndex: number
+): ProgramTemplateState {
+  if (fromIndex === toIndex) return state;
+  const phases = [...state.phases];
+  const [removed] = phases.splice(fromIndex, 1);
+  phases.splice(toIndex, 0, removed);
+  const newPhases = phases.map((p, i) => ({
+    ...p,
+    order: i,
+    title: `Phase ${i + 1}`,
+  }));
+  const totalWeeks = newPhases.reduce((sum, p) => sum + p.durationWeeks, 0);
+  return {
+    ...state,
+    durationWeeks: totalWeeks,
+    phases: newPhases,
+  };
+}
+
+/** Reorder weeks within a phase: move from fromIndex to toIndex. */
+export function reorderWeeksInPhase(
+  state: ProgramTemplateState,
+  phaseIndex: number,
+  fromIndex: number,
+  toIndex: number
+): ProgramTemplateState {
+  if (fromIndex === toIndex) return state;
+  const phase = state.phases[phaseIndex];
+  if (!phase) return state;
+  const weeks = [...phase.weeks];
+  const [removed] = weeks.splice(fromIndex, 1);
+  weeks.splice(toIndex, 0, removed);
+  const newWeeks = weeks.map((w, i) => ({
+    ...w,
+    index: i,
+    label: `Week ${i + 1}`,
+  }));
+  const newPhases = state.phases.map((p, i) =>
+    i === phaseIndex
+      ? { ...p, weeks: newWeeks, durationWeeks: newWeeks.length }
+      : p
+  );
   const totalWeeks = newPhases.reduce((sum, p) => sum + p.durationWeeks, 0);
   return {
     ...state,
