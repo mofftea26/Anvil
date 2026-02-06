@@ -12,6 +12,7 @@ import React, {
 import {
   ActivityIndicator,
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
   TextInput,
@@ -26,6 +27,9 @@ import {
 import {
   createAnimatedComponent,
   runOnJS,
+  scrollTo,
+  useAnimatedRef,
+  useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -91,9 +95,14 @@ const DRAG_LIFT_Y = 10;
 const DRAG_SCALE = 1.2;
 const CAROUSEL_SECTION_SCALE = 1.06;
 const CAROUSEL_HOLE_PAD = 14;
+const AUTO_SCROLL_EDGE_PX = 42;
+const AUTO_SCROLL_MAX_STEP_PX = 18;
+const PHASE_SLOT_W = 76;
+const WEEK_SLOT_W = 56;
 
 const AnimatedView = createAnimatedComponent(View);
 const AnimatedBlurView = createAnimatedComponent(BlurView);
+const AnimatedScrollView = createAnimatedComponent(ScrollView);
 
 function phaseHasData(phase: ProgramPhase): boolean {
   return phase.weeks.some((w) =>
@@ -169,6 +178,8 @@ export default function ProgramTemplateEditorScreen() {
   const phaseSectionRef = useRef<View>(null);
   const weekSectionRef = useRef<View>(null);
   const rootLayoutRef = useRef<{ x: number; y: number } | null>(null);
+  const phaseScrollMeasureRef = useRef<View>(null);
+  const weekScrollMeasureRef = useRef<View>(null);
   const dragStartX = useSharedValue(0);
   const dragStartY = useSharedValue(0);
   const dragOverlayX = useSharedValue(0);
@@ -193,21 +204,42 @@ export default function ProgramTemplateEditorScreen() {
   const weekDropTargetIndexShared = useSharedValue(-1);
   const globalUpdateTick = useSharedValue(0);
 
+  const phaseScrollRef = useAnimatedRef<ScrollView>();
+  const weekScrollRef = useAnimatedRef<ScrollView>();
+  const phaseScrollX = useSharedValue(0);
+  const weekScrollX = useSharedValue(0);
+  const phaseScrollWinX = useSharedValue(0);
+  const phaseScrollWinW = useSharedValue(0);
+  const weekScrollWinX = useSharedValue(0);
+  const weekScrollWinW = useSharedValue(0);
+  const phaseScrollLayoutW = useSharedValue(0);
+  const phaseScrollContentW = useSharedValue(0);
+  const weekScrollLayoutW = useSharedValue(0);
+  const weekScrollContentW = useSharedValue(0);
+
+  const onPhaseScroll = useAnimatedScrollHandler({
+    onScroll: (e) => {
+      phaseScrollX.value = e.contentOffset.x;
+    },
+  });
+
+  const onWeekScroll = useAnimatedScrollHandler({
+    onScroll: (e) => {
+      weekScrollX.value = e.contentOffset.x;
+    },
+  });
+
   type DraggingPhaseState = number | null;
   const [draggingPhaseIndex, setDraggingPhaseIndex] =
     useState<DraggingPhaseState>(null);
-  const phaseLayoutsRef = useRef<
-    Record<number, { x: number; y: number; width: number; height: number }>
-  >({});
-  const phaseTabRefsRef = useRef<Record<number, View | null>>({});
+  const phaseMidpointsRef = useRef<number[]>([]);
+  const phaseMidpointsShared = useSharedValue<number[]>([]);
 
   type DraggingWeekState = number | null;
   const [draggingWeekIndex, setDraggingWeekIndex] =
     useState<DraggingWeekState>(null);
-  const weekLayoutsRef = useRef<
-    Record<number, { x: number; y: number; width: number; height: number }>
-  >({});
-  const weekTabRefsRef = useRef<Record<number, View | null>>({});
+  const weekMidpointsRef = useRef<number[]>([]);
+  const weekMidpointsShared = useSharedValue<number[]>([]);
 
   const phaseCount = state?.phases?.length ?? 0;
   const clampedPhaseIndex = Math.min(
@@ -352,6 +384,12 @@ export default function ProgramTemplateEditorScreen() {
     [state, clampedPhaseIndex, clampedWeekIndex, schedulePersist]
   );
 
+  // --- Stable refs for gesture -> JS calls (prevents gesture recreation jank) ---
+  const handleDropRef = useRef(handleDrop);
+  useEffect(() => {
+    handleDropRef.current = handleDrop;
+  }, [handleDrop]);
+
   const dragOverlayChipStyle = useAnimatedStyle(() => ({
     left:
       dragOverlayX.value -
@@ -457,9 +495,11 @@ export default function ProgramTemplateEditorScreen() {
 
   function PhaseTabWithOffset({
     index,
+    onLayout,
     children,
   }: {
     index: number;
+    onLayout?: (e: any) => void;
     children: React.ReactNode;
   }) {
     const style = useAnimatedStyle(() => {
@@ -467,24 +507,29 @@ export default function ProgramTemplateEditorScreen() {
       const to = phaseDropTargetIndexShared.value;
       if (from < 0 || to < 0 || from === to)
         return { transform: [{ translateX: 0 }] };
-      const SLOT_W = 76;
       let offset = 0;
-      if (to < from && index >= to && index < from) offset = SLOT_W;
-      if (to > from && index > from && index <= to) offset = -SLOT_W;
+      if (to < from && index >= to && index < from) offset = PHASE_SLOT_W;
+      if (to > from && index > from && index <= to) offset = -PHASE_SLOT_W;
       return {
         transform: [
           { translateX: withSpring(offset, { damping: 20, stiffness: 260 }) },
         ],
       };
     });
-    return <AnimatedView style={style}>{children}</AnimatedView>;
+    return (
+      <AnimatedView onLayout={onLayout} style={style}>
+        {children}
+      </AnimatedView>
+    );
   }
 
   function WeekPillWithOffset({
     index,
+    onLayout,
     children,
   }: {
     index: number;
+    onLayout?: (e: any) => void;
     children: React.ReactNode;
   }) {
     const style = useAnimatedStyle(() => {
@@ -492,17 +537,20 @@ export default function ProgramTemplateEditorScreen() {
       const to = weekDropTargetIndexShared.value;
       if (from < 0 || to < 0 || from === to)
         return { transform: [{ translateX: 0 }] };
-      const SLOT_W = 56;
       let offset = 0;
-      if (to < from && index >= to && index < from) offset = SLOT_W;
-      if (to > from && index > from && index <= to) offset = -SLOT_W;
+      if (to < from && index >= to && index < from) offset = WEEK_SLOT_W;
+      if (to > from && index > from && index <= to) offset = -WEEK_SLOT_W;
       return {
         transform: [
           { translateX: withSpring(offset, { damping: 20, stiffness: 260 }) },
         ],
       };
     });
-    return <AnimatedView style={style}>{children}</AnimatedView>;
+    return (
+      <AnimatedView onLayout={onLayout} style={style}>
+        {children}
+      </AnimatedView>
+    );
   }
 
   const updateHoveredDay = useCallback(
@@ -527,126 +575,114 @@ export default function ProgramTemplateEditorScreen() {
     [hoveredDayOrderShared]
   );
 
-  const updatePhaseDropPreview = useCallback(
-    (x: number) => {
-      if (!state) return;
-      const layouts = phaseLayoutsRef.current;
-      const cnt = state.phases.length;
-      let to = Math.max(0, cnt - 1);
-      for (let i = 0; i < cnt; i++) {
-        const L = layouts[i];
-        if (!L) continue;
-        const mid = L.x + L.width / 2;
-        if (x < mid) {
-          to = i;
-          break;
-        }
-      }
-      phaseDropTargetIndexShared.value = to;
-    },
-    [state, phaseDropTargetIndexShared]
-  );
+  const updateHoveredDayRef = useRef(updateHoveredDay);
+  useEffect(() => {
+    updateHoveredDayRef.current = updateHoveredDay;
+  }, [updateHoveredDay]);
 
-  const updateWeekDropPreview = useCallback(
-    (x: number) => {
-      const cnt = currentPhase?.weeks?.length ?? 0;
-      if (cnt === 0) return;
-      const layouts = weekLayoutsRef.current;
-      let to = Math.max(0, cnt - 1);
-      for (let i = 0; i < cnt; i++) {
-        const L = layouts[i];
-        if (!L) continue;
-        const mid = L.x + L.width / 2;
-        if (x < mid) {
-          to = i;
-          break;
-        }
-      }
-      weekDropTargetIndexShared.value = to;
-    },
-    [currentPhase?.weeks?.length, weekDropTargetIndexShared]
-  );
-
-  const dropPhaseAt = useCallback(
-    (fromIndex: number, x: number, y: number) => {
+  const commitPhaseDrop = useCallback(
+    (fromIndex: number, toIndex: number) => {
       if (!state) return;
-      const layouts = phaseLayoutsRef.current;
       const phaseCnt = state.phases.length;
-      let toIndex = Math.max(0, phaseCnt - 1);
-      for (let i = 0; i < phaseCnt; i++) {
-        const L = layouts[i];
-        if (!L) continue;
-        const mid = L.x + L.width / 2;
-        if (x < mid) {
-          toIndex = i;
-          break;
-        }
-      }
-      if (toIndex !== fromIndex) {
-        const next = reorderPhases(state, fromIndex, toIndex);
-        setState(next);
-        schedulePersist({ state: next });
-        setSelectedPhaseIndex(toIndex);
-      }
+      const clampedTo = Math.min(
+        Math.max(0, toIndex),
+        Math.max(0, phaseCnt - 1)
+      );
+      if (fromIndex === clampedTo) return;
+      const next = reorderPhases(state, fromIndex, clampedTo);
+      setState(next);
+      schedulePersist({ state: next });
+      setSelectedPhaseIndex(clampedTo);
     },
     [state, schedulePersist]
   );
 
-  const dropWeekAt = useCallback(
-    (fromIndex: number, x: number, y: number) => {
+  const commitWeekDrop = useCallback(
+    (fromIndex: number, toIndex: number) => {
       if (!state) return;
-      const layouts = weekLayoutsRef.current;
       const weekCnt = currentPhase?.weeks?.length ?? 0;
-      let toIndex = Math.max(0, weekCnt - 1);
-      for (let i = 0; i < weekCnt; i++) {
-        const L = layouts[i];
-        if (!L) continue;
-        const mid = L.x + L.width / 2;
-        if (x < mid) {
-          toIndex = i;
-          break;
-        }
-      }
-      if (toIndex !== fromIndex) {
-        const next = reorderWeeksInPhase(
-          state,
-          clampedPhaseIndex,
-          fromIndex,
-          toIndex
-        );
-        setState(next);
-        schedulePersist({ state: next });
-        setSelectedWeekIndex(toIndex);
-      }
+      const clampedTo = Math.min(
+        Math.max(0, toIndex),
+        Math.max(0, weekCnt - 1)
+      );
+      if (fromIndex === clampedTo) return;
+      const next = reorderWeeksInPhase(
+        state,
+        clampedPhaseIndex,
+        fromIndex,
+        clampedTo
+      );
+      setState(next);
+      schedulePersist({ state: next });
+      setSelectedWeekIndex(clampedTo);
     },
     [state, clampedPhaseIndex, currentPhase?.weeks?.length, schedulePersist]
   );
 
-  const handleGlobalDrop = useCallback(
-    (x: number, y: number) => {
-      if (!state) return;
-      if (dragging) {
-        handleDrop(x, y, dragging.fromDayOrder, dragging.workoutIndex);
-        return;
-      }
-      if (draggingPhaseIndex != null) {
-        dropPhaseAt(draggingPhaseIndex, x, y);
-        return;
-      }
-      if (draggingWeekIndex != null) {
-        dropWeekAt(draggingWeekIndex, x, y);
-      }
+  const commitPhaseDropRef = useRef(commitPhaseDrop);
+  useEffect(() => {
+    commitPhaseDropRef.current = commitPhaseDrop;
+  }, [commitPhaseDrop]);
+
+  const commitWeekDropRef = useRef(commitWeekDrop);
+  useEffect(() => {
+    commitWeekDropRef.current = commitWeekDrop;
+  }, [commitWeekDrop]);
+
+  // Keep midpoint arrays well-formed (no holes) so the UI-thread drop preview
+  // always updates and "make space" animations can trigger immediately.
+  useEffect(() => {
+    const cnt = state?.phases?.length ?? 0;
+    if (cnt <= 0) {
+      phaseMidpointsRef.current = [];
+      phaseMidpointsShared.value = [];
+      return;
+    }
+    const next = new Array(cnt);
+    for (let i = 0; i < cnt; i++) {
+      next[i] =
+        phaseMidpointsRef.current[i] ?? i * PHASE_SLOT_W + PHASE_SLOT_W / 2;
+    }
+    phaseMidpointsShared.value = next;
+  }, [state?.phases?.length, phaseMidpointsShared]);
+
+  useEffect(() => {
+    const cnt = currentPhase?.weeks?.length ?? 0;
+    if (cnt <= 0) {
+      weekMidpointsRef.current = [];
+      weekMidpointsShared.value = [];
+      return;
+    }
+    const next = new Array(cnt);
+    for (let i = 0; i < cnt; i++) {
+      next[i] =
+        weekMidpointsRef.current[i] ?? i * WEEK_SLOT_W + WEEK_SLOT_W / 2;
+    }
+    weekMidpointsShared.value = next;
+  }, [currentPhase?.weeks?.length, weekMidpointsShared]);
+
+  // Stable wrappers to call latest JS callbacks from UI thread.
+  const handleDropFromWorklet = useCallback(
+    (x: number, y: number, fromDayOrder: number, workoutIndex: number) => {
+      handleDropRef.current(x, y, fromDayOrder, workoutIndex);
     },
-    [
-      state,
-      dragging,
-      draggingPhaseIndex,
-      draggingWeekIndex,
-      handleDrop,
-      dropPhaseAt,
-      dropWeekAt,
-    ]
+    []
   );
+  const commitPhaseDropFromWorklet = useCallback(
+    (fromIndex: number, toIndex: number) => {
+      commitPhaseDropRef.current(fromIndex, toIndex);
+    },
+    []
+  );
+  const commitWeekDropFromWorklet = useCallback(
+    (fromIndex: number, toIndex: number) => {
+      commitWeekDropRef.current(fromIndex, toIndex);
+    },
+    []
+  );
+  const updateHoveredDayFromWorklet = useCallback((x: number, y: number) => {
+    updateHoveredDayRef.current(x, y);
+  }, []);
 
   const globalPanGesture = useMemo(
     () =>
@@ -659,19 +695,151 @@ export default function ProgramTemplateEditorScreen() {
           if (dragModeShared.value !== 1) return;
           dragOverlayX.value = e.absoluteX;
           dragOverlayY.value = e.absoluteY;
-          globalUpdateTick.value += 1;
-          if (globalUpdateTick.value % 4 !== 0) return;
-          if (dragging) {
-            runOnJS(updateHoveredDay)(e.absoluteX, e.absoluteY);
-          } else if (draggingPhaseIndex != null) {
-            runOnJS(updatePhaseDropPreview)(e.absoluteX);
-          } else if (draggingWeekIndex != null) {
-            runOnJS(updateWeekDropPreview)(e.absoluteX);
+          const focus = dragFocusSectionShared.value;
+
+          // Workouts: keep JS hover detection throttled.
+          if (focus === 0) {
+            globalUpdateTick.value += 1;
+            if (globalUpdateTick.value % 4 !== 0) return;
+            runOnJS(updateHoveredDayFromWorklet)(e.absoluteX, e.absoluteY);
+            return;
+          }
+
+          // Phase/Week: preview + edge scroll stays on UI thread.
+          if (focus === 1) {
+            // Auto-scroll when finger hits edges, then compute content-relative X for drop preview.
+            const left = phaseScrollWinX.value;
+            const right = left + phaseScrollWinW.value;
+            const maxX = Math.max(
+              0,
+              phaseScrollContentW.value - phaseScrollLayoutW.value
+            );
+            if (maxX > 0 && phaseScrollWinW.value > 0) {
+              if (e.absoluteX < left + AUTO_SCROLL_EDGE_PX) {
+                const p =
+                  (left + AUTO_SCROLL_EDGE_PX - e.absoluteX) /
+                  AUTO_SCROLL_EDGE_PX;
+                const next = Math.max(
+                  0,
+                  phaseScrollX.value - AUTO_SCROLL_MAX_STEP_PX * p
+                );
+                if (Math.abs(next - phaseScrollX.value) > 0.25) {
+                  phaseScrollX.value = next;
+                  scrollTo(phaseScrollRef, next, 0, false);
+                }
+              } else if (e.absoluteX > right - AUTO_SCROLL_EDGE_PX) {
+                const p =
+                  (e.absoluteX - (right - AUTO_SCROLL_EDGE_PX)) /
+                  AUTO_SCROLL_EDGE_PX;
+                const next = Math.min(
+                  maxX,
+                  phaseScrollX.value + AUTO_SCROLL_MAX_STEP_PX * p
+                );
+                if (Math.abs(next - phaseScrollX.value) > 0.25) {
+                  phaseScrollX.value = next;
+                  scrollTo(phaseScrollRef, next, 0, false);
+                }
+              }
+            }
+            const xInContent =
+              e.absoluteX - phaseScrollWinX.value + phaseScrollX.value;
+            const mids = phaseMidpointsShared.value;
+            if (mids.length > 0) {
+              let to = mids.length - 1;
+              for (let i = 0; i < mids.length; i++) {
+                const raw = mids[i] as number;
+                // Always have a monotonic fallback midpoint so we never "stick to last".
+                const mid =
+                  raw > 0 && raw === raw
+                    ? raw
+                    : i * PHASE_SLOT_W + PHASE_SLOT_W / 2;
+                if (xInContent < mid) {
+                  to = i;
+                  break;
+                }
+              }
+              phaseDropTargetIndexShared.value = to;
+            }
+            return;
+          }
+
+          if (focus === 2) {
+            const left = weekScrollWinX.value;
+            const right = left + weekScrollWinW.value;
+            const maxX = Math.max(
+              0,
+              weekScrollContentW.value - weekScrollLayoutW.value
+            );
+            if (maxX > 0 && weekScrollWinW.value > 0) {
+              if (e.absoluteX < left + AUTO_SCROLL_EDGE_PX) {
+                const p =
+                  (left + AUTO_SCROLL_EDGE_PX - e.absoluteX) /
+                  AUTO_SCROLL_EDGE_PX;
+                const next = Math.max(
+                  0,
+                  weekScrollX.value - AUTO_SCROLL_MAX_STEP_PX * p
+                );
+                if (Math.abs(next - weekScrollX.value) > 0.25) {
+                  weekScrollX.value = next;
+                  scrollTo(weekScrollRef, next, 0, false);
+                }
+              } else if (e.absoluteX > right - AUTO_SCROLL_EDGE_PX) {
+                const p =
+                  (e.absoluteX - (right - AUTO_SCROLL_EDGE_PX)) /
+                  AUTO_SCROLL_EDGE_PX;
+                const next = Math.min(
+                  maxX,
+                  weekScrollX.value + AUTO_SCROLL_MAX_STEP_PX * p
+                );
+                if (Math.abs(next - weekScrollX.value) > 0.25) {
+                  weekScrollX.value = next;
+                  scrollTo(weekScrollRef, next, 0, false);
+                }
+              }
+            }
+            const xInContent =
+              e.absoluteX - weekScrollWinX.value + weekScrollX.value;
+            const mids = weekMidpointsShared.value;
+            if (mids.length > 0) {
+              let to = mids.length - 1;
+              for (let i = 0; i < mids.length; i++) {
+                const raw = mids[i] as number;
+                const mid =
+                  raw > 0 && raw === raw
+                    ? raw
+                    : i * WEEK_SLOT_W + WEEK_SLOT_W / 2;
+                if (xInContent < mid) {
+                  to = i;
+                  break;
+                }
+              }
+              weekDropTargetIndexShared.value = to;
+            }
           }
         })
         .onEnd((e) => {
           if (dragModeShared.value !== 1) return;
-          runOnJS(handleGlobalDrop)(e.absoluteX, e.absoluteY);
+          const focus = dragFocusSectionShared.value;
+          if (focus === 1) {
+            runOnJS(commitPhaseDropFromWorklet)(
+              phaseDragFromIndexShared.value,
+              phaseDropTargetIndexShared.value
+            );
+            return;
+          }
+          if (focus === 2) {
+            runOnJS(commitWeekDropFromWorklet)(
+              weekDragFromIndexShared.value,
+              weekDropTargetIndexShared.value
+            );
+            return;
+          }
+          runOnJS(handleDropFromWorklet)(
+            e.absoluteX,
+            e.absoluteY,
+            dragFromDayOrder.value,
+            dragWorkoutIndex.value
+          );
         })
         .onFinalize(() => {
           dragModeShared.value = 0;
@@ -698,19 +866,32 @@ export default function ProgramTemplateEditorScreen() {
       focusRectH,
       dragOverlayX,
       dragOverlayY,
-      handleGlobalDrop,
+      phaseScrollRef,
+      weekScrollRef,
+      phaseScrollWinX,
+      phaseScrollWinW,
+      weekScrollWinX,
+      weekScrollWinW,
+      phaseScrollLayoutW,
+      phaseScrollContentW,
+      weekScrollLayoutW,
+      weekScrollContentW,
+      phaseScrollX,
+      weekScrollX,
       globalUpdateTick,
-      dragging,
-      draggingPhaseIndex,
-      draggingWeekIndex,
-      updateHoveredDay,
-      updatePhaseDropPreview,
-      updateWeekDropPreview,
       hoveredDayOrderShared,
       phaseDragFromIndexShared,
       phaseDropTargetIndexShared,
       weekDragFromIndexShared,
       weekDropTargetIndexShared,
+      dragFromDayOrder,
+      dragWorkoutIndex,
+      phaseMidpointsShared,
+      weekMidpointsShared,
+      updateHoveredDayFromWorklet,
+      handleDropFromWorklet,
+      commitPhaseDropFromWorklet,
+      commitWeekDropFromWorklet,
     ]
   );
 
@@ -1186,123 +1367,139 @@ export default function ProgramTemplateEditorScreen() {
                   </Text>
                 </View>
                 <View style={styles.tabRow}>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
+                  <View
+                    ref={phaseScrollMeasureRef}
+                    collapsable={false}
                     style={styles.phaseScrollView}
-                    contentContainerStyle={styles.phaseScroll}
-                    scrollEnabled={draggingPhaseIndex == null}
+                    onLayout={(ev) => {
+                      phaseScrollLayoutW.value = ev.nativeEvent.layout.width;
+                      phaseScrollMeasureRef.current?.measureInWindow(
+                        (x, _y, w, _h) => {
+                          phaseScrollWinX.value = x;
+                          phaseScrollWinW.value = w;
+                        }
+                      );
+                    }}
                   >
-                    {state.phases.map((phase, i) => {
-                      const isSelected = clampedPhaseIndex === i;
-                      return (
-                        <PhaseTabWithOffset key={`phase-${i}`} index={i}>
-                          <Pressable
-                            ref={(r) => {
-                              phaseTabRefsRef.current[i] = r as View | null;
+                    <AnimatedScrollView
+                      ref={phaseScrollRef}
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      style={{ flex: 1 }}
+                      contentContainerStyle={styles.phaseScroll}
+                      scrollEnabled={draggingPhaseIndex == null}
+                      scrollEventThrottle={16}
+                      onScroll={onPhaseScroll}
+                      onContentSizeChange={(w, _h) => {
+                        phaseScrollContentW.value = w;
+                      }}
+                    >
+                      {state.phases.map((phase, i) => {
+                        const isSelected = clampedPhaseIndex === i;
+                        return (
+                          <PhaseTabWithOffset
+                            key={`phase-${i}`}
+                            index={i}
+                            onLayout={(ev) => {
+                              const { x, width } = ev.nativeEvent.layout;
+                              const mid = x + width / 2;
+                              phaseMidpointsRef.current[i] = mid;
+                              const cnt = state.phases.length;
+                              const next = new Array(cnt);
+                              for (let j = 0; j < cnt; j++) {
+                                next[j] =
+                                  phaseMidpointsRef.current[j] ??
+                                  j * PHASE_SLOT_W + PHASE_SLOT_W / 2;
+                              }
+                              phaseMidpointsShared.value = next;
                             }}
-                            onLayout={() => {
-                              const ref = phaseTabRefsRef.current[i];
-                              if (
-                                ref &&
-                                typeof (ref as any).measureInWindow ===
-                                  "function"
-                              ) {
-                                (ref as any).measureInWindow(
-                                  (
-                                    x: number,
-                                    y: number,
-                                    w: number,
-                                    h: number
-                                  ) => {
-                                    phaseLayoutsRef.current[i] = {
-                                      x,
-                                      y,
-                                      width: w,
-                                      height: h,
-                                    };
+                          >
+                            <Pressable
+                              delayLongPress={500}
+                              onLongPress={(e) => {
+                                const ne = e.nativeEvent as any;
+                                const pageX = ne?.pageX ?? 0;
+                                const pageY = ne?.pageY ?? 0;
+                                const lx = ne?.locationX ?? 0;
+                                const ly = ne?.locationY ?? 0;
+                                dragStartX.value = pageX;
+                                dragStartY.value = pageY;
+                                dragOverlayX.value = pageX;
+                                dragOverlayY.value = pageY;
+                                dragGrabOffsetX.value = lx;
+                                // Keep the chip on the finger (avoid downward jump)
+                                dragGrabOffsetY.value = ly + DRAG_LIFT_Y;
+                                dragModeShared.value = 1;
+                                dragFocusSectionShared.value = 1;
+                                phaseDragFromIndexShared.value = i;
+                                phaseDropTargetIndexShared.value = i;
+                                phaseScrollMeasureRef.current?.measureInWindow(
+                                  (sx, _sy, sw, _sh) => {
+                                    phaseScrollWinX.value = sx;
+                                    phaseScrollWinW.value = sw;
                                   }
                                 );
-                              }
-                            }}
-                            delayLongPress={500}
-                            onLongPress={(e) => {
-                              const ne = e.nativeEvent as any;
-                              const pageX = ne?.pageX ?? 0;
-                              const pageY = ne?.pageY ?? 0;
-                              const lx = ne?.locationX ?? 0;
-                              const ly = ne?.locationY ?? 0;
-                              dragStartX.value = pageX;
-                              dragStartY.value = pageY;
-                              dragOverlayX.value = pageX;
-                              dragOverlayY.value = pageY;
-                              dragGrabOffsetX.value = lx;
-                              // Keep the chip on the finger (avoid downward jump)
-                              dragGrabOffsetY.value = ly + DRAG_LIFT_Y;
-                              dragModeShared.value = 1;
-                              dragFocusSectionShared.value = 1;
-                              phaseDragFromIndexShared.value = i;
-                              phaseDropTargetIndexShared.value = i;
-                              rootContainerRef.current?.measureInWindow(
-                                (rootX, rootY) => {
-                                  rootLayoutRef.current = {
-                                    x: rootX,
-                                    y: rootY,
-                                  };
-                                  rootLayoutX.value = rootX;
-                                  rootLayoutY.value = rootY;
-                                  phaseSectionRef.current?.measureInWindow(
-                                    (sx, sy, sw, sh) => {
-                                      const pad = CAROUSEL_HOLE_PAD;
-                                      focusRectX.value = Math.max(
-                                        0,
-                                        sx - rootX - pad
-                                      );
-                                      focusRectY.value = Math.max(
-                                        0,
-                                        sy - rootY - pad
-                                      );
-                                      focusRectW.value = sw + pad * 2;
-                                      focusRectH.value = sh + pad * 2;
-                                    }
-                                  );
-                                }
-                              );
-                              setDraggingPhaseIndex(i);
-                            }}
-                            onPress={() => setSelectedPhaseIndex(i)}
-                            style={({ pressed }) => [
-                              styles.compactTab,
-                              {
-                                backgroundColor: isSelected
-                                  ? theme.colors.accent
-                                  : hexToRgba(theme.colors.text, 0.06),
-                                opacity:
-                                  draggingPhaseIndex === i
-                                    ? 0
-                                    : pressed
-                                    ? 0.9
-                                    : 1,
-                              },
-                            ]}
-                          >
-                            <Text
-                              style={[
-                                styles.compactTabText,
+                                rootContainerRef.current?.measureInWindow(
+                                  (rootX, rootY) => {
+                                    rootLayoutRef.current = {
+                                      x: rootX,
+                                      y: rootY,
+                                    };
+                                    rootLayoutX.value = rootX;
+                                    rootLayoutY.value = rootY;
+                                    phaseSectionRef.current?.measureInWindow(
+                                      (sx, sy, sw, sh) => {
+                                        const pad = CAROUSEL_HOLE_PAD;
+                                        focusRectX.value = Math.max(
+                                          0,
+                                          sx - rootX - pad
+                                        );
+                                        focusRectY.value = Math.max(
+                                          0,
+                                          sy - rootY - pad
+                                        );
+                                        focusRectW.value = sw + pad * 2;
+                                        focusRectH.value = sh + pad * 2;
+                                      }
+                                    );
+                                  }
+                                );
+                                setDraggingPhaseIndex(i);
+                              }}
+                              onPress={() => setSelectedPhaseIndex(i)}
+                              style={({ pressed }) => [
+                                styles.compactTab,
                                 {
-                                  color: isSelected
-                                    ? theme.colors.background
-                                    : theme.colors.text,
+                                  backgroundColor: isSelected
+                                    ? theme.colors.accent
+                                    : hexToRgba(theme.colors.text, 0.06),
+                                  opacity:
+                                    draggingPhaseIndex === i
+                                      ? 0
+                                      : pressed
+                                      ? 0.9
+                                      : 1,
                                 },
                               ]}
                             >
-                              {phase.title}
-                            </Text>
-                          </Pressable>
-                        </PhaseTabWithOffset>
-                      );
-                    })}
-                  </ScrollView>
+                              <Text
+                                style={[
+                                  styles.compactTabText,
+                                  {
+                                    color: isSelected
+                                      ? theme.colors.background
+                                      : theme.colors.text,
+                                  },
+                                ]}
+                              >
+                                {phase.title}
+                              </Text>
+                            </Pressable>
+                          </PhaseTabWithOffset>
+                        );
+                      })}
+                    </AnimatedScrollView>
+                  </View>
                   <View style={styles.phaseControlsVertical}>
                     <Pressable
                       onPress={handleRemovePhase}
@@ -1365,123 +1562,139 @@ export default function ProgramTemplateEditorScreen() {
                   </Text>
                 </View>
                 <View style={styles.tabRow}>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
+                  <View
+                    ref={weekScrollMeasureRef}
+                    collapsable={false}
                     style={styles.phaseScrollView}
-                    contentContainerStyle={styles.phaseScroll}
-                    scrollEnabled={draggingWeekIndex == null}
+                    onLayout={(ev) => {
+                      weekScrollLayoutW.value = ev.nativeEvent.layout.width;
+                      weekScrollMeasureRef.current?.measureInWindow(
+                        (x, _y, w, _h) => {
+                          weekScrollWinX.value = x;
+                          weekScrollWinW.value = w;
+                        }
+                      );
+                    }}
                   >
-                    {currentPhase?.weeks.map((w, i) => {
-                      const isSelected = clampedWeekIndex === i;
-                      return (
-                        <WeekPillWithOffset key={w.index} index={i}>
-                          <Pressable
-                            ref={(r) => {
-                              weekTabRefsRef.current[i] = r as View | null;
+                    <AnimatedScrollView
+                      ref={weekScrollRef}
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      style={{ flex: 1 }}
+                      contentContainerStyle={styles.phaseScroll}
+                      scrollEnabled={draggingWeekIndex == null}
+                      scrollEventThrottle={16}
+                      onScroll={onWeekScroll}
+                      onContentSizeChange={(w, _h) => {
+                        weekScrollContentW.value = w;
+                      }}
+                    >
+                      {currentPhase?.weeks.map((w, i) => {
+                        const isSelected = clampedWeekIndex === i;
+                        return (
+                          <WeekPillWithOffset
+                            key={w.index}
+                            index={i}
+                            onLayout={(ev) => {
+                              const { x, width } = ev.nativeEvent.layout;
+                              const mid = x + width / 2;
+                              weekMidpointsRef.current[i] = mid;
+                              const cnt = currentPhase?.weeks?.length ?? 0;
+                              const next = new Array(cnt);
+                              for (let j = 0; j < cnt; j++) {
+                                next[j] =
+                                  weekMidpointsRef.current[j] ??
+                                  j * WEEK_SLOT_W + WEEK_SLOT_W / 2;
+                              }
+                              weekMidpointsShared.value = next;
                             }}
-                            onLayout={() => {
-                              const ref = weekTabRefsRef.current[i];
-                              if (
-                                ref &&
-                                typeof (ref as any).measureInWindow ===
-                                  "function"
-                              ) {
-                                (ref as any).measureInWindow(
-                                  (
-                                    x: number,
-                                    y: number,
-                                    w2: number,
-                                    h: number
-                                  ) => {
-                                    weekLayoutsRef.current[i] = {
-                                      x,
-                                      y,
-                                      width: w2,
-                                      height: h,
-                                    };
+                          >
+                            <Pressable
+                              delayLongPress={500}
+                              onLongPress={(e) => {
+                                const ne = e.nativeEvent as any;
+                                const pageX = ne?.pageX ?? 0;
+                                const pageY = ne?.pageY ?? 0;
+                                const lx = ne?.locationX ?? 0;
+                                const ly = ne?.locationY ?? 0;
+                                dragStartX.value = pageX;
+                                dragStartY.value = pageY;
+                                dragOverlayX.value = pageX;
+                                dragOverlayY.value = pageY;
+                                dragGrabOffsetX.value = lx;
+                                dragGrabOffsetY.value = ly + DRAG_LIFT_Y;
+                                dragModeShared.value = 1;
+                                dragFocusSectionShared.value = 2;
+                                weekDragFromIndexShared.value = i;
+                                weekDropTargetIndexShared.value = i;
+                                weekScrollMeasureRef.current?.measureInWindow(
+                                  (sx, _sy, sw, _sh) => {
+                                    weekScrollWinX.value = sx;
+                                    weekScrollWinW.value = sw;
                                   }
                                 );
-                              }
-                            }}
-                            delayLongPress={500}
-                            onLongPress={(e) => {
-                              const ne = e.nativeEvent as any;
-                              const pageX = ne?.pageX ?? 0;
-                              const pageY = ne?.pageY ?? 0;
-                              const lx = ne?.locationX ?? 0;
-                              const ly = ne?.locationY ?? 0;
-                              dragStartX.value = pageX;
-                              dragStartY.value = pageY;
-                              dragOverlayX.value = pageX;
-                              dragOverlayY.value = pageY;
-                              dragGrabOffsetX.value = lx;
-                              dragGrabOffsetY.value = ly + DRAG_LIFT_Y;
-                              dragModeShared.value = 1;
-                              dragFocusSectionShared.value = 2;
-                              weekDragFromIndexShared.value = i;
-                              weekDropTargetIndexShared.value = i;
-                              rootContainerRef.current?.measureInWindow(
-                                (rootX, rootY) => {
-                                  rootLayoutRef.current = {
-                                    x: rootX,
-                                    y: rootY,
-                                  };
-                                  rootLayoutX.value = rootX;
-                                  rootLayoutY.value = rootY;
-                                  weekSectionRef.current?.measureInWindow(
-                                    (sx, sy, sw, sh) => {
-                                      const pad = CAROUSEL_HOLE_PAD;
-                                      focusRectX.value = Math.max(
-                                        0,
-                                        sx - rootX - pad
-                                      );
-                                      focusRectY.value = Math.max(
-                                        0,
-                                        sy - rootY - pad
-                                      );
-                                      focusRectW.value = sw + pad * 2;
-                                      focusRectH.value = sh + pad * 2;
-                                    }
-                                  );
-                                }
-                              );
-                              setDraggingWeekIndex(i);
-                            }}
-                            onPress={() => setSelectedWeekIndex(i)}
-                            style={({ pressed }) => [
-                              styles.weekPill,
-                              {
-                                backgroundColor: isSelected
-                                  ? theme.colors.accent
-                                  : weekPillColorByIndex[i] ?? "transparent",
-                                borderColor: theme.colors.border,
-                                opacity:
-                                  draggingWeekIndex === i
-                                    ? 0
-                                    : pressed
-                                    ? 0.9
-                                    : 1,
-                              },
-                            ]}
-                          >
-                            <Text
-                              style={[
-                                styles.compactTabText,
+                                rootContainerRef.current?.measureInWindow(
+                                  (rootX, rootY) => {
+                                    rootLayoutRef.current = {
+                                      x: rootX,
+                                      y: rootY,
+                                    };
+                                    rootLayoutX.value = rootX;
+                                    rootLayoutY.value = rootY;
+                                    weekSectionRef.current?.measureInWindow(
+                                      (sx, sy, sw, sh) => {
+                                        const pad = CAROUSEL_HOLE_PAD;
+                                        focusRectX.value = Math.max(
+                                          0,
+                                          sx - rootX - pad
+                                        );
+                                        focusRectY.value = Math.max(
+                                          0,
+                                          sy - rootY - pad
+                                        );
+                                        focusRectW.value = sw + pad * 2;
+                                        focusRectH.value = sh + pad * 2;
+                                      }
+                                    );
+                                  }
+                                );
+                                setDraggingWeekIndex(i);
+                              }}
+                              onPress={() => setSelectedWeekIndex(i)}
+                              style={({ pressed }) => [
+                                styles.weekPill,
                                 {
-                                  color: isSelected
-                                    ? theme.colors.background
-                                    : theme.colors.text,
+                                  backgroundColor: isSelected
+                                    ? theme.colors.accent
+                                    : weekPillColorByIndex[i] ?? "transparent",
+                                  borderColor: theme.colors.border,
+                                  opacity:
+                                    draggingWeekIndex === i
+                                      ? 0
+                                      : pressed
+                                      ? 0.9
+                                      : 1,
                                 },
                               ]}
                             >
-                              {w.label}
-                            </Text>
-                          </Pressable>
-                        </WeekPillWithOffset>
-                      );
-                    })}
-                  </ScrollView>
+                              <Text
+                                style={[
+                                  styles.compactTabText,
+                                  {
+                                    color: isSelected
+                                      ? theme.colors.background
+                                      : theme.colors.text,
+                                  },
+                                ]}
+                              >
+                                {w.label}
+                              </Text>
+                            </Pressable>
+                          </WeekPillWithOffset>
+                        );
+                      })}
+                    </AnimatedScrollView>
+                  </View>
                   <View style={styles.phaseControlsVertical}>
                     <Pressable
                       onPress={handleRemoveWeek}
@@ -1759,11 +1972,13 @@ export default function ProgramTemplateEditorScreen() {
               <AnimatedView
                 style={[styles.carouselRegion, carouselTopRegionStyle]}
               >
-                <AnimatedBlurView
-                  intensity={18}
-                  tint="dark"
-                  style={StyleSheet.absoluteFillObject}
-                />
+                {Platform.OS === "ios" ? (
+                  <AnimatedBlurView
+                    intensity={18}
+                    tint="dark"
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                ) : null}
                 <View
                   style={[
                     StyleSheet.absoluteFillObject,
@@ -1774,11 +1989,13 @@ export default function ProgramTemplateEditorScreen() {
               <AnimatedView
                 style={[styles.carouselRegion, carouselBottomRegionStyle]}
               >
-                <AnimatedBlurView
-                  intensity={18}
-                  tint="dark"
-                  style={StyleSheet.absoluteFillObject}
-                />
+                {Platform.OS === "ios" ? (
+                  <AnimatedBlurView
+                    intensity={18}
+                    tint="dark"
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                ) : null}
                 <View
                   style={[
                     StyleSheet.absoluteFillObject,
@@ -1789,11 +2006,13 @@ export default function ProgramTemplateEditorScreen() {
               <AnimatedView
                 style={[styles.carouselRegion, carouselLeftRegionStyle]}
               >
-                <AnimatedBlurView
-                  intensity={18}
-                  tint="dark"
-                  style={StyleSheet.absoluteFillObject}
-                />
+                {Platform.OS === "ios" ? (
+                  <AnimatedBlurView
+                    intensity={18}
+                    tint="dark"
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                ) : null}
                 <View
                   style={[
                     StyleSheet.absoluteFillObject,
@@ -1804,11 +2023,13 @@ export default function ProgramTemplateEditorScreen() {
               <AnimatedView
                 style={[styles.carouselRegion, carouselRightRegionStyle]}
               >
-                <AnimatedBlurView
-                  intensity={18}
-                  tint="dark"
-                  style={StyleSheet.absoluteFillObject}
-                />
+                {Platform.OS === "ios" ? (
+                  <AnimatedBlurView
+                    intensity={18}
+                    tint="dark"
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                ) : null}
                 <View
                   style={[
                     StyleSheet.absoluteFillObject,
