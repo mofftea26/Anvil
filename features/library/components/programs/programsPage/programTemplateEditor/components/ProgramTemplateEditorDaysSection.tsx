@@ -1,12 +1,16 @@
 import React, { useCallback } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import { createAnimatedComponent, useAnimatedStyle, withSpring } from "react-native-reanimated";
+import {
+  createAnimatedComponent,
+  useAnimatedStyle,
+  withSpring,
+} from "react-native-reanimated";
 
 import type { ProgramDay } from "@/features/library/types/programTemplate";
-import type { DraggingWorkoutState } from "@/features/library/screens/program-template-editor/types";
 import { hexToRgba } from "@/features/profile/utils/trainerProfileUtils";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import { Icon, Text, useTheme } from "@/shared/ui";
+import type { DraggingWorkoutState } from "../types";
 
 const AnimatedView = createAnimatedComponent(View);
 
@@ -64,7 +68,12 @@ export function ProgramTemplateEditorDaysSection(props: {
       if (rowRef && typeof (rowRef as any).measureInWindow === "function") {
         (rowRef as any).measureInWindow(
           (x: number, y: number, w: number, h: number) => {
-            props.dayLayoutsRef.current[dayOrder] = { x, y, width: w, height: h };
+            props.dayLayoutsRef.current[dayOrder] = {
+              x,
+              y,
+              width: w,
+              height: h,
+            };
           }
         );
       }
@@ -83,7 +92,10 @@ export function ProgramTemplateEditorDaysSection(props: {
         </Text>
         <Pressable
           onPress={props.onDuplicateWeek}
-          style={({ pressed }) => [styles.copyBtn, { opacity: pressed ? 0.8 : 1 }]}
+          style={({ pressed }) => [
+            styles.copyBtn,
+            { opacity: pressed ? 0.8 : 1 },
+          ]}
         >
           <Icon name="copy-outline" size={18} color={theme.colors.accent} />
         </Pressable>
@@ -110,7 +122,8 @@ export function ProgramTemplateEditorDaysSection(props: {
                 style={({ pressed }) => [
                   styles.dayRow,
                   {
-                    backgroundColor: theme.colors.surface3 ?? theme.colors.background,
+                    backgroundColor:
+                      theme.colors.surface3 ?? theme.colors.background,
                     borderColor: theme.colors.border,
                     opacity: pressed ? 0.92 : 1,
                   },
@@ -118,7 +131,10 @@ export function ProgramTemplateEditorDaysSection(props: {
               >
                 <Text
                   weight="semibold"
-                  style={[styles.dayRowLabel, { color: theme.colors.textMuted }]}
+                  style={[
+                    styles.dayRowLabel,
+                    { color: theme.colors.textMuted },
+                  ]}
                   numberOfLines={1}
                 >
                   {dayLabel}
@@ -130,7 +146,10 @@ export function ProgramTemplateEditorDaysSection(props: {
                       style={[
                         styles.workoutChip,
                         {
-                          backgroundColor: hexToRgba(theme.colors.textMuted, 0.12),
+                          backgroundColor: hexToRgba(
+                            theme.colors.textMuted,
+                            0.12
+                          ),
                         },
                       ]}
                     >
@@ -140,10 +159,16 @@ export function ProgramTemplateEditorDaysSection(props: {
                         color={theme.colors.textMuted}
                       />
                       <Text
-                        style={[styles.workoutChipText, { color: theme.colors.textMuted }]}
+                        style={[
+                          styles.workoutChipText,
+                          { color: theme.colors.textMuted },
+                        ]}
                         numberOfLines={1}
                       >
-                        {t("library.programsScreen.addWorkoutDay", "Add workout")}
+                        {t(
+                          "library.programsScreen.addWorkoutDay",
+                          "Add workout"
+                        )}
                       </Text>
                     </View>
                   ) : (
@@ -160,13 +185,19 @@ export function ProgramTemplateEditorDaysSection(props: {
                             style={[
                               styles.workoutChip,
                               {
-                                backgroundColor: hexToRgba(theme.colors.accent, 0.15),
+                                backgroundColor: hexToRgba(
+                                  theme.colors.accent,
+                                  0.15
+                                ),
                                 opacity: 0,
                               },
                             ]}
                           >
                             <Text
-                              style={[styles.workoutChipText, { color: theme.colors.text }]}
+                              style={[
+                                styles.workoutChipText,
+                                { color: theme.colors.text },
+                              ]}
                               numberOfLines={1}
                             >
                               {workoutTitle}
@@ -193,12 +224,18 @@ export function ProgramTemplateEditorDaysSection(props: {
                             style={[
                               styles.workoutChip,
                               {
-                                backgroundColor: hexToRgba(theme.colors.accent, 0.15),
+                                backgroundColor: hexToRgba(
+                                  theme.colors.accent,
+                                  0.15
+                                ),
                               },
                             ]}
                           >
                             <Text
-                              style={[styles.workoutChipText, { color: theme.colors.text }]}
+                              style={[
+                                styles.workoutChipText,
+                                { color: theme.colors.text },
+                              ]}
                               numberOfLines={1}
                             >
                               {workoutTitle}
@@ -268,4 +305,3 @@ const styles = StyleSheet.create({
   },
   workoutChipText: { fontSize: 12, fontWeight: "600" },
 });
-

@@ -4,6 +4,8 @@
     "baseUrl": ".",
     "strict": true,
     "paths": {
+      "expo-router": ["./node_modules/expo-router/build/index"],
+      "expo-router/*": ["./node_modules/expo-router/build/*"],
       "@/*": ["./*"],
       "@/features/*": ["./features/*"],
       "@/shared/*": ["./shared/*"],

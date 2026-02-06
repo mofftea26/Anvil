@@ -2,8 +2,8 @@ import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback } from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
 
-import { ProgramTemplateCard } from "@/features/library/components/program-templates/ProgramTemplateCard";
-import { useProgramTemplatesList } from "@/features/library/hooks/program-templates/useProgramTemplatesList";
+import { ProgramTemplateCard } from "@/features/library/components/programs/programsPage/components/ProgramTemplateCard";
+import { useProgramTemplatesList } from "@/features/library/components/programs/programsPage/hooks/useProgramTemplatesList";
 import {
   DIFFICULTY_ICONS,
   getDifficultyColors,

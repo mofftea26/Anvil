@@ -4,9 +4,11 @@ import {
   duplicateProgramTemplate,
   listProgramTemplates,
   unarchiveProgramTemplate,
-  type ProgramDifficulty,
-  type ProgramTemplate,
 } from "@/features/library/api/programTemplates.api";
+import type {
+  ProgramDifficulty,
+  ProgramTemplate,
+} from "@/features/library/types/programTemplate";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import { appToast } from "@/shared/ui";
 import { router } from "expo-router";

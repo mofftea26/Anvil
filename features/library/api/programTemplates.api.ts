@@ -1,6 +1,7 @@
 import { supabase } from "@/shared/supabase/client";
 import type {
   DayWorkoutRef,
+  InlineWorkout,
   ProgramDay,
   ProgramDifficulty,
   ProgramPhase,
@@ -148,10 +149,24 @@ function normalizeState(raw: unknown): ProgramTemplateState {
         })),
         workoutLibrary: {
           linkedWorkoutIds: Array.isArray(lib.linkedWorkoutIds)
-            ? lib.linkedWorkoutIds
+            ? (lib.linkedWorkoutIds.filter(
+                (x: unknown): x is string => typeof x === "string"
+              ) as string[])
             : [],
           inlineWorkouts: Array.isArray(lib.inlineWorkouts)
-            ? lib.inlineWorkouts
+            ? (lib.inlineWorkouts.filter((x: unknown): x is InlineWorkout => {
+                if (!x || typeof x !== "object") return false;
+                const v = x as {
+                  id?: unknown;
+                  title?: unknown;
+                  state?: unknown;
+                };
+                return (
+                  typeof v.id === "string" &&
+                  typeof v.title === "string" &&
+                  "state" in v
+                );
+              }) as InlineWorkout[])
             : [],
         },
         ui: obj.ui as ProgramTemplateState["ui"],
@@ -345,14 +360,6 @@ export async function createProgramTemplate(
     .single();
 
   if (error) {
-    if (__DEV__) {
-      console.warn("[ProgramTemplate create] Supabase error:", {
-        message: error.message,
-        details: error.details,
-        code: error.code,
-        hint: error.hint,
-      });
-    }
     throw error;
   }
   return toTemplate(data as RawRow);
@@ -390,14 +397,6 @@ export async function updateProgramTemplate(
     .single();
 
   if (error) {
-    if (__DEV__) {
-      console.warn("[ProgramTemplate update] Supabase error:", {
-        message: error.message,
-        details: error.details,
-        code: error.code,
-        hint: error.hint,
-      });
-    }
     throw error;
   }
   return toTemplate(data as RawRow);
@@ -455,7 +454,7 @@ export function setDayWorkoutFromTable(
   workoutId: string
 ): ProgramTemplateState {
   const ref = { source: "workoutsTable" as const, workoutId };
-  const phases = state.phases.map((p, pi) => {
+  const phases: ProgramPhase[] = state.phases.map((p, pi) => {
     if (pi !== phaseIndex) return p;
     return {
       ...p,
@@ -501,7 +500,7 @@ export function removeWorkoutFromDayAt(
   dayOrder: number,
   workoutIndex: number
 ): ProgramTemplateState {
-  const phases = state.phases.map((p, pi) => {
+  const phases: ProgramPhase[] = state.phases.map((p, pi) => {
     if (pi !== phaseIndex) return p;
     return {
       ...p,
@@ -541,7 +540,7 @@ export function addRefToDay(
   ref: DayWorkoutRef
 ): ProgramTemplateState {
   if (!ref) return state;
-  const phases = state.phases.map((p, pi) => {
+  const phases: ProgramPhase[] = state.phases.map((p, pi) => {
     if (pi !== phaseIndex) return p;
     return {
       ...p,
