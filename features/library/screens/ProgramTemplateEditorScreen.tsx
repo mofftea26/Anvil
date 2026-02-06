@@ -1,5 +1,6 @@
 import { RemoveCircleHalfDotIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
+import { BlurView } from "expo-blur";
 import { router, useLocalSearchParams } from "expo-router";
 import React, {
   useCallback,
@@ -27,6 +28,8 @@ import {
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
+  withSpring,
+  withTiming,
 } from "react-native-reanimated";
 
 import type { WorkoutRow } from "@/features/builder/api/workouts.api";
@@ -84,8 +87,13 @@ const DIFFICULTY_KEYS: Record<ProgramDifficulty, string> = {
 
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const DEBOUNCE_MS = 600;
+const DRAG_LIFT_Y = 10;
+const DRAG_SCALE = 1.2;
+const CAROUSEL_SECTION_SCALE = 1.06;
+const CAROUSEL_HOLE_PAD = 14;
 
 const AnimatedView = createAnimatedComponent(View);
+const AnimatedBlurView = createAnimatedComponent(BlurView);
 
 function phaseHasData(phase: ProgramPhase): boolean {
   return phase.weeks.some((w) =>
@@ -158,6 +166,8 @@ export default function ProgramTemplateEditorScreen() {
   const dayRowRefsRef = useRef<Record<number, View | null>>({});
   const daysSectionRef = useRef<View>(null);
   const rootContainerRef = useRef<View>(null);
+  const phaseSectionRef = useRef<View>(null);
+  const weekSectionRef = useRef<View>(null);
   const rootLayoutRef = useRef<{ x: number; y: number } | null>(null);
   const dragStartX = useSharedValue(0);
   const dragStartY = useSharedValue(0);
@@ -165,11 +175,23 @@ export default function ProgramTemplateEditorScreen() {
   const dragOverlayY = useSharedValue(0);
   const rootLayoutX = useSharedValue(0);
   const rootLayoutY = useSharedValue(0);
-  const globalPanActive = useSharedValue(0);
+  const dragModeShared = useSharedValue(0);
   const dragGrabOffsetX = useSharedValue(0);
   const dragGrabOffsetY = useSharedValue(0);
   const dragFromDayOrder = useSharedValue(0);
   const dragWorkoutIndex = useSharedValue(0);
+  const hoveredDayOrderShared = useSharedValue(-1);
+  // 0 = none, 1 = phases, 2 = weeks (UI-thread carousel focus)
+  const dragFocusSectionShared = useSharedValue(0);
+  const focusRectX = useSharedValue(0);
+  const focusRectY = useSharedValue(0);
+  const focusRectW = useSharedValue(0);
+  const focusRectH = useSharedValue(0);
+  const phaseDragFromIndexShared = useSharedValue(-1);
+  const phaseDropTargetIndexShared = useSharedValue(-1);
+  const weekDragFromIndexShared = useSharedValue(-1);
+  const weekDropTargetIndexShared = useSharedValue(-1);
+  const globalUpdateTick = useSharedValue(0);
 
   type DraggingPhaseState = number | null;
   const [draggingPhaseIndex, setDraggingPhaseIndex] =
@@ -331,131 +353,366 @@ export default function ProgramTemplateEditorScreen() {
   );
 
   const dragOverlayChipStyle = useAnimatedStyle(() => ({
-    left: dragOverlayX.value - rootLayoutX.value - dragGrabOffsetX.value,
-    top: dragOverlayY.value - rootLayoutY.value - dragGrabOffsetY.value,
+    left:
+      dragOverlayX.value -
+      rootLayoutX.value -
+      dragGrabOffsetX.value * DRAG_SCALE,
+    top:
+      dragOverlayY.value -
+      rootLayoutY.value -
+      dragGrabOffsetY.value * DRAG_SCALE,
+    transform: [{ scale: DRAG_SCALE }],
   }));
 
-  const isAnyDragging =
-    dragging != null || draggingPhaseIndex != null || draggingWeekIndex != null;
+  const carouselBackdropStyle = useAnimatedStyle(() => {
+    const active =
+      dragModeShared.value === 1 && dragFocusSectionShared.value !== 0;
+    return {
+      opacity: withTiming(active ? 1 : 0, {
+        duration: active ? 120 : 160,
+      }),
+    };
+  });
+
+  const carouselTopRegionStyle = useAnimatedStyle(() => ({
+    left: 0,
+    right: 0,
+    top: 0,
+    height: focusRectY.value,
+  }));
+
+  const carouselBottomRegionStyle = useAnimatedStyle(() => ({
+    left: 0,
+    right: 0,
+    top: focusRectY.value + focusRectH.value,
+    bottom: 0,
+  }));
+
+  const carouselLeftRegionStyle = useAnimatedStyle(() => ({
+    left: 0,
+    top: focusRectY.value,
+    width: focusRectX.value,
+    height: focusRectH.value,
+  }));
+
+  const carouselRightRegionStyle = useAnimatedStyle(() => ({
+    left: focusRectX.value + focusRectW.value,
+    right: 0,
+    top: focusRectY.value,
+    height: focusRectH.value,
+  }));
+
+  const phaseCarouselStyle = useAnimatedStyle(() => {
+    const active =
+      dragModeShared.value === 1 && dragFocusSectionShared.value === 1;
+    const scale = withSpring(active ? CAROUSEL_SECTION_SCALE : 1, {
+      damping: 18,
+      stiffness: 220,
+    });
+    const lift = withSpring(active ? -2 : 0, { damping: 18, stiffness: 220 });
+    return {
+      zIndex: active ? 10 : 0,
+      elevation: active ? 10 : 0,
+      transform: [{ translateY: lift }, { scale }],
+    };
+  });
+
+  const weekCarouselStyle = useAnimatedStyle(() => {
+    const active =
+      dragModeShared.value === 1 && dragFocusSectionShared.value === 2;
+    const scale = withSpring(active ? CAROUSEL_SECTION_SCALE : 1, {
+      damping: 18,
+      stiffness: 220,
+    });
+    const lift = withSpring(active ? -2 : 0, { damping: 18, stiffness: 220 });
+    return {
+      zIndex: active ? 10 : 0,
+      elevation: active ? 10 : 0,
+      transform: [{ translateY: lift }, { scale }],
+    };
+  });
+
+  function DayRowWithScale({
+    dayOrder,
+    children,
+  }: {
+    dayOrder: number;
+    children: React.ReactNode;
+  }) {
+    const style = useAnimatedStyle(() => {
+      const isHover = hoveredDayOrderShared.value === dayOrder;
+      return {
+        transform: [
+          {
+            scale: withSpring(isHover ? 1.025 : 1, {
+              damping: 18,
+              stiffness: 240,
+            }),
+          },
+        ],
+      };
+    });
+    return <AnimatedView style={style}>{children}</AnimatedView>;
+  }
+
+  function PhaseTabWithOffset({
+    index,
+    children,
+  }: {
+    index: number;
+    children: React.ReactNode;
+  }) {
+    const style = useAnimatedStyle(() => {
+      const from = phaseDragFromIndexShared.value;
+      const to = phaseDropTargetIndexShared.value;
+      if (from < 0 || to < 0 || from === to)
+        return { transform: [{ translateX: 0 }] };
+      const SLOT_W = 76;
+      let offset = 0;
+      if (to < from && index >= to && index < from) offset = SLOT_W;
+      if (to > from && index > from && index <= to) offset = -SLOT_W;
+      return {
+        transform: [
+          { translateX: withSpring(offset, { damping: 20, stiffness: 260 }) },
+        ],
+      };
+    });
+    return <AnimatedView style={style}>{children}</AnimatedView>;
+  }
+
+  function WeekPillWithOffset({
+    index,
+    children,
+  }: {
+    index: number;
+    children: React.ReactNode;
+  }) {
+    const style = useAnimatedStyle(() => {
+      const from = weekDragFromIndexShared.value;
+      const to = weekDropTargetIndexShared.value;
+      if (from < 0 || to < 0 || from === to)
+        return { transform: [{ translateX: 0 }] };
+      const SLOT_W = 56;
+      let offset = 0;
+      if (to < from && index >= to && index < from) offset = SLOT_W;
+      if (to > from && index > from && index <= to) offset = -SLOT_W;
+      return {
+        transform: [
+          { translateX: withSpring(offset, { damping: 20, stiffness: 260 }) },
+        ],
+      };
+    });
+    return <AnimatedView style={style}>{children}</AnimatedView>;
+  }
+
+  const updateHoveredDay = useCallback(
+    (x: number, y: number) => {
+      const layouts = dayLayoutsRef.current;
+      let order = -1;
+      for (let i = 0; i < 7; i++) {
+        const L = layouts[i];
+        if (
+          L &&
+          x >= L.x &&
+          x <= L.x + L.width &&
+          y >= L.y &&
+          y <= L.y + L.height
+        ) {
+          order = i;
+          break;
+        }
+      }
+      hoveredDayOrderShared.value = order;
+    },
+    [hoveredDayOrderShared]
+  );
+
+  const updatePhaseDropPreview = useCallback(
+    (x: number) => {
+      if (!state) return;
+      const layouts = phaseLayoutsRef.current;
+      const cnt = state.phases.length;
+      let to = Math.max(0, cnt - 1);
+      for (let i = 0; i < cnt; i++) {
+        const L = layouts[i];
+        if (!L) continue;
+        const mid = L.x + L.width / 2;
+        if (x < mid) {
+          to = i;
+          break;
+        }
+      }
+      phaseDropTargetIndexShared.value = to;
+    },
+    [state, phaseDropTargetIndexShared]
+  );
+
+  const updateWeekDropPreview = useCallback(
+    (x: number) => {
+      const cnt = currentPhase?.weeks?.length ?? 0;
+      if (cnt === 0) return;
+      const layouts = weekLayoutsRef.current;
+      let to = Math.max(0, cnt - 1);
+      for (let i = 0; i < cnt; i++) {
+        const L = layouts[i];
+        if (!L) continue;
+        const mid = L.x + L.width / 2;
+        if (x < mid) {
+          to = i;
+          break;
+        }
+      }
+      weekDropTargetIndexShared.value = to;
+    },
+    [currentPhase?.weeks?.length, weekDropTargetIndexShared]
+  );
+
+  const dropPhaseAt = useCallback(
+    (fromIndex: number, x: number, y: number) => {
+      if (!state) return;
+      const layouts = phaseLayoutsRef.current;
+      const phaseCnt = state.phases.length;
+      let toIndex = Math.max(0, phaseCnt - 1);
+      for (let i = 0; i < phaseCnt; i++) {
+        const L = layouts[i];
+        if (!L) continue;
+        const mid = L.x + L.width / 2;
+        if (x < mid) {
+          toIndex = i;
+          break;
+        }
+      }
+      if (toIndex !== fromIndex) {
+        const next = reorderPhases(state, fromIndex, toIndex);
+        setState(next);
+        schedulePersist({ state: next });
+        setSelectedPhaseIndex(toIndex);
+      }
+    },
+    [state, schedulePersist]
+  );
+
+  const dropWeekAt = useCallback(
+    (fromIndex: number, x: number, y: number) => {
+      if (!state) return;
+      const layouts = weekLayoutsRef.current;
+      const weekCnt = currentPhase?.weeks?.length ?? 0;
+      let toIndex = Math.max(0, weekCnt - 1);
+      for (let i = 0; i < weekCnt; i++) {
+        const L = layouts[i];
+        if (!L) continue;
+        const mid = L.x + L.width / 2;
+        if (x < mid) {
+          toIndex = i;
+          break;
+        }
+      }
+      if (toIndex !== fromIndex) {
+        const next = reorderWeeksInPhase(
+          state,
+          clampedPhaseIndex,
+          fromIndex,
+          toIndex
+        );
+        setState(next);
+        schedulePersist({ state: next });
+        setSelectedWeekIndex(toIndex);
+      }
+    },
+    [state, clampedPhaseIndex, currentPhase?.weeks?.length, schedulePersist]
+  );
 
   const handleGlobalDrop = useCallback(
     (x: number, y: number) => {
-      if (!state) {
-        setDraggingState(null);
-        setDraggingPhaseIndex(null);
-        setDraggingWeekIndex(null);
-        return;
-      }
-
-      // Workout chip drop (between days)
+      if (!state) return;
       if (dragging) {
         handleDrop(x, y, dragging.fromDayOrder, dragging.workoutIndex);
-        setDraggingState(null);
         return;
       }
-
-      // Phase tab drop (reorder phases)
       if (draggingPhaseIndex != null) {
-        const layouts = phaseLayoutsRef.current;
-        let toIndex = draggingPhaseIndex;
-        const phaseCnt = state.phases.length;
-        for (let i = 0; i < phaseCnt; i++) {
-          const L = layouts[i];
-          if (
-            L &&
-            x >= L.x &&
-            x <= L.x + L.width &&
-            y >= L.y &&
-            y <= L.y + L.height
-          ) {
-            toIndex = i;
-            break;
-          }
-        }
-        if (toIndex !== draggingPhaseIndex) {
-          const next = reorderPhases(state, draggingPhaseIndex, toIndex);
-          setState(next);
-          schedulePersist({ state: next });
-          setSelectedPhaseIndex(toIndex);
-        }
-        setDraggingPhaseIndex(null);
+        dropPhaseAt(draggingPhaseIndex, x, y);
         return;
       }
-
-      // Week pill drop (reorder weeks within current phase)
       if (draggingWeekIndex != null) {
-        const layouts = weekLayoutsRef.current;
-        let toIndex = draggingWeekIndex;
-        const weekCnt = currentPhase?.weeks?.length ?? 0;
-        for (let i = 0; i < weekCnt; i++) {
-          const L = layouts[i];
-          if (
-            L &&
-            x >= L.x &&
-            x <= L.x + L.width &&
-            y >= L.y &&
-            y <= L.y + L.height
-          ) {
-            toIndex = i;
-            break;
-          }
-        }
-        if (toIndex !== draggingWeekIndex) {
-          const next = reorderWeeksInPhase(
-            state,
-            clampedPhaseIndex,
-            draggingWeekIndex,
-            toIndex
-          );
-          setState(next);
-          schedulePersist({ state: next });
-          setSelectedWeekIndex(toIndex);
-        }
-        setDraggingWeekIndex(null);
+        dropWeekAt(draggingWeekIndex, x, y);
       }
     },
     [
       state,
-      currentPhase?.weeks?.length,
-      clampedPhaseIndex,
       dragging,
       draggingPhaseIndex,
       draggingWeekIndex,
       handleDrop,
-      schedulePersist,
+      dropPhaseAt,
+      dropWeekAt,
     ]
   );
 
-  const globalPanGesture = useMemo(() => {
-    if (!isAnyDragging) return Gesture.Pan().enabled(false);
-    return Gesture.Pan()
-      .enabled(true)
-      .minDistance(0)
-      .onStart(() => {
-        globalPanActive.value = 1;
-      })
-      .onUpdate((e: { translationX: number; translationY: number }) => {
-        dragOverlayX.value = dragStartX.value + e.translationX;
-        dragOverlayY.value = dragStartY.value + e.translationY;
-      })
-      .onEnd(() => {
-        runOnJS(handleGlobalDrop)(dragOverlayX.value, dragOverlayY.value);
-      })
-      .onFinalize(() => {
-        globalPanActive.value = 0;
-        runOnJS(setDraggingState)(null);
-        runOnJS(setDraggingPhaseIndex)(null);
-        runOnJS(setDraggingWeekIndex)(null);
-      });
-  }, [
-    isAnyDragging,
-    dragOverlayX,
-    dragOverlayY,
-    dragStartX,
-    dragStartY,
-    handleGlobalDrop,
-    globalPanActive,
-  ]);
+  const globalPanGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .manualActivation(true)
+        .onTouchesMove((_e, stateManager) => {
+          if (dragModeShared.value === 1) stateManager.activate();
+        })
+        .onUpdate((e) => {
+          if (dragModeShared.value !== 1) return;
+          dragOverlayX.value = e.absoluteX;
+          dragOverlayY.value = e.absoluteY;
+          globalUpdateTick.value += 1;
+          if (globalUpdateTick.value % 4 !== 0) return;
+          if (dragging) {
+            runOnJS(updateHoveredDay)(e.absoluteX, e.absoluteY);
+          } else if (draggingPhaseIndex != null) {
+            runOnJS(updatePhaseDropPreview)(e.absoluteX);
+          } else if (draggingWeekIndex != null) {
+            runOnJS(updateWeekDropPreview)(e.absoluteX);
+          }
+        })
+        .onEnd((e) => {
+          if (dragModeShared.value !== 1) return;
+          runOnJS(handleGlobalDrop)(e.absoluteX, e.absoluteY);
+        })
+        .onFinalize(() => {
+          dragModeShared.value = 0;
+          dragFocusSectionShared.value = 0;
+          focusRectX.value = 0;
+          focusRectY.value = 0;
+          focusRectW.value = 0;
+          focusRectH.value = 0;
+          hoveredDayOrderShared.value = -1;
+          phaseDragFromIndexShared.value = -1;
+          phaseDropTargetIndexShared.value = -1;
+          weekDragFromIndexShared.value = -1;
+          weekDropTargetIndexShared.value = -1;
+          runOnJS(setDraggingState)(null);
+          runOnJS(setDraggingPhaseIndex)(null);
+          runOnJS(setDraggingWeekIndex)(null);
+        }),
+    [
+      dragModeShared,
+      dragFocusSectionShared,
+      focusRectX,
+      focusRectY,
+      focusRectW,
+      focusRectH,
+      dragOverlayX,
+      dragOverlayY,
+      handleGlobalDrop,
+      globalUpdateTick,
+      dragging,
+      draggingPhaseIndex,
+      draggingWeekIndex,
+      updateHoveredDay,
+      updatePhaseDropPreview,
+      updateWeekDropPreview,
+      hoveredDayOrderShared,
+      phaseDragFromIndexShared,
+      phaseDropTargetIndexShared,
+      weekDragFromIndexShared,
+      weekDropTargetIndexShared,
+    ]
+  );
 
   useEffect(() => {
     if (!dragging && draggingPhaseIndex == null && draggingWeekIndex == null)
@@ -588,13 +845,27 @@ export default function ProgramTemplateEditorScreen() {
   };
 
   const phaseOverlayStyle = useAnimatedStyle(() => ({
-    left: dragOverlayX.value - rootLayoutX.value - dragGrabOffsetX.value,
-    top: dragOverlayY.value - rootLayoutY.value - dragGrabOffsetY.value,
+    left:
+      dragOverlayX.value -
+      rootLayoutX.value -
+      dragGrabOffsetX.value * DRAG_SCALE,
+    top:
+      dragOverlayY.value -
+      rootLayoutY.value -
+      dragGrabOffsetY.value * DRAG_SCALE,
+    transform: [{ scale: DRAG_SCALE }],
   }));
 
   const weekOverlayStyle = useAnimatedStyle(() => ({
-    left: dragOverlayX.value - rootLayoutX.value - dragGrabOffsetX.value,
-    top: dragOverlayY.value - rootLayoutY.value - dragGrabOffsetY.value,
+    left:
+      dragOverlayX.value -
+      rootLayoutX.value -
+      dragGrabOffsetX.value * DRAG_SCALE,
+    top:
+      dragOverlayY.value -
+      rootLayoutY.value -
+      dragGrabOffsetY.value * DRAG_SCALE,
+    transform: [{ scale: DRAG_SCALE }],
   }));
 
   const handleAddWorkoutToDay = (workoutId: string) => {
@@ -888,10 +1159,13 @@ export default function ProgramTemplateEditorScreen() {
 
             {/* Phase: vertical, keep as-is */}
             {phaseCount > 0 && (
-              <View
+              <AnimatedView
+                ref={phaseSectionRef}
+                collapsable={false}
                 style={[
                   styles.compactSection,
                   { borderBottomColor: theme.colors.border },
+                  phaseCarouselStyle,
                 ]}
               >
                 <View style={styles.compactLabelRow}>
@@ -922,90 +1196,110 @@ export default function ProgramTemplateEditorScreen() {
                     {state.phases.map((phase, i) => {
                       const isSelected = clampedPhaseIndex === i;
                       return (
-                        <Pressable
-                          key={`phase-${i}`}
-                          ref={(r) => {
-                            phaseTabRefsRef.current[i] = r as View | null;
-                          }}
-                          onLayout={() => {
-                            const ref = phaseTabRefsRef.current[i];
-                            if (
-                              ref &&
-                              typeof (ref as any).measureInWindow === "function"
-                            ) {
-                              (ref as any).measureInWindow(
-                                (
-                                  x: number,
-                                  y: number,
-                                  w: number,
-                                  h: number
-                                ) => {
-                                  phaseLayoutsRef.current[i] = {
-                                    x,
-                                    y,
-                                    width: w,
-                                    height: h,
+                        <PhaseTabWithOffset key={`phase-${i}`} index={i}>
+                          <Pressable
+                            ref={(r) => {
+                              phaseTabRefsRef.current[i] = r as View | null;
+                            }}
+                            onLayout={() => {
+                              const ref = phaseTabRefsRef.current[i];
+                              if (
+                                ref &&
+                                typeof (ref as any).measureInWindow ===
+                                  "function"
+                              ) {
+                                (ref as any).measureInWindow(
+                                  (
+                                    x: number,
+                                    y: number,
+                                    w: number,
+                                    h: number
+                                  ) => {
+                                    phaseLayoutsRef.current[i] = {
+                                      x,
+                                      y,
+                                      width: w,
+                                      height: h,
+                                    };
+                                  }
+                                );
+                              }
+                            }}
+                            delayLongPress={500}
+                            onLongPress={(e) => {
+                              const ne = e.nativeEvent as any;
+                              const pageX = ne?.pageX ?? 0;
+                              const pageY = ne?.pageY ?? 0;
+                              const lx = ne?.locationX ?? 0;
+                              const ly = ne?.locationY ?? 0;
+                              dragStartX.value = pageX;
+                              dragStartY.value = pageY;
+                              dragOverlayX.value = pageX;
+                              dragOverlayY.value = pageY;
+                              dragGrabOffsetX.value = lx;
+                              // Keep the chip on the finger (avoid downward jump)
+                              dragGrabOffsetY.value = ly + DRAG_LIFT_Y;
+                              dragModeShared.value = 1;
+                              dragFocusSectionShared.value = 1;
+                              phaseDragFromIndexShared.value = i;
+                              phaseDropTargetIndexShared.value = i;
+                              rootContainerRef.current?.measureInWindow(
+                                (rootX, rootY) => {
+                                  rootLayoutRef.current = {
+                                    x: rootX,
+                                    y: rootY,
                                   };
+                                  rootLayoutX.value = rootX;
+                                  rootLayoutY.value = rootY;
+                                  phaseSectionRef.current?.measureInWindow(
+                                    (sx, sy, sw, sh) => {
+                                      const pad = CAROUSEL_HOLE_PAD;
+                                      focusRectX.value = Math.max(
+                                        0,
+                                        sx - rootX - pad
+                                      );
+                                      focusRectY.value = Math.max(
+                                        0,
+                                        sy - rootY - pad
+                                      );
+                                      focusRectW.value = sw + pad * 2;
+                                      focusRectH.value = sh + pad * 2;
+                                    }
+                                  );
                                 }
                               );
-                            }
-                          }}
-                          delayLongPress={500}
-                          onLongPress={(e) => {
-                            const ne = e.nativeEvent as any;
-                            const pageX = ne?.pageX ?? 0;
-                            const pageY = ne?.pageY ?? 0;
-                            const lx = ne?.locationX ?? 0;
-                            const ly = ne?.locationY ?? 0;
-                            dragStartX.value = pageX;
-                            dragStartY.value = pageY;
-                            dragOverlayX.value = pageX;
-                            dragOverlayY.value = pageY;
-                            dragGrabOffsetX.value = lx;
-                            dragGrabOffsetY.value = ly;
-                            rootContainerRef.current?.measureInWindow(
-                              (x, y) => {
-                                rootLayoutRef.current = { x, y };
-                                rootLayoutX.value = x;
-                                rootLayoutY.value = y;
-                              }
-                            );
-                            setDraggingPhaseIndex(i);
-                          }}
-                          onPressOut={() => {
-                            if (globalPanActive.value === 0) {
-                              setDraggingPhaseIndex(null);
-                            }
-                          }}
-                          onPress={() => setSelectedPhaseIndex(i)}
-                          style={({ pressed }) => [
-                            styles.compactTab,
-                            {
-                              backgroundColor: isSelected
-                                ? theme.colors.accent
-                                : hexToRgba(theme.colors.text, 0.06),
-                              opacity:
-                                draggingPhaseIndex === i
-                                  ? 0
-                                  : pressed
-                                  ? 0.9
-                                  : 1,
-                            },
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.compactTabText,
+                              setDraggingPhaseIndex(i);
+                            }}
+                            onPress={() => setSelectedPhaseIndex(i)}
+                            style={({ pressed }) => [
+                              styles.compactTab,
                               {
-                                color: isSelected
-                                  ? theme.colors.background
-                                  : theme.colors.text,
+                                backgroundColor: isSelected
+                                  ? theme.colors.accent
+                                  : hexToRgba(theme.colors.text, 0.06),
+                                opacity:
+                                  draggingPhaseIndex === i
+                                    ? 0
+                                    : pressed
+                                    ? 0.9
+                                    : 1,
                               },
                             ]}
                           >
-                            {phase.title}
-                          </Text>
-                        </Pressable>
+                            <Text
+                              style={[
+                                styles.compactTabText,
+                                {
+                                  color: isSelected
+                                    ? theme.colors.background
+                                    : theme.colors.text,
+                                },
+                              ]}
+                            >
+                              {phase.title}
+                            </Text>
+                          </Pressable>
+                        </PhaseTabWithOffset>
                       );
                     })}
                   </ScrollView>
@@ -1039,15 +1333,18 @@ export default function ProgramTemplateEditorScreen() {
                     </Pressable>
                   </View>
                 </View>
-              </View>
+              </AnimatedView>
             )}
 
             {/* Weeks: vertical, colored pills */}
             {phaseCount > 0 && (
-              <View
+              <AnimatedView
+                ref={weekSectionRef}
+                collapsable={false}
                 style={[
                   styles.compactSection,
                   { borderBottomColor: theme.colors.border },
+                  weekCarouselStyle,
                 ]}
               >
                 <View style={styles.compactLabelRow}>
@@ -1078,87 +1375,110 @@ export default function ProgramTemplateEditorScreen() {
                     {currentPhase?.weeks.map((w, i) => {
                       const isSelected = clampedWeekIndex === i;
                       return (
-                        <Pressable
-                          key={w.index}
-                          ref={(r) => {
-                            weekTabRefsRef.current[i] = r as View | null;
-                          }}
-                          onLayout={() => {
-                            const ref = weekTabRefsRef.current[i];
-                            if (
-                              ref &&
-                              typeof (ref as any).measureInWindow === "function"
-                            ) {
-                              (ref as any).measureInWindow(
-                                (
-                                  x: number,
-                                  y: number,
-                                  w2: number,
-                                  h: number
-                                ) => {
-                                  weekLayoutsRef.current[i] = {
-                                    x,
-                                    y,
-                                    width: w2,
-                                    height: h,
+                        <WeekPillWithOffset key={w.index} index={i}>
+                          <Pressable
+                            ref={(r) => {
+                              weekTabRefsRef.current[i] = r as View | null;
+                            }}
+                            onLayout={() => {
+                              const ref = weekTabRefsRef.current[i];
+                              if (
+                                ref &&
+                                typeof (ref as any).measureInWindow ===
+                                  "function"
+                              ) {
+                                (ref as any).measureInWindow(
+                                  (
+                                    x: number,
+                                    y: number,
+                                    w2: number,
+                                    h: number
+                                  ) => {
+                                    weekLayoutsRef.current[i] = {
+                                      x,
+                                      y,
+                                      width: w2,
+                                      height: h,
+                                    };
+                                  }
+                                );
+                              }
+                            }}
+                            delayLongPress={500}
+                            onLongPress={(e) => {
+                              const ne = e.nativeEvent as any;
+                              const pageX = ne?.pageX ?? 0;
+                              const pageY = ne?.pageY ?? 0;
+                              const lx = ne?.locationX ?? 0;
+                              const ly = ne?.locationY ?? 0;
+                              dragStartX.value = pageX;
+                              dragStartY.value = pageY;
+                              dragOverlayX.value = pageX;
+                              dragOverlayY.value = pageY;
+                              dragGrabOffsetX.value = lx;
+                              dragGrabOffsetY.value = ly + DRAG_LIFT_Y;
+                              dragModeShared.value = 1;
+                              dragFocusSectionShared.value = 2;
+                              weekDragFromIndexShared.value = i;
+                              weekDropTargetIndexShared.value = i;
+                              rootContainerRef.current?.measureInWindow(
+                                (rootX, rootY) => {
+                                  rootLayoutRef.current = {
+                                    x: rootX,
+                                    y: rootY,
                                   };
+                                  rootLayoutX.value = rootX;
+                                  rootLayoutY.value = rootY;
+                                  weekSectionRef.current?.measureInWindow(
+                                    (sx, sy, sw, sh) => {
+                                      const pad = CAROUSEL_HOLE_PAD;
+                                      focusRectX.value = Math.max(
+                                        0,
+                                        sx - rootX - pad
+                                      );
+                                      focusRectY.value = Math.max(
+                                        0,
+                                        sy - rootY - pad
+                                      );
+                                      focusRectW.value = sw + pad * 2;
+                                      focusRectH.value = sh + pad * 2;
+                                    }
+                                  );
                                 }
                               );
-                            }
-                          }}
-                          delayLongPress={500}
-                          onLongPress={(e) => {
-                            const ne = e.nativeEvent as any;
-                            const pageX = ne?.pageX ?? 0;
-                            const pageY = ne?.pageY ?? 0;
-                            const lx = ne?.locationX ?? 0;
-                            const ly = ne?.locationY ?? 0;
-                            dragStartX.value = pageX;
-                            dragStartY.value = pageY;
-                            dragOverlayX.value = pageX;
-                            dragOverlayY.value = pageY;
-                            dragGrabOffsetX.value = lx;
-                            dragGrabOffsetY.value = ly;
-                            rootContainerRef.current?.measureInWindow(
-                              (x, y) => {
-                                rootLayoutRef.current = { x, y };
-                                rootLayoutX.value = x;
-                                rootLayoutY.value = y;
-                              }
-                            );
-                            setDraggingWeekIndex(i);
-                          }}
-                          onPressOut={() => {
-                            if (globalPanActive.value === 0) {
-                              setDraggingWeekIndex(null);
-                            }
-                          }}
-                          onPress={() => setSelectedWeekIndex(i)}
-                          style={({ pressed }) => [
-                            styles.weekPill,
-                            {
-                              backgroundColor: isSelected
-                                ? theme.colors.accent
-                                : weekPillColorByIndex[i] ?? "transparent",
-                              borderColor: theme.colors.border,
-                              opacity:
-                                draggingWeekIndex === i ? 0 : pressed ? 0.9 : 1,
-                            },
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.compactTabText,
+                              setDraggingWeekIndex(i);
+                            }}
+                            onPress={() => setSelectedWeekIndex(i)}
+                            style={({ pressed }) => [
+                              styles.weekPill,
                               {
-                                color: isSelected
-                                  ? theme.colors.background
-                                  : theme.colors.text,
+                                backgroundColor: isSelected
+                                  ? theme.colors.accent
+                                  : weekPillColorByIndex[i] ?? "transparent",
+                                borderColor: theme.colors.border,
+                                opacity:
+                                  draggingWeekIndex === i
+                                    ? 0
+                                    : pressed
+                                    ? 0.9
+                                    : 1,
                               },
                             ]}
                           >
-                            {w.label}
-                          </Text>
-                        </Pressable>
+                            <Text
+                              style={[
+                                styles.compactTabText,
+                                {
+                                  color: isSelected
+                                    ? theme.colors.background
+                                    : theme.colors.text,
+                                },
+                              ]}
+                            >
+                              {w.label}
+                            </Text>
+                          </Pressable>
+                        </WeekPillWithOffset>
                       );
                     })}
                   </ScrollView>
@@ -1199,7 +1519,7 @@ export default function ProgramTemplateEditorScreen() {
                     </Pressable>
                   </View>
                 </View>
-              </View>
+              </AnimatedView>
             )}
 
             {/* Week schedule (Days): neutral design, no week colors */}
@@ -1235,196 +1555,269 @@ export default function ProgramTemplateEditorScreen() {
                     const dayLabel = DAY_LABELS[day.order] ?? day.label;
                     const hasWorkouts = titles.length > 0;
                     return (
-                      <Pressable
-                        key={day.id}
-                        ref={(r) => {
-                          dayRowRefsRef.current[day.order] = r as View | null;
-                        }}
-                        onLayout={() => {
-                          const rowRef = dayRowRefsRef.current[day.order];
-                          if (
-                            rowRef &&
-                            typeof (rowRef as any).measureInWindow ===
-                              "function"
-                          ) {
-                            (rowRef as any).measureInWindow(
-                              (x: number, y: number, w: number, h: number) => {
-                                dayLayoutsRef.current[day.order] = {
-                                  x,
-                                  y,
-                                  width: w,
-                                  height: h,
-                                };
-                              }
-                            );
-                          }
-                        }}
-                        onPress={() =>
-                          setDayPlannerOpen({
-                            phaseIndex: clampedPhaseIndex,
-                            weekIndex: clampedWeekIndex,
-                            dayOrder: day.order,
-                          })
-                        }
-                        style={({ pressed }) => [
-                          styles.dayRow,
-                          {
-                            backgroundColor:
-                              theme.colors.surface3 ?? theme.colors.background,
-                            borderColor: theme.colors.border,
-                            opacity: pressed ? 0.92 : 1,
-                          },
-                        ]}
-                      >
-                        <Text
-                          weight="semibold"
-                          style={[
-                            styles.dayRowLabel,
-                            { color: theme.colors.textMuted },
-                          ]}
-                          numberOfLines={1}
-                        >
-                          {dayLabel}
-                        </Text>
-                        <View style={styles.dayRowChips}>
-                          {!hasWorkouts ? (
-                            <View
-                              style={[
-                                styles.workoutChip,
-                                {
-                                  backgroundColor: hexToRgba(
-                                    theme.colors.textMuted,
-                                    0.12
-                                  ),
-                                },
-                              ]}
-                            >
-                              <Icon
-                                name="barbell-outline"
-                                size={14}
-                                color={theme.colors.textMuted}
-                              />
-                              <Text
-                                style={[
-                                  styles.workoutChipText,
-                                  { color: theme.colors.textMuted },
-                                ]}
-                                numberOfLines={1}
-                              >
-                                {t(
-                                  "library.programsScreen.addWorkoutDay",
-                                  "Add workout"
-                                )}
-                              </Text>
-                            </View>
-                          ) : (
-                            titles.map((workoutTitle, idx) => {
-                              const isThisChipDragging =
-                                dragging &&
-                                dragging.fromDayOrder === day.order &&
-                                dragging.workoutIndex === idx;
-                              if (isThisChipDragging) {
-                                return (
-                                  <View
-                                    key={idx}
-                                    style={[
-                                      styles.workoutChip,
-                                      {
-                                        backgroundColor: hexToRgba(
-                                          theme.colors.accent,
-                                          0.15
-                                        ),
-                                        opacity: 0,
-                                      },
-                                    ]}
-                                  >
-                                    <Text
-                                      style={[
-                                        styles.workoutChipText,
-                                        { color: theme.colors.text },
-                                      ]}
-                                      numberOfLines={1}
-                                    >
-                                      {workoutTitle}
-                                    </Text>
-                                  </View>
-                                );
-                              }
-                              return (
-                                <Pressable
-                                  key={idx}
-                                  delayLongPress={500}
-                                  onLongPress={(e) => {
-                                    const ne = e.nativeEvent as any;
-                                    const pageX = ne?.pageX ?? 0;
-                                    const pageY = ne?.pageY ?? 0;
-                                    const lx = ne?.locationX ?? 0;
-                                    const ly = ne?.locationY ?? 0;
-                                    dragStartX.value = pageX;
-                                    dragStartY.value = pageY;
-                                    dragOverlayX.value = pageX;
-                                    dragOverlayY.value = pageY;
-                                    dragGrabOffsetX.value = lx;
-                                    dragGrabOffsetY.value = ly;
-                                    rootContainerRef.current?.measureInWindow(
-                                      (x, y) => {
-                                        rootLayoutRef.current = { x, y };
-                                        rootLayoutX.value = x;
-                                        rootLayoutY.value = y;
-                                      }
-                                    );
-                                    setDragging({
-                                      fromDayOrder: day.order,
-                                      workoutIndex: idx,
-                                      workoutTitle: workoutTitle,
-                                    });
-                                  }}
-                                  onPressOut={() => {
-                                    if (globalPanActive.value === 0) {
-                                      setDraggingState(null);
-                                    }
-                                  }}
-                                  onPress={() =>
-                                    setDayPlannerOpen({
-                                      phaseIndex: clampedPhaseIndex,
-                                      weekIndex: clampedWeekIndex,
-                                      dayOrder: day.order,
-                                    })
-                                  }
-                                >
-                                  <View
-                                    style={[
-                                      styles.workoutChip,
-                                      {
-                                        backgroundColor: hexToRgba(
-                                          theme.colors.accent,
-                                          0.15
-                                        ),
-                                      },
-                                    ]}
-                                  >
-                                    <Text
-                                      style={[
-                                        styles.workoutChipText,
-                                        { color: theme.colors.text },
-                                      ]}
-                                      numberOfLines={1}
-                                    >
-                                      {workoutTitle}
-                                    </Text>
-                                  </View>
-                                </Pressable>
+                      <DayRowWithScale key={day.id} dayOrder={day.order}>
+                        <Pressable
+                          ref={(r) => {
+                            dayRowRefsRef.current[day.order] = r as View | null;
+                          }}
+                          onLayout={() => {
+                            const rowRef = dayRowRefsRef.current[day.order];
+                            if (
+                              rowRef &&
+                              typeof (rowRef as any).measureInWindow ===
+                                "function"
+                            ) {
+                              (rowRef as any).measureInWindow(
+                                (
+                                  x: number,
+                                  y: number,
+                                  w: number,
+                                  h: number
+                                ) => {
+                                  dayLayoutsRef.current[day.order] = {
+                                    x,
+                                    y,
+                                    width: w,
+                                    height: h,
+                                  };
+                                }
                               );
+                            }
+                          }}
+                          onPress={() =>
+                            setDayPlannerOpen({
+                              phaseIndex: clampedPhaseIndex,
+                              weekIndex: clampedWeekIndex,
+                              dayOrder: day.order,
                             })
-                          )}
-                        </View>
-                      </Pressable>
+                          }
+                          style={({ pressed }) => [
+                            styles.dayRow,
+                            {
+                              backgroundColor:
+                                theme.colors.surface3 ??
+                                theme.colors.background,
+                              borderColor: theme.colors.border,
+                              opacity: pressed ? 0.92 : 1,
+                            },
+                          ]}
+                        >
+                          <Text
+                            weight="semibold"
+                            style={[
+                              styles.dayRowLabel,
+                              { color: theme.colors.textMuted },
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {dayLabel}
+                          </Text>
+                          <View style={styles.dayRowChips}>
+                            {!hasWorkouts ? (
+                              <View
+                                style={[
+                                  styles.workoutChip,
+                                  {
+                                    backgroundColor: hexToRgba(
+                                      theme.colors.textMuted,
+                                      0.12
+                                    ),
+                                  },
+                                ]}
+                              >
+                                <Icon
+                                  name="barbell-outline"
+                                  size={14}
+                                  color={theme.colors.textMuted}
+                                />
+                                <Text
+                                  style={[
+                                    styles.workoutChipText,
+                                    { color: theme.colors.textMuted },
+                                  ]}
+                                  numberOfLines={1}
+                                >
+                                  {t(
+                                    "library.programsScreen.addWorkoutDay",
+                                    "Add workout"
+                                  )}
+                                </Text>
+                              </View>
+                            ) : (
+                              titles.map((workoutTitle, idx) => {
+                                const isThisChipDragging =
+                                  dragging &&
+                                  dragging.fromDayOrder === day.order &&
+                                  dragging.workoutIndex === idx;
+                                if (isThisChipDragging) {
+                                  return (
+                                    <View
+                                      key={idx}
+                                      style={[
+                                        styles.workoutChip,
+                                        {
+                                          backgroundColor: hexToRgba(
+                                            theme.colors.accent,
+                                            0.15
+                                          ),
+                                          opacity: 0,
+                                        },
+                                      ]}
+                                    >
+                                      <Text
+                                        style={[
+                                          styles.workoutChipText,
+                                          { color: theme.colors.text },
+                                        ]}
+                                        numberOfLines={1}
+                                      >
+                                        {workoutTitle}
+                                      </Text>
+                                    </View>
+                                  );
+                                }
+                                return (
+                                  <Pressable
+                                    key={idx}
+                                    delayLongPress={500}
+                                    onLongPress={(e) => {
+                                      const ne = e.nativeEvent as any;
+                                      const pageX = ne?.pageX ?? 0;
+                                      const pageY = ne?.pageY ?? 0;
+                                      const lx = ne?.locationX ?? 0;
+                                      const ly = ne?.locationY ?? 0;
+                                      dragStartX.value = pageX;
+                                      dragStartY.value = pageY;
+                                      dragOverlayX.value = pageX;
+                                      dragOverlayY.value = pageY;
+                                      dragGrabOffsetX.value = lx;
+                                      dragGrabOffsetY.value = ly + DRAG_LIFT_Y;
+                                      dragModeShared.value = 1;
+                                      dragFocusSectionShared.value = 0;
+                                      rootContainerRef.current?.measureInWindow(
+                                        (x, y) => {
+                                          rootLayoutRef.current = { x, y };
+                                          rootLayoutX.value = x;
+                                          rootLayoutY.value = y;
+                                        }
+                                      );
+                                      setDragging({
+                                        fromDayOrder: day.order,
+                                        workoutIndex: idx,
+                                        workoutTitle: workoutTitle,
+                                      });
+                                    }}
+                                    onPress={() =>
+                                      setDayPlannerOpen({
+                                        phaseIndex: clampedPhaseIndex,
+                                        weekIndex: clampedWeekIndex,
+                                        dayOrder: day.order,
+                                      })
+                                    }
+                                  >
+                                    <View
+                                      style={[
+                                        styles.workoutChip,
+                                        {
+                                          backgroundColor: hexToRgba(
+                                            theme.colors.accent,
+                                            0.15
+                                          ),
+                                        },
+                                      ]}
+                                    >
+                                      <Text
+                                        style={[
+                                          styles.workoutChipText,
+                                          { color: theme.colors.text },
+                                        ]}
+                                        numberOfLines={1}
+                                      >
+                                        {workoutTitle}
+                                      </Text>
+                                    </View>
+                                  </Pressable>
+                                );
+                              })
+                            )}
+                          </View>
+                        </Pressable>
+                      </DayRowWithScale>
                     );
                   })}
                 </View>
               </View>
             )}
           </ScrollView>
+
+          {/* Carousel focus backdrop for phase/week dragging (pointerEvents none so dragging stays responsive) */}
+          {(draggingPhaseIndex != null || draggingWeekIndex != null) && (
+            <AnimatedView
+              pointerEvents="none"
+              style={[styles.carouselBackdrop, carouselBackdropStyle]}
+            >
+              <AnimatedView
+                style={[styles.carouselRegion, carouselTopRegionStyle]}
+              >
+                <AnimatedBlurView
+                  intensity={18}
+                  tint="dark"
+                  style={StyleSheet.absoluteFillObject}
+                />
+                <View
+                  style={[
+                    StyleSheet.absoluteFillObject,
+                    { backgroundColor: "rgba(0,0,0,0.12)" },
+                  ]}
+                />
+              </AnimatedView>
+              <AnimatedView
+                style={[styles.carouselRegion, carouselBottomRegionStyle]}
+              >
+                <AnimatedBlurView
+                  intensity={18}
+                  tint="dark"
+                  style={StyleSheet.absoluteFillObject}
+                />
+                <View
+                  style={[
+                    StyleSheet.absoluteFillObject,
+                    { backgroundColor: "rgba(0,0,0,0.12)" },
+                  ]}
+                />
+              </AnimatedView>
+              <AnimatedView
+                style={[styles.carouselRegion, carouselLeftRegionStyle]}
+              >
+                <AnimatedBlurView
+                  intensity={18}
+                  tint="dark"
+                  style={StyleSheet.absoluteFillObject}
+                />
+                <View
+                  style={[
+                    StyleSheet.absoluteFillObject,
+                    { backgroundColor: "rgba(0,0,0,0.12)" },
+                  ]}
+                />
+              </AnimatedView>
+              <AnimatedView
+                style={[styles.carouselRegion, carouselRightRegionStyle]}
+              >
+                <AnimatedBlurView
+                  intensity={18}
+                  tint="dark"
+                  style={StyleSheet.absoluteFillObject}
+                />
+                <View
+                  style={[
+                    StyleSheet.absoluteFillObject,
+                    { backgroundColor: "rgba(0,0,0,0.12)" },
+                  ]}
+                />
+              </AnimatedView>
+            </AnimatedView>
+          )}
 
           {/* Drag overlay: chip clone driven by UI thread (no re-renders while dragging) */}
           {dragging && (
@@ -1773,6 +2166,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 6,
+  },
+  carouselBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 5,
+  },
+  carouselRegion: {
+    position: "absolute",
+    overflow: "hidden",
   },
   workoutChipText: { fontSize: 12, fontWeight: "500", flexShrink: 1 },
   menuOverlay: {
