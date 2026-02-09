@@ -3,6 +3,7 @@ import { RefreshControl, ScrollView, View } from "react-native";
 
 import { WorkoutCard } from "@/features/library/components/workouts/WorkoutCard";
 import { useWorkouts } from "@/features/library/hooks/workouts/useWorkouts";
+import { AssignToClientsSheet } from "@/features/clients/components/assignments/AssignToClientsSheet";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import {
   Button,
@@ -18,6 +19,8 @@ import {
 export default function WorkoutsScreen() {
   const { t } = useAppTranslation();
   const theme = useTheme();
+  const [assignOpen, setAssignOpen] = React.useState(false);
+  const [assignItem, setAssignItem] = React.useState<{ id: string; title: string } | null>(null);
   const {
     rows,
     isLoading,
@@ -27,6 +30,11 @@ export default function WorkoutsScreen() {
     onAddWorkout,
     onOpenWorkout,
   } = useWorkouts();
+
+  const openAssign = React.useCallback((id: string, title: string) => {
+    setAssignItem({ id, title });
+    setAssignOpen(true);
+  }, []);
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -77,11 +85,23 @@ export default function WorkoutsScreen() {
                 updatedAtLabel={t("library.workoutsList.updatedAt")}
                 defaultTitle={t("builder.workoutDetails.defaultTitle")}
                 onPress={() => onOpenWorkout(w.id)}
+                onPressAssign={() => {
+                  openAssign(w.id, w.title || t("builder.workoutDetails.defaultTitle"));
+                }}
               />
             ))}
           </VStack>
         )}
       </ScrollView>
+
+      {assignItem ? (
+        <AssignToClientsSheet
+          visible={assignOpen}
+          onClose={() => setAssignOpen(false)}
+          mode="workout"
+          item={assignItem}
+        />
+      ) : null}
     </View>
   );
 }

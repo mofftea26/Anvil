@@ -11,9 +11,11 @@ export function ProgramTemplateCardHeader(props: {
   editedDate: string;
   onOpenInfo: () => void;
   onOpenMenu: () => void;
+  showActions?: boolean;
 }) {
   const { t } = useAppTranslation();
   const theme = useTheme();
+  const showActions = props.showActions !== false;
 
   return (
     <HStack align="flex-start" justify="space-between" style={styles.header}>
@@ -64,7 +66,8 @@ export function ProgramTemplateCardHeader(props: {
         </View>
       </VStack>
 
-      <HStack align="center" gap={4}>
+      {showActions ? (
+        <HStack align="center" gap={4}>
         <Pressable
           onPress={(e) => {
             e.stopPropagation();
@@ -105,7 +108,8 @@ export function ProgramTemplateCardHeader(props: {
         >
           <Icon name="cog" size={22} color={theme.colors.textMuted} />
         </Pressable>
-      </HStack>
+        </HStack>
+      ) : null}
     </HStack>
   );
 }

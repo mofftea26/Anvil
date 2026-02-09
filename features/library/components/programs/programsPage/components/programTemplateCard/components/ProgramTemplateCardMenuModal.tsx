@@ -8,6 +8,7 @@ export function ProgramTemplateCardMenuModal(props: {
   visible: boolean;
   isArchived: boolean;
   onClose: () => void;
+  onAssign?: () => void;
   onDuplicate: () => void;
   onArchive: () => void;
   onUnarchive: () => void;
@@ -31,6 +32,17 @@ export function ProgramTemplateCardMenuModal(props: {
             },
           ]}
         >
+          {props.onAssign ? (
+            <Pressable
+              style={[styles.item, { borderBottomColor: theme.colors.border }]}
+              onPress={props.onAssign}
+            >
+              <Text style={[styles.itemText, { color: theme.colors.text }]}>
+                {t("clients.assign", "Assign")}
+              </Text>
+            </Pressable>
+          ) : null}
+
           <Pressable
             style={[styles.item, { borderBottomColor: theme.colors.border }]}
             onPress={props.onDuplicate}

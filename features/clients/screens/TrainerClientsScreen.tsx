@@ -1,11 +1,13 @@
 import { router } from "expo-router";
 import React from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 
 import {
   TrainerClientCard,
   type TrainerClientRow,
 } from "@/features/clients/components/trainer-clients/TrainerClientCard";
+import { useTrainerClientsAssignmentsSummary } from "@/features/clients/hooks/assignments/useTrainerClientsAssignmentsSummary";
 import { useTrainerClients } from "@/features/clients/hooks/trainer-clients/useTrainerClients";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import {
@@ -24,6 +26,15 @@ export default function TrainerClientsScreen() {
   const { t } = useAppTranslation();
   const theme = useTheme();
 
+  const [assignmentsRefreshToken, setAssignmentsRefreshToken] = React.useState(0);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      // Ensure assignment badges/buttons update after edits done on other screens (e.g. client details).
+      setAssignmentsRefreshToken((x) => x + 1);
+    }, [])
+  );
+
   const {
     data,
     isLoading,
@@ -32,7 +43,18 @@ export default function TrainerClientsScreen() {
     onRefresh,
     onArchive,
     archiveLoading,
+    trainerId,
   } = useTrainerClients();
+
+  const clientIds = React.useMemo(
+    () => (data as TrainerClientRow[] | undefined)?.map((r) => r.clientId) ?? [],
+    [data]
+  );
+  const summary = useTrainerClientsAssignmentsSummary({
+    trainerId,
+    clientIds,
+    refreshToken: assignmentsRefreshToken,
+  });
 
   const handleView = (clientId: string) => {
     router.push(`/(trainer)/client/${clientId}` as Parameters<typeof router.push>[0]);
@@ -102,6 +124,19 @@ export default function TrainerClientsScreen() {
                 onPressView={handleView}
                 onPressArchive={onArchive}
                 archiveLoading={archiveLoading}
+                onAssigned={() => setAssignmentsRefreshToken((x) => x + 1)}
+                assignmentSummary={{
+                  activeProgram: summary.activeProgramsByClientId[row.clientId] ?? null,
+                  todayWorkout: summary.todayWorkoutByClientId[row.clientId] ?? null,
+                  programTitle:
+                    summary.programTitleById[
+                      summary.activeProgramsByClientId[row.clientId]?.programtemplateid ?? ""
+                    ] ?? null,
+                  workoutTitle:
+                    summary.workoutTitleById[
+                      summary.todayWorkoutByClientId[row.clientId]?.workoutTemplateId ?? ""
+                    ] ?? null,
+                }}
               />
             ))}
           </VStack>

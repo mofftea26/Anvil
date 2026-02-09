@@ -28,10 +28,13 @@ type Props = {
   lastEditedLabel: string;
   isArchived?: boolean;
   onPress: () => void;
+  onAssign?: () => void;
   onDuplicate: () => void;
   onArchive: () => void;
   onUnarchive: () => void;
   onDelete: () => void;
+  showActions?: boolean;
+  assignmentStats?: { doing: number; finished: number } | null;
 };
 
 export function ProgramTemplateCard({
@@ -39,10 +42,13 @@ export function ProgramTemplateCard({
   lastEditedLabel,
   isArchived = false,
   onPress,
+  onAssign,
   onDuplicate,
   onArchive,
   onUnarchive,
   onDelete,
+  showActions = true,
+  assignmentStats = null,
 }: Props) {
   const { t } = useAppTranslation();
   const theme = useTheme();
@@ -97,6 +103,7 @@ export function ProgramTemplateCard({
                 editedDate={editedDate}
                 onOpenInfo={() => setInfoDialogOpen(true)}
                 onOpenMenu={() => setMenuOpen(true)}
+                showActions={showActions}
               />
 
               <ProgramTemplateCardStatsRow
@@ -104,6 +111,7 @@ export function ProgramTemplateCard({
                 difficultyLabel={difficultyLabel}
                 totalWeeks={totalWeeks}
                 phaseCount={phaseCount}
+                assignmentStats={assignmentStats}
               />
             </VStack>
           </View>
@@ -120,6 +128,14 @@ export function ProgramTemplateCard({
         visible={menuOpen}
         isArchived={isArchived}
         onClose={() => setMenuOpen(false)}
+        onAssign={
+          showActions && onAssign
+            ? () => {
+                setMenuOpen(false);
+                onAssign();
+              }
+            : undefined
+        }
         onDuplicate={() => {
           setMenuOpen(false);
           onDuplicate();

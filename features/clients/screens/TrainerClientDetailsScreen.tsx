@@ -6,6 +6,7 @@ import { ClientDetailsBasicInfoCard } from "@/features/clients/components/traine
 import { ClientDetailsHeroCard } from "@/features/clients/components/trainer-client-details/ClientDetailsHeroCard";
 import { ClientDetailsLinkActionsCard } from "@/features/clients/components/trainer-client-details/ClientDetailsLinkActionsCard";
 import { ClientDetailsManagementCard } from "@/features/clients/components/trainer-client-details/ClientDetailsManagementCard";
+import { ClientAssignedItemsCard } from "@/features/clients/components/assignments/ClientAssignedItemsCard";
 import { useTrainerClientDetails } from "@/features/clients/hooks/trainer-client-details/useTrainerClientDetails";
 import { KeyboardScreen } from "@/shared/components/KeyboardScreen";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
@@ -115,6 +116,8 @@ export default function TrainerClientDetailsScreen() {
           ) : null}
 
           <ClientDetailsBasicInfoCard profile={clientProfile} />
+
+          <ClientAssignedItemsCard clientId={clientId} />
 
           <ClientDetailsManagementCard
             form={managementForm}

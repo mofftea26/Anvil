@@ -54,5 +54,6 @@ export function useTrainerClients() {
     onRefresh,
     onArchive,
     archiveLoading: setStatusState.isLoading,
+    trainerId,
   };
 }

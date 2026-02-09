@@ -12,11 +12,14 @@ export function ProgramTemplateCardStatsRow(props: {
   difficultyLabel: string;
   totalWeeks: number;
   phaseCount: number;
+  assignmentStats?: { doing: number; finished: number } | null;
 }) {
   const { t } = useAppTranslation();
   const theme = useTheme();
   const diffColors = getDifficultyColors(props.difficulty);
   const weeksLabel = t("library.programsScreen.weeks", { count: props.totalWeeks });
+  const doing = props.assignmentStats?.doing ?? null;
+  const finished = props.assignmentStats?.finished ?? null;
 
   return (
     <View style={styles.statsContainer}>
@@ -95,6 +98,36 @@ export function ProgramTemplateCardStatsRow(props: {
             </Text>
           </VStack>
         </View>
+
+        {doing != null && finished != null ? (
+          <View style={styles.statItem}>
+            <View
+              style={[
+                styles.statIconContainer,
+                { backgroundColor: hexToRgba(theme.colors.textMuted, 0.12) },
+              ]}
+            >
+              <Icon
+                name="people-outline"
+                size={16}
+                color={theme.colors.textMuted}
+                strokeWidth={2}
+              />
+            </View>
+            <VStack style={styles.statTextContainer}>
+              <Text
+                weight="bold"
+                style={[styles.statLabel, { color: theme.colors.text, fontSize: 14 }]}
+                numberOfLines={1}
+              >
+                {t("library.programsScreen.programDoingFinished", "{{doing}} doing · {{finished}} finished", {
+                  doing,
+                  finished,
+                })}
+              </Text>
+            </VStack>
+          </View>
+        ) : null}
       </HStack>
     </View>
   );

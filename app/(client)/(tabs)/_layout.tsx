@@ -55,6 +55,21 @@ export default function ClientTabsLayout() {
       />
 
       <Tabs.Screen
+        name="workouts"
+        options={{
+          title: t("tabs.workouts", "Workouts"),
+          tabBarIcon: ({ color, size, focused }) => (
+            <Icon
+              name={focused ? "calendar-03" : "calendar-03"}
+              size={size}
+              color={color}
+              strokeWidth={focused ? 2 : 1.5}
+            />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
         name="coach"
         options={{
           title: t("tabs.coach"),

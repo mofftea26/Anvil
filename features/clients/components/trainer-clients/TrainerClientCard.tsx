@@ -19,6 +19,7 @@ import {
   VStack,
 } from "@/shared/ui";
 import { formatSlugToLabel } from "@/shared/utils/formatSlugToLabel";
+import { AssignToClientActions } from "@/features/clients/components/assignments/AssignToClientActions";
 
 export type TrainerClientRow = {
   id: string;
@@ -46,6 +47,13 @@ type TrainerClientCardProps = {
     isArchived: boolean
   ) => void | Promise<void>;
   archiveLoading: boolean;
+  onAssigned?: () => void;
+  assignmentSummary?: {
+    activeProgram: { id: string; programtemplateid: string; startdate: string } | null;
+    todayWorkout: { id: string; workoutTemplateId: string; scheduledFor: string } | null;
+    programTitle?: string | null;
+    workoutTitle?: string | null;
+  };
 };
 
 export function TrainerClientCard({
@@ -53,6 +61,8 @@ export function TrainerClientCard({
   onPressView,
   onPressArchive,
   archiveLoading,
+  onAssigned,
+  assignmentSummary,
 }: TrainerClientCardProps) {
   const { t } = useAppTranslation();
   const theme = useTheme();
@@ -73,6 +83,13 @@ export function TrainerClientCard({
 
   const nextCheckIn = row.management?.nextCheckInAt ?? null;
   const checkInText = nextCheckIn ? formatCheckIn(nextCheckIn, t) : "—";
+  const hasActiveProgram = Boolean(assignmentSummary?.activeProgram);
+  const todayWorkoutId = assignmentSummary?.todayWorkout?.workoutTemplateId ?? null;
+  const programTitle =
+    assignmentSummary?.programTitle ??
+    assignmentSummary?.activeProgram?.programtemplateid ??
+    null;
+  const workoutTitle = assignmentSummary?.workoutTitle ?? null;
 
   const statusPill = isArchived
     ? {
@@ -222,6 +239,15 @@ export function TrainerClientCard({
             >
               {t("linking.clients.viewClient")}
             </Button>
+            {!hasActiveProgram ? (
+              <View style={{ flex: 1 }}>
+                <AssignToClientActions
+                  clientId={row.clientId}
+                  variant="compact"
+                  onAssigned={onAssigned}
+                />
+              </View>
+            ) : null}
             <Button
               height={40}
               fullWidth
@@ -234,6 +260,46 @@ export function TrainerClientCard({
                 : t("linking.clients.archive")}
             </Button>
           </HStack>
+
+          {hasActiveProgram ? (
+            <View
+              style={{
+                marginTop: 12,
+                backgroundColor: "rgba(255,255,255,0.06)",
+                borderWidth: 1,
+                borderColor: "rgba(255,255,255,0.10)",
+                borderRadius: 14,
+                paddingVertical: 10,
+                paddingHorizontal: 12,
+              }}
+            >
+              <VStack style={{ gap: 8 }}>
+                <HStack align="center" justify="space-between">
+                  <Text variant="caption" muted>
+                    {t("clients.assigned", "Assigned")}
+                  </Text>
+                  <Text variant="caption" muted>
+                    {t("clients.assignLocked", "Locked")}
+                  </Text>
+                </HStack>
+                <HStack align="center" justify="space-between">
+                  <Text numberOfLines={1} weight="semibold" style={{ flex: 1 }}>
+                    {t("clients.program", "Program")} • {programTitle}
+                  </Text>
+                </HStack>
+                <HStack align="center" justify="space-between">
+                  <Text variant="caption" muted>
+                    {t("clients.todaysWorkout", "Today")}
+                  </Text>
+                  <Text numberOfLines={1} weight="semibold">
+                    {todayWorkoutId
+                      ? workoutTitle ?? t("clients.workout", "Workout")
+                      : t("clients.rest", "Rest")}
+                  </Text>
+                </HStack>
+              </VStack>
+            </View>
+          ) : null}
         </VStack>
       </View>
     </Card>

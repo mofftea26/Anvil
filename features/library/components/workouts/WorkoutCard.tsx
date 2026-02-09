@@ -12,6 +12,7 @@ type WorkoutCardProps = {
   updatedAtLabel: string;
   defaultTitle: string;
   onPress: () => void;
+  onPressAssign?: () => void;
 };
 
 export function WorkoutCard({
@@ -19,6 +20,7 @@ export function WorkoutCard({
   updatedAtLabel,
   defaultTitle,
   onPress,
+  onPressAssign,
 }: WorkoutCardProps) {
   const theme = useTheme();
   const title = workout.title || defaultTitle;
@@ -138,7 +140,34 @@ export function WorkoutCard({
               </VStack>
 
               {/* Duration Badge - Prominent Circle */}
-              <DurationCircle minutes={durationMinutes} size="small" />
+              <HStack align="center" gap={8}>
+                {onPressAssign ? (
+                  <Pressable
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      onPressAssign();
+                    }}
+                    hitSlop={10}
+                    style={({ pressed }) => [
+                      styles.assignBtn,
+                      {
+                        backgroundColor: pressed
+                          ? hexToRgba(theme.colors.accent, 0.18)
+                          : hexToRgba(theme.colors.textMuted, 0.10),
+                      },
+                    ]}
+                    accessibilityLabel="Assign to clients"
+                  >
+                    <Icon
+                      name="people-outline"
+                      size={18}
+                      color={theme.colors.text}
+                      strokeWidth={1.5}
+                    />
+                  </Pressable>
+                ) : null}
+                <DurationCircle minutes={durationMinutes} size="small" />
+              </HStack>
             </HStack>
 
             {/* Stats Section - Modern Horizontal Layout */}
@@ -342,5 +371,12 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     lineHeight: 14,
+  },
+  assignBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

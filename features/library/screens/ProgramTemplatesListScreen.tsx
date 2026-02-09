@@ -4,6 +4,8 @@ import { RefreshControl, ScrollView, View } from "react-native";
 
 import { ProgramTemplateCard } from "@/features/library/components/programs/programsPage/components/ProgramTemplateCard";
 import { useProgramTemplatesList } from "@/features/library/components/programs/programsPage/hooks/useProgramTemplatesList";
+import { AssignToClientsSheet } from "@/features/clients/components/assignments/AssignToClientsSheet";
+import { useProgramAssignmentStats } from "@/features/clients/hooks/assignments/useProgramAssignmentStats";
 import {
   DIFFICULTY_ICONS,
   getDifficultyColors,
@@ -25,6 +27,8 @@ export default function ProgramTemplatesListScreen() {
   const { t } = useAppTranslation();
   const theme = useTheme();
   const alert = useAppAlert();
+  const [assignOpen, setAssignOpen] = React.useState(false);
+  const [assignItem, setAssignItem] = React.useState<{ id: string; title: string } | null>(null);
   const {
     rows,
     isLoading,
@@ -48,6 +52,7 @@ export default function ProgramTemplatesListScreen() {
   );
 
   const lastEditedLabel = t("library.programsScreen.lastEdited");
+  const { assignmentStatsByProgramId } = useProgramAssignmentStats(rows.map((r) => r.id));
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -226,6 +231,10 @@ export default function ProgramTemplatesListScreen() {
                 lastEditedLabel={lastEditedLabel}
                 isArchived={template.isArchived}
                 onPress={() => onOpenProgram(template.id)}
+                onAssign={() => {
+                  setAssignItem({ id: template.id, title: template.title || "Program" });
+                  setAssignOpen(true);
+                }}
                 onDuplicate={() => onDuplicate(template.id)}
                 onArchive={() => {
                   alert.confirm({
@@ -270,11 +279,21 @@ export default function ProgramTemplatesListScreen() {
                     onConfirm: () => onDelete(template.id),
                   });
                 }}
+                assignmentStats={assignmentStatsByProgramId[template.id] ?? null}
               />
             ))}
           </VStack>
         )}
       </ScrollView>
+
+      {assignItem ? (
+        <AssignToClientsSheet
+          visible={assignOpen}
+          onClose={() => setAssignOpen(false)}
+          mode="program"
+          item={assignItem}
+        />
+      ) : null}
     </View>
   );
 }

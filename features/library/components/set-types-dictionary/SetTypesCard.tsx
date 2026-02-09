@@ -1,11 +1,11 @@
 import type { SetTypeRow } from "@/features/library/types/setTypes";
 import { getSetTypeIconName } from "@/features/library/utils/setTypeIcons";
-import React from "react";
 import { LinearGradient } from "expo-linear-gradient";
+import React from "react";
 import { StyleSheet, View } from "react-native";
 
-import { Card, Icon, Text, useTheme } from "@/shared/ui";
 import { hexToRgba } from "@/features/profile/utils/trainerProfileUtils";
+import { Card, Icon, Text, useTheme } from "@/shared/ui";
 
 type SetTypesCardProps = {
   row: SetTypeRow;
