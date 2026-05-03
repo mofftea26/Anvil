@@ -1,9 +1,8 @@
-import React from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { Animated, Pressable, StyleSheet, View } from "react-native";
 
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import { Icon, Text, useTheme } from "@/shared/ui";
-import { hexToRgba } from "@/features/profile/utils/trainerProfileUtils";
 
 export type WorkoutsTopTabKey = "program" | "schedule" | "history" | "stats";
 
@@ -21,78 +20,122 @@ export function WorkoutsTopTabs(props: {
 }) {
   const theme = useTheme();
   const { t } = useAppTranslation();
+  const pulse = useRef(new Animated.Value(1)).current;
 
-  const tabs: Array<{ key: WorkoutsTopTabKey; title: string; hidden?: boolean }> =
+  useEffect(() => {
+    Animated.sequence([
+      Animated.timing(pulse, {
+        toValue: 0.985,
+        duration: 90,
+        useNativeDriver: true,
+      }),
+      Animated.spring(pulse, {
+        toValue: 1,
+        useNativeDriver: true,
+        speed: 22,
+        bounciness: 4,
+      }),
+    ]).start();
+  }, [props.active, pulse]);
+
+  const tabs: { key: WorkoutsTopTabKey; title: string; hidden?: boolean }[] =
     [
-      { key: "program", title: t("client.workouts.program", "My Program") },
+      { key: "program", title: t("client.workouts.program", "Program") },
       { key: "schedule", title: t("client.workouts.schedule", "Schedule") },
       { key: "history", title: t("client.workouts.history", "History") },
       { key: "stats", title: t("client.workouts.stats", "Stats"), hidden: !props.showStats },
     ];
 
+  const visibleTabs = tabs.filter((x) => !x.hidden);
+
   return (
-    <View style={[styles.wrap, { backgroundColor: theme.colors.surface }]}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.content,
-          { paddingHorizontal: theme.spacing.lg },
+    <View style={[styles.wrap, { paddingHorizontal: theme.spacing.sm }]}>
+      <Animated.View
+        style={[
+          styles.row,
+          {
+            backgroundColor: theme.colors.surface2,
+            borderColor: theme.colors.border,
+            transform: [{ scale: pulse }],
+          },
         ]}
       >
-        {tabs
-          .filter((x) => !x.hidden)
-          .map((tab) => {
-            const isActive = tab.key === props.active;
-            return (
-              <Pressable
-                key={tab.key}
-                onPress={() => props.onChange(tab.key)}
-                style={({ pressed }) => [
-                  styles.tab,
+        {visibleTabs.map((tab) => {
+          const isActive = tab.key === props.active;
+          return (
+            <Pressable
+              key={tab.key}
+              onPress={() => props.onChange(tab.key)}
+              style={({ pressed }) => [
+                styles.tab,
+                {
+                  opacity: pressed ? 0.84 : 1,
+                  transform: [{ scale: pressed ? 0.97 : 1 }],
+                  backgroundColor: isActive ? theme.colors.surface : "transparent",
+                },
+              ]}
+            >
+              <Icon
+                name={icons[tab.key]}
+                size={15}
+                color={isActive ? theme.colors.accent : theme.colors.textMuted}
+                strokeWidth={isActive ? 2 : 1.6}
+              />
+              <Text
+                style={{
+                  color: isActive ? theme.colors.text : theme.colors.textMuted,
+                  fontWeight: isActive ? "700" : "600",
+                  fontSize: 12,
+                }}
+                numberOfLines={1}
+              >
+                {tab.title}
+              </Text>
+              <Animated.View
+                style={[
+                  styles.indicator,
                   {
-                    backgroundColor: isActive
-                      ? hexToRgba(theme.colors.accent, 0.15)
-                      : theme.colors.surface2,
-                    opacity: pressed ? 0.85 : 1,
+                    backgroundColor: isActive ? theme.colors.accent : "transparent",
+                    transform: [{ scaleX: isActive ? 1 : 0.7 }],
                   },
                 ]}
-              >
-                <Icon
-                  name={icons[tab.key]}
-                  size={16}
-                  color={isActive ? theme.colors.accent : theme.colors.textMuted}
-                  strokeWidth={isActive ? 2 : 1.5}
-                />
-                <Text
-                  style={{
-                    color: isActive ? theme.colors.accent : theme.colors.text,
-                    fontWeight: isActive ? "700" : "600",
-                    fontSize: 13,
-                  }}
-                  numberOfLines={1}
-                >
-                  {tab.title}
-                </Text>
-              </Pressable>
-            );
-          })}
-      </ScrollView>
+              />
+            </Pressable>
+          );
+        })}
+      </Animated.View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { paddingVertical: 10 },
-  content: { gap: 10 },
-  tab: {
+  wrap: { paddingTop: 4, paddingBottom: 2 },
+  row: {
+    minHeight: 40,
+    borderRadius: 12,
+    borderWidth: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    minHeight: 40,
+    padding: 3,
+    gap: 4,
+  },
+  tab: {
+    flex: 1,
+    borderRadius: 10,
+    minHeight: 36,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+    position: "relative",
+  },
+  indicator: {
+    position: "absolute",
+    bottom: 3,
+    width: 16,
+    height: 2,
+    borderRadius: 999,
   },
 });
 

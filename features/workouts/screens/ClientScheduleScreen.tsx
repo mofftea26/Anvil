@@ -1,14 +1,15 @@
-import React, { useEffect, useMemo } from "react";
-import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
-import { Text, useTheme, VStack } from "@/shared/ui";
+import { appToast, Text, useTheme, VStack } from "@/shared/ui";
 
-import { AssignedWorkoutCard } from "../components/AssignedWorkoutCard";
-import { DayPickerChips } from "../components/DayPickerChips";
-import { WeekSwitcher } from "../components/WeekSwitcher";
+import { updateClientWorkoutAssignmentSchedule } from "../api/clientWorkouts.api";
+import { ScheduleTimelineBoard } from "../components/ScheduleTimelineBoard";
 import { useClientWorkoutSchedule } from "../hooks/useClientWorkoutSchedule";
+import { useClientProgramAssignments } from "../hooks/useClientProgramAssignments";
+import { useProgramTemplatesPublicMap } from "../hooks/useProgramTemplatesPublicMap";
 import { useWorkoutTemplatesMap } from "../hooks/useWorkoutTemplatesMap";
 
 function ScheduleSkeleton() {
@@ -35,120 +36,147 @@ export function ClientScheduleScreen(props: { clientId: string }) {
   const { t } = useAppTranslation();
 
   const schedule = useClientWorkoutSchedule({ clientId: props.clientId });
+  const { error, showErrorToast } = schedule;
+  const [timeOverrides, setTimeOverrides] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    schedule.showErrorToast();
-  }, [schedule.error, schedule.showErrorToast]);
+    showErrorToast();
+  }, [error, showErrorToast]);
 
-  const templateIds = useMemo(
-    () =>
-      schedule.visibleGroups.flatMap((g) =>
-        g.assignments.map((a) => a.workoutTemplateId)
-      ),
-    [schedule.visibleGroups]
-  );
+  const templateIds = useMemo(() => schedule.groups.flatMap((g) => g.assignments.map((a) => a.workoutTemplateId)), [schedule.groups]);
   const { templatesById } = useWorkoutTemplatesMap(templateIds);
-
-  const dayChipLabels = useMemo(
-    () => schedule.groups.map((g) => g.label.split(",")[0] ?? g.label),
-    [schedule.groups]
+  const programAssignments = useClientProgramAssignments({ clientId: props.clientId });
+  const programTemplateIds = useMemo(
+    () => programAssignments.items.map((x) => x.programTemplateId),
+    [programAssignments.items]
   );
+  const { templatesById: programTemplatesById } = useProgramTemplatesPublicMap(programTemplateIds);
+  const programTitleByAssignmentId = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const row of programAssignments.items) {
+      const title =
+        programTemplatesById[row.programTemplateId]?.title ??
+        t("clients.program", "Program");
+      map.set(row.id, title);
+    }
+    return map;
+  }, [programAssignments.items, programTemplatesById, t]);
 
-  const hasAny = schedule.visibleGroups.some((g) => g.assignments.length > 0);
+  const days = useMemo(() => {
+    return schedule.groups.map((group, idx) => {
+      const d = new Date(`${group.dateKey}T00:00:00`);
+      return {
+        dateKey: group.dateKey,
+        dayLabel: d.toLocaleDateString(undefined, { weekday: "short" }),
+        dayNumber: String(d.getDate()),
+        isToday: group.dateKey === schedule.todayKey,
+        isActive: idx === schedule.selectedDayIndex,
+        hasWorkouts: group.assignments.length > 0,
+      };
+    });
+  }, [schedule.groups, schedule.selectedDayIndex, schedule.todayKey]);
+
+  const assignmentById = useMemo(() => {
+    const map = new Map<string, { id: string; scheduledFor: string }>();
+    for (const group of schedule.groups) {
+      for (const row of group.assignments) {
+        map.set(row.id, { id: row.id, scheduledFor: row.scheduledFor });
+      }
+    }
+    return map;
+  }, [schedule.groups]);
+
+  const timelineItems = useMemo(
+    () =>
+      (schedule.selectedGroup ? [schedule.selectedGroup] : []).flatMap((group) =>
+        group.assignments.map((a) => {
+          const isProgram = a.source === "program" || a.programAssignmentId != null;
+          const programTitle = a.programAssignmentId
+            ? (programTitleByAssignmentId.get(a.programAssignmentId) ?? null)
+            : null;
+          const statusLabel =
+            String(a.status ?? "") === "completed"
+              ? t("common.completed", "Completed")
+              : t("client.workouts.pending", "Pending");
+          return {
+            id: a.id,
+            dateKey: group.dateKey,
+            scheduledTime: timeOverrides[a.id] ?? a.scheduledTime,
+            title:
+              templatesById[a.workoutTemplateId]?.title ??
+              t("client.program.plannedWorkout", "Planned workout"),
+            subtitle: isProgram
+              ? programTitle ?? t("clients.program", "Program")
+              : t("clients.manual", "Single"),
+            sourceColor: isProgram ? theme.colors.accent2 : theme.colors.accent,
+            statusLabel,
+            statusColor:
+              String(a.status ?? "") === "completed"
+                ? theme.colors.accent
+                : theme.colors.textMuted,
+          };
+        })
+      ),
+    [schedule.selectedGroup, programTitleByAssignmentId, templatesById, t, theme.colors, timeOverrides]
+  );
 
   return (
-    <View style={{ flex: 1 }}>
-      <View style={{ paddingHorizontal: theme.spacing.lg, paddingTop: theme.spacing.md }}>
-        <WeekSwitcher
-          label={schedule.weekLabel}
-          onPrev={schedule.goPrevWeek}
-          onNext={schedule.goNextWeek}
-          onToday={schedule.goToday}
-        />
-      </View>
-
-      <DayPickerChips
-        labels={dayChipLabels}
-        activeIndex={schedule.selectedDayIndex}
-        onChange={schedule.setSelectedDayIndex}
-      />
-
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={[
-          styles.content,
-          {
-            paddingHorizontal: theme.spacing.lg,
-            paddingTop: theme.spacing.lg,
-            paddingBottom: theme.spacing.lg,
-          },
-        ]}
-        refreshControl={
-          <RefreshControl
-            refreshing={schedule.refreshing}
-            onRefresh={() => void schedule.onRefresh()}
-            tintColor={theme.colors.text}
-          />
-        }
-      >
+    <View style={[styles.root, { paddingHorizontal: theme.spacing.sm, paddingTop: theme.spacing.xs, paddingBottom: theme.spacing.sm }]}>
         {schedule.isLoading ? (
           <ScheduleSkeleton />
-        ) : !hasAny ? (
-          <View style={[styles.empty, { borderColor: theme.colors.border }]}>
-            <Text weight="bold" style={{ color: theme.colors.text, fontSize: 16 }}>
-              {t("client.workouts.emptyTitle", "No workouts scheduled")}
-            </Text>
-            <Text style={{ color: theme.colors.textMuted, marginTop: 6, lineHeight: 20 }}>
+        ) : (
+          <VStack style={{ gap: 6, flex: 1 }}>
+            <ScheduleTimelineBoard
+              title={t("client.workouts.schedule", "Schedule")}
+              monthLabel={schedule.monthLabel}
+              monthIndex={schedule.monthIndex}
+              year={schedule.year}
+              days={days}
+              items={timelineItems}
+              canDrag
+              onPrevMonth={() => schedule.goPrevMonth()}
+              onNextMonth={() => schedule.goNextMonth()}
+              onChangeMonthYear={schedule.setMonthYear}
+              onSelectDay={(dateKey) => {
+                schedule.setSelectedDateKey(dateKey);
+              }}
+              onPressItem={(id) => router.push(`/(client)/workouts/assigned/${id}` as any)}
+              onDropTime={async (id, newTime) => {
+                const assignment = assignmentById.get(id);
+                if (!assignment) return;
+                const prev = timeOverrides[id];
+                setTimeOverrides((state) => ({ ...state, [id]: newTime }));
+                try {
+                  await updateClientWorkoutAssignmentSchedule({
+                    assignmentId: id,
+                    scheduledFor: assignment.scheduledFor,
+                    scheduledTime: newTime,
+                  });
+                  void schedule.onRefresh();
+                } catch (e: unknown) {
+                  setTimeOverrides((state) => {
+                    const next = { ...state };
+                    if (prev == null) delete next[id];
+                    else next[id] = prev;
+                    return next;
+                  });
+                  appToast.error(e instanceof Error ? e.message : "Failed to update schedule");
+                }
+              }}
+            />
+            <Text style={{ color: theme.colors.textMuted, fontSize: 10, marginTop: "auto" }}>
               {t(
-                "client.workouts.emptySubtitle",
-                "When your trainer assigns workouts, you’ll see them here."
+                "client.workouts.dragHint",
+                "Drag workouts on the timeline to set their time. If no time is assigned, they default to 8:00 AM."
               )}
             </Text>
-          </View>
-        ) : (
-          schedule.visibleGroups
-            .filter((g) => g.assignments.length > 0)
-            .map((g) => (
-              <VStack key={g.dateKey} style={{ gap: 12 }}>
-                <Text
-                  weight="semibold"
-                  style={{
-                    color: theme.colors.textMuted,
-                    textTransform: "uppercase",
-                    letterSpacing: 0.8,
-                    fontSize: 11,
-                  }}
-                >
-                  {g.label}
-                </Text>
-
-                <VStack style={{ gap: 12 }}>
-                  {g.assignments.map((a) => (
-                    <AssignedWorkoutCard
-                      key={a.id}
-                      assignment={a}
-                      template={templatesById[a.workoutTemplateId] ?? null}
-                      onPress={() =>
-                        router.push(`/(client)/workouts/assigned/${a.id}` as any)
-                      }
-                    />
-                  ))}
-                </VStack>
-              </VStack>
-            ))
+          </VStack>
         )}
-      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { gap: 22 },
-  empty: {
-    padding: 18,
-    borderRadius: 18,
-    borderWidth: 1,
-    backgroundColor: "rgba(255,255,255,0.02)",
-  },
+  root: { flex: 1, gap: 10 },
 });
 

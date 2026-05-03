@@ -80,6 +80,8 @@ export default function TrainerClientsScreen() {
         }}
       />
       <ScrollView
+        alwaysBounceVertical
+        bounces
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -88,6 +90,7 @@ export default function TrainerClientsScreen() {
           />
         }
         contentContainerStyle={{
+          flexGrow: 1,
           paddingHorizontal: theme.spacing.sm,
           paddingBottom: theme.spacing.lg,
           gap: theme.spacing.lg,

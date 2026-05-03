@@ -6,7 +6,6 @@ import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import {
     StickyHeader,
     TabBackgroundGradient,
-    Text,
     useTheme,
 } from "@/shared/ui";
 
@@ -35,7 +34,10 @@ export default function ClientDashboard() {
       />
       <ScrollView
         style={{ flex: 1, backgroundColor: "transparent" }}
+        alwaysBounceVertical
+        bounces
         contentContainerStyle={{
+          flexGrow: 1,
           padding: theme.spacing.xl,
           paddingTop: theme.spacing.xl,
           paddingBottom: theme.spacing.lg,

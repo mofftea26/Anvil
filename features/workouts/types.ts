@@ -11,6 +11,7 @@ export type ClientWorkoutAssignment = {
   trainerId: string;
   workoutTemplateId: string;
   scheduledFor: string; // YYYY-MM-DD
+  scheduledTime: string | null; // HH:mm:ss
   source: string | null;
   programAssignmentId?: string | null;
   status: AssignmentStatus | null;

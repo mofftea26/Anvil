@@ -7,10 +7,15 @@ import { ClientDetailsHeroCard } from "@/features/clients/components/trainer-cli
 import { ClientDetailsLinkActionsCard } from "@/features/clients/components/trainer-client-details/ClientDetailsLinkActionsCard";
 import { ClientDetailsManagementCard } from "@/features/clients/components/trainer-client-details/ClientDetailsManagementCard";
 import { ClientAssignedItemsCard } from "@/features/clients/components/assignments/ClientAssignedItemsCard";
+import { TrainerClientScheduleTab } from "@/features/clients/components/assignments/TrainerClientScheduleTab";
+import { TrainerAssignmentsTab } from "@/features/assignments/components/TrainerAssignmentsTab";
 import { useTrainerClientDetails } from "@/features/clients/hooks/trainer-client-details/useTrainerClientDetails";
 import { KeyboardScreen } from "@/shared/components/KeyboardScreen";
+import { useAppSelector } from "@/shared/hooks/useAppSelector";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import {
+  Chip,
+  HStack,
   LoadingSpinner,
   StickyHeader,
   Text,
@@ -24,6 +29,8 @@ export default function TrainerClientDetailsScreen() {
   const { t } = useAppTranslation();
   const theme = useTheme();
   const alert = useAppAlert();
+  const trainerId = useAppSelector((s) => s.auth.userId ?? "");
+  const [tab, setTab] = React.useState<"overview" | "assignments" | "schedule">("overview");
 
   const {
     clientId,
@@ -111,49 +118,79 @@ export default function TrainerClientDetailsScreen() {
             target={clientProfile?.target}
           />
 
+          <HStack gap={10}>
+            <Chip
+              label={t("common.overview", "Overview")}
+              isActive={tab === "overview"}
+              onPress={() => setTab("overview")}
+            />
+            <Chip
+              label={t("clients.assignments", "Assignments")}
+              isActive={tab === "assignments"}
+              onPress={() => setTab("assignments")}
+            />
+            <Chip
+              label={t("client.workouts.schedule", "Schedule")}
+              isActive={tab === "schedule"}
+              onPress={() => setTab("schedule")}
+            />
+          </HStack>
+
           {(linksLoading || profileLoading) && !clientProfile ? (
             <LoadingSpinner />
           ) : null}
 
-          <ClientDetailsBasicInfoCard profile={clientProfile} />
+          {tab === "assignments" ? (
+            <>
+              <TrainerAssignmentsTab clientId={clientId} />
+            </>
+          ) : tab === "schedule" ? (
+            <>
+              <TrainerClientScheduleTab clientId={clientId} trainerId={trainerId} />
+            </>
+          ) : (
+            <>
+              <ClientDetailsBasicInfoCard profile={clientProfile} />
 
-          <ClientAssignedItemsCard clientId={clientId} />
+              <ClientAssignedItemsCard clientId={clientId} />
 
-          <ClientDetailsManagementCard
-            form={managementForm}
-            setForm={setManagementForm}
-            statusOptions={statusOptions}
-            freqOptions={freqOptions}
-            showDatePicker={showDatePicker}
-            setShowDatePicker={setShowDatePicker}
-            setNextCheckInDate={setNextCheckInDate}
-            formatDatePretty={formatDatePretty}
-            onSave={saveManagement}
-            onMarkCheckIn={markNextCheckIn}
-            saveLoading={upsertLoading}
-            markCheckInLoading={markCheckInLoading}
-          />
+              <ClientDetailsManagementCard
+                form={managementForm}
+                setForm={setManagementForm}
+                statusOptions={statusOptions}
+                freqOptions={freqOptions}
+                showDatePicker={showDatePicker}
+                setShowDatePicker={setShowDatePicker}
+                setNextCheckInDate={setNextCheckInDate}
+                formatDatePretty={formatDatePretty}
+                onSave={saveManagement}
+                onMarkCheckIn={markNextCheckIn}
+                saveLoading={upsertLoading}
+                markCheckInLoading={markCheckInLoading}
+              />
 
-          <ClientDetailsLinkActionsCard
-            isArchived={isArchived}
-            hasLink={Boolean(link)}
-            linksLoading={linksLoading}
-            archiveLoading={setLinkStatusLoading}
-            deleteLoading={deleteLoading}
-            onArchive={toggleArchive}
-            onDelete={() =>
-              alert.confirm({
-                title: t("linking.clients.deleteClient"),
-                message: t("common.areYouSure"),
-                confirmText: t("common.delete"),
-                cancelText: t("common.cancel"),
-                destructive: true,
-                onConfirm: async () => {
-                  await doDelete();
-                },
-              })
-            }
-          />
+              <ClientDetailsLinkActionsCard
+                isArchived={isArchived}
+                hasLink={Boolean(link)}
+                linksLoading={linksLoading}
+                archiveLoading={setLinkStatusLoading}
+                deleteLoading={deleteLoading}
+                onArchive={toggleArchive}
+                onDelete={() =>
+                  alert.confirm({
+                    title: t("linking.clients.deleteClient"),
+                    message: t("common.areYouSure"),
+                    confirmText: t("common.delete"),
+                    cancelText: t("common.cancel"),
+                    destructive: true,
+                    onConfirm: async () => {
+                      await doDelete();
+                    },
+                  })
+                }
+              />
+            </>
+          )}
 
           {(linksLoading || profileLoading) &&
           (upsertLoading || markCheckInLoading) ? (

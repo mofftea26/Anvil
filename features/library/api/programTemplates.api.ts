@@ -51,7 +51,6 @@ export function buildInitialProgramState(
   }
 
   const phases: ProgramPhase[] = [];
-  let globalWeekIndex = 0;
   for (let p = 0; p < count; p++) {
     const phaseWeeks = phaseWeekCounts[p];
     const weeks: ProgramWeek[] = [];
@@ -73,7 +72,6 @@ export function buildInitialProgramState(
         label: `Week ${w + 1}`,
         days,
       });
-      globalWeekIndex++;
     }
     phases.push({
       id: phaseId(p),
@@ -182,13 +180,13 @@ function normalizeState(raw: unknown): ProgramTemplateState {
           order: 0,
           durationWeeks: (obj.weeks as unknown[]).length,
           weeks: (
-            obj.weeks as Array<{
+            obj.weeks as {
               weekIndex?: number;
-              days?: Array<{
+              days?: {
                 dayIndex?: number;
-                workouts?: Array<{ workoutId: string; title?: string }>;
-              }>;
-            }>
+                workouts?: { workoutId: string; title?: string }[];
+              }[];
+            }[]
           ).map((w, wi) => ({
             index: wi,
             label: `Week ${(w.weekIndex ?? wi) + 1}`,
@@ -218,9 +216,9 @@ function normalizeState(raw: unknown): ProgramTemplateState {
       ];
       const linkedIds: string[] = [];
       (
-        obj.weeks as Array<{
-          days?: Array<{ workouts?: Array<{ workoutId: string }> }>;
-        }>
+        obj.weeks as {
+          days?: { workouts?: { workoutId: string }[] }[];
+        }[]
       ).forEach((w) =>
         w.days?.forEach((d) =>
           d.workouts?.forEach((x) => {

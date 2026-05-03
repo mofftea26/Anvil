@@ -177,6 +177,8 @@ export default function ProgramTemplatesListScreen() {
       </View>
 
       <ScrollView
+        alwaysBounceVertical
+        bounces
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -185,6 +187,7 @@ export default function ProgramTemplatesListScreen() {
           />
         }
         contentContainerStyle={{
+          flexGrow: 1,
           padding: theme.spacing.lg,
           paddingBottom: theme.spacing.xl,
           gap: theme.spacing.md,

@@ -1,6 +1,5 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Button, useTheme } from "@/shared/ui";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
@@ -14,7 +13,6 @@ type Props = {
 export function StickySaveBar({ onSave, onDiscard, isSaving }: Props) {
   const { t } = useAppTranslation();
   const theme = useTheme();
-  const insets = useSafeAreaInsets();
 
   return (
     <View

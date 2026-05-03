@@ -14,9 +14,7 @@ import { fetchExercises } from "../api/exercises.api";
 import { StickySaveBar } from "../components/StickySaveBar";
 import type { Exercise } from "../types/exercise";
 import { setPendingExercisePick } from "../utils/exercisePickerBridge";
-import { ExerciseLibraryCard } from "@/shared/ui";
-
-import { Chip, Icon, StickyHeader, Text, useTheme } from "@/shared/ui";
+import { Chip, ExerciseLibraryCard, Icon, StickyHeader, Text, useTheme } from "@/shared/ui";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import { formatSlugToLabel } from "@/shared/utils";
 

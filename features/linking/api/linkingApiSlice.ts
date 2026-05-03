@@ -174,6 +174,7 @@ export const linkingApiSlice = api.injectEndpoints({
         checkInFrequency: "weekly" | "biweekly" | "monthly" | "custom";
         nextCheckInAt: string | null;
         coachNotes: string | null;
+        tags?: string[] | null;
       }
     >({
       async queryFn({
@@ -182,6 +183,7 @@ export const linkingApiSlice = api.injectEndpoints({
         checkInFrequency,
         nextCheckInAt,
         coachNotes,
+        tags,
       }) {
         const { data, error } = await supabase.rpc(
           "anvil_upsert_trainer_client_management",
@@ -191,23 +193,9 @@ export const linkingApiSlice = api.injectEndpoints({
             p_check_in_frequency: checkInFrequency,
             p_next_check_in_at: nextCheckInAt,
             p_coach_notes: coachNotes,
+            p_tags: tags ?? [],
           }
         );
-        if (error) return { error: { message: error.message } };
-        return { data: data as TrainerClientManagement };
-      },
-      invalidatesTags: ["TrainerClients", "Coach"],
-    }),
-
-    setClientStatus: build.mutation<
-      TrainerClientManagement,
-      { clientId: string; clientStatus: "active" | "paused" | "inactive" }
-    >({
-      async queryFn({ clientId, clientStatus }) {
-        const { data, error } = await supabase.rpc("anvil_set_client_status", {
-          p_client_id: clientId,
-          p_client_status: clientStatus,
-        });
         if (error) return { error: { message: error.message } };
         return { data: data as TrainerClientManagement };
       },
@@ -326,19 +314,11 @@ invalidatesTags: [{ type: "TrainerRequests", id: "inbox" }, "TrainerClients", "C
     // ---------- Trainer: requests inbox ----------
     getTrainerRequestsInbox: build.query<TrainerRequestsInboxRow[], { trainerEmail: string }>({
       async queryFn({ trainerEmail }) {
-        console.log("[getTrainerRequestsInbox] queryFn trainerEmail:", trainerEmail);
-    
         if (!trainerEmail?.trim()) return { data: [] };
-    
         const { data, error } = await supabase.rpc("get_trainer_requests_inbox", {
           p_trainer_email: trainerEmail,
         });
-    
-        console.log("[getTrainerRequestsInbox] rpc error:", error);
-        console.log("[getTrainerRequestsInbox] rpc data:", data);
-    
         if (error) return { error: { message: error.message } };
-    
         const rows = (data as any[]) ?? [];
         return {
           data: rows.map((r) => ({
@@ -510,7 +490,6 @@ export const {
   useGetTrainerClientsQuery,
   useSetTrainerClientStatusMutation,
   useUpsertTrainerClientManagementMutation,
-  useSetClientStatusMutation,
   useMarkClientCheckInMutation,
   useDeleteArchivedClientLinkMutation,
   useCreateTrainerInviteMutation,

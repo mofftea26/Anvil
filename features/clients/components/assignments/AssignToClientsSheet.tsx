@@ -4,12 +4,13 @@ import { Modal, Platform, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
-  assignWorkoutTemplateToClients,
+  assignWorkoutToClients,
   checkWorkoutExists,
   fetchClientProgramAssignmentByUniqueKey,
   generateProgramWorkoutAssignments,
   insertClientProgramAssignment,
   listActiveProgramAssignmentsByClientIds,
+  listWorkoutAssignmentsForClientOnDate,
   reactivateClientProgramAssignment,
   resetClientProgramAssignmentProgress,
 } from "@/features/clients/api/assignments.api";
@@ -31,6 +32,7 @@ import {
 } from "@/shared/ui";
 
 import { ProgramAssignmentDuplicateModal } from "./ProgramAssignmentDuplicateModal";
+import { DEFAULT_SCHEDULE_TIME, normalizeScheduleTime } from "@/features/workouts/utils/scheduleTime";
 
 function toYmd(date: Date): string {
   const d = new Date(date);
@@ -55,7 +57,7 @@ export function AssignToClientsSheet(props: {
   const insets = useSafeAreaInsets();
   const alert = useAppAlert();
 
-  const { trainerId, options, isLoading, refetch } = useTrainerClientsOptions();
+  const { trainerId, options, isLoading } = useTrainerClientsOptions();
 
   const [clientIds, setClientIds] = useState<string[]>(props.initialClientIds ?? []);
   const [saving, setSaving] = useState(false);
@@ -146,17 +148,71 @@ export function AssignToClientsSheet(props: {
           });
           return;
         }
-        await assignWorkoutTemplateToClients({
+        const ymd = toYmd(scheduledDate);
+        const slotTime = DEFAULT_SCHEDULE_TIME;
+        const overlapsByClient = await Promise.all(
+          allowedClientIds.map(async (clientId) => {
+            const rows = await listWorkoutAssignmentsForClientOnDate({
+              trainerId,
+              clientId,
+              ymd,
+            });
+            const hasRealOverlap =
+              rows.length > 0 &&
+              rows.some(
+                (x) =>
+                  normalizeScheduleTime(x.scheduledTime) === slotTime &&
+                  (x.workoutTemplateId !== props.item.id ||
+                    x.programAssignmentId != null ||
+                    x.source === "program")
+              );
+            return { clientId, hasRealOverlap };
+          })
+        );
+        const overlappingCount = overlapsByClient.filter((x) => x.hasRealOverlap).length;
+        let overwriteExisting = false;
+
+        if (overlappingCount > 0) {
+          const confirmed = await new Promise<boolean>((resolve) => {
+            alert.show({
+              title: t("clients.assign.overwriteTitleMany", "Some clients already have workouts"),
+              message: t(
+                "clients.assign.overwriteMessageMany",
+                "{{n}} selected client(s) already have a workout on {{date}}. Overwrite that day with this single workout?",
+                { n: String(overlappingCount), date: ymd }
+              ),
+              buttons: [
+                {
+                  text: t("common.cancel", "Cancel"),
+                  variant: "secondary",
+                  onPress: () => resolve(false),
+                },
+                {
+                  text: t("common.overwrite", "Overwrite"),
+                  variant: "destructive",
+                  onPress: () => resolve(true),
+                },
+              ],
+            });
+          });
+          if (!confirmed) return;
+          overwriteExisting = true;
+        }
+
+        await assignWorkoutToClients({
           trainerId,
           clientIds: allowedClientIds,
-          workoutTemplateId: props.item.id,
-          scheduledFor: toYmd(scheduledDate),
+          workoutId: props.item.id,
+          scheduledFor: ymd,
+          scheduledTime: slotTime,
+          overwriteExisting,
         });
         appToast.success(
           t("clients.assign.assignedWorkout", "Workout assigned")
         );
       } else {
         let assignedCount = 0;
+        let scheduleFailedCount = 0;
         for (const clientId of allowedClientIds) {
           try {
             const inserted = await insertClientProgramAssignment({
@@ -167,10 +223,14 @@ export function AssignToClientsSheet(props: {
               notes: notes.trim() ? notes.trim() : null,
             });
             // Generate program workouts so trainer details + client schedule can show them.
-            await generateProgramWorkoutAssignments({
-              programAssignmentId: inserted.id,
-              replaceExisting: false,
-            });
+            try {
+              await generateProgramWorkoutAssignments({
+                programAssignmentId: inserted.id,
+                replaceExisting: true,
+              });
+            } catch {
+              scheduleFailedCount += 1;
+            }
             assignedCount += 1;
           } catch (e: any) {
             const httpStatus = Number(e?.status ?? e?.statusCode ?? NaN);
@@ -195,6 +255,14 @@ export function AssignToClientsSheet(props: {
           appToast.success(
             t("clients.assign.assignedProgram", "Program assigned")
           );
+          if (scheduleFailedCount > 0) {
+            appToast.warn(
+              t(
+                "clients.assign.scheduleGenerationFailed",
+                "Assigned, but schedule generation failed",
+              ),
+            );
+          }
         }
       }
       props.onAssigned?.();
@@ -332,6 +400,15 @@ export function AssignToClientsSheet(props: {
                   </HStack>
                 </Card>
 
+                <Input
+                  label={t("clients.assign.notes", "Notes (optional)")}
+                  value={notes}
+                  onChangeText={setNotes}
+                  placeholder={t("clients.assign.notesPlaceholder", "Add notes for the client…")}
+                  multiline
+                  autoGrow
+                />
+
                 {showDatePicker ? (
                   <DateTimePicker
                     value={startDate}
@@ -343,15 +420,6 @@ export function AssignToClientsSheet(props: {
                     }}
                   />
                 ) : null}
-
-                <Input
-                  label={t("clients.assign.notes", "Notes (optional)")}
-                  placeholder={t("clients.assign.notesPlaceholder", "Add a note for the client…")}
-                  value={notes}
-                  onChangeText={setNotes}
-                  multiline
-                  autoGrow
-                />
               </>
             )}
 
@@ -362,14 +430,6 @@ export function AssignToClientsSheet(props: {
               style={{ marginTop: 6 }}
             >
               {t("clients.assign.assign", "Assign")}
-            </Button>
-
-            <Button
-              variant="secondary"
-              onPress={() => void refetch()}
-              disabled={isLoading}
-            >
-              {t("common.refresh", "Refresh")}
             </Button>
           </VStack>
         </View>
@@ -394,7 +454,19 @@ export function AssignToClientsSheet(props: {
                 try {
                   await reactivateClientProgramAssignment({ assignmentId: dupExisting.id });
                   // best-effort: ensure program workouts exist
-                  await generateProgramWorkoutAssignments({ programAssignmentId: dupExisting.id, replaceExisting: false });
+                  try {
+                    await generateProgramWorkoutAssignments({
+                      programAssignmentId: dupExisting.id,
+                      replaceExisting: true,
+                    });
+                  } catch {
+                    appToast.warn(
+                      t(
+                        "clients.assign.scheduleGenerationFailed",
+                        "Assigned, but schedule generation failed",
+                      ),
+                    );
+                  }
                   appToast.success(t("clients.assign.duplicate.reactivated", "Reactivated"));
                   setDupOpen(false);
                   setDupExisting(null);
@@ -414,8 +486,20 @@ export function AssignToClientsSheet(props: {
           setDupLoading(true);
           try {
             await resetClientProgramAssignmentProgress({ assignmentId: dupExisting.id });
-          // best-effort: ensure program workouts exist
-          await generateProgramWorkoutAssignments({ programAssignmentId: dupExisting.id, replaceExisting: false });
+            // best-effort: ensure program workouts exist
+            try {
+              await generateProgramWorkoutAssignments({
+                programAssignmentId: dupExisting.id,
+                replaceExisting: true,
+              });
+            } catch {
+              appToast.warn(
+                t(
+                  "clients.assign.scheduleGenerationFailed",
+                  "Assigned, but schedule generation failed",
+                ),
+              );
+            }
             appToast.success(t("clients.assign.duplicate.resetDone", "Progress reset"));
             setDupOpen(false);
             setDupExisting(null);
@@ -435,8 +519,21 @@ export function AssignToClientsSheet(props: {
                 setDupLoading(true);
                 try {
                   await resetClientProgramAssignmentProgress({ assignmentId: dupExisting.id });
-                // best-effort: ensure program workouts exist
-                await generateProgramWorkoutAssignments({ programAssignmentId: dupExisting.id, replaceExisting: false });
+                  await reactivateClientProgramAssignment({ assignmentId: dupExisting.id });
+                  // best-effort: ensure program workouts exist
+                  try {
+                    await generateProgramWorkoutAssignments({
+                      programAssignmentId: dupExisting.id,
+                      replaceExisting: true,
+                    });
+                  } catch {
+                    appToast.warn(
+                      t(
+                        "clients.assign.scheduleGenerationFailed",
+                        "Assigned, but schedule generation failed",
+                      ),
+                    );
+                  }
                   appToast.success(t("clients.assign.duplicate.resetReactivated", "Reset & reactivated"));
                   setDupOpen(false);
                   setDupExisting(null);

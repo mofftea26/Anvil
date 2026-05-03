@@ -8,7 +8,7 @@ import {
   getDifficultyColors,
 } from "@/features/library/utils/programColors";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
-import { Chip, Icon, useTheme } from "@/shared/ui";
+import { Chip, Icon } from "@/shared/ui";
 
 const DIFFICULTY_KEYS: Record<ProgramDifficulty, string> = {
   beginner: "library.programsScreen.difficultyBeginner",
@@ -21,7 +21,6 @@ export function ProgramTemplateDifficultyRow(props: {
   onChange: (d: ProgramDifficulty) => void;
 }) {
   const { t } = useAppTranslation();
-  const theme = useTheme();
 
   return (
     <View style={styles.row}>

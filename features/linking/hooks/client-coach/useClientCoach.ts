@@ -6,7 +6,6 @@ import {
   useGetMyCoachQuery,
 } from "@/features/linking/api/linkingApiSlice";
 import {
-  hexToRgba,
   isHexColor,
   parseCerts,
   formatShortDate,

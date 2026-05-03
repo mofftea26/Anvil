@@ -16,8 +16,9 @@ type RawWorkoutAssignmentRow = {
   id: string;
   trainerid: string;
   clientid: string;
-  workouttemplateid: string;
+  workoutid: string;
   scheduledfor: string; // YYYY-MM-DD
+  scheduledtime: string | null; // HH:mm:ss
   status: string | null;
   source: string | null;
   programassignmentid: string | null;
@@ -29,8 +30,9 @@ function toWorkoutAssignment(row: RawWorkoutAssignmentRow): ClientWorkoutAssignm
     id: row.id,
     trainerId: row.trainerid,
     clientId: row.clientid,
-    workoutTemplateId: row.workouttemplateid,
+    workoutTemplateId: row.workoutid,
     scheduledFor: row.scheduledfor,
+    scheduledTime: row.scheduledtime ?? null,
     status: (row.status as any) ?? null,
     source: row.source ?? null,
     programAssignmentId: row.programassignmentid ?? null,
@@ -187,14 +189,15 @@ export function useTrainerClientsAssignmentsSummary(params: {
                 clientId: p.clientid,
                 workoutTemplateId: hit.workoutTemplateId,
                 scheduledFor: ymd,
+                scheduledTime: "08:00:00",
                 status: "assigned",
                 source: "program",
                 programAssignmentId: p.id,
                 programDayKey: hit.programDayKey,
               };
             }
-          } catch (e) {
-            console.log("[useTrainerClientsAssignmentsSummary] derive program workout failed", e);
+          } catch {
+            // ignore: non-critical derive fallback
           }
         }
 
@@ -228,8 +231,8 @@ export function useTrainerClientsAssignmentsSummary(params: {
           if (workoutTitlesRes.error) throw workoutTitlesRes.error;
           for (const r of (programTitlesRes.data ?? []) as any[]) pTitle[r.id] = r.title ?? "Program";
           for (const r of (workoutTitlesRes.data ?? []) as any[]) wTitle[r.id] = r.title ?? "Workout";
-        } catch (e) {
-          console.log("[useTrainerClientsAssignmentsSummary] title fetch failed", e);
+        } catch {
+          // ignore: titles are best-effort
         }
 
         setActivePrograms(activeMap);

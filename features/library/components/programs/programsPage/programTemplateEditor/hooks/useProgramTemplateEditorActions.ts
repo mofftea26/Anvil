@@ -85,7 +85,6 @@ export function useProgramTemplateEditorActions(params: {
     clampedWeekIndex,
     phaseCount,
     currentPhase,
-    currentWeek,
     setSelectedPhaseIndex,
     setSelectedWeekIndex,
     dayPlannerOpen,

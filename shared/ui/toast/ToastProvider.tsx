@@ -175,27 +175,30 @@ export function ToastProvider({ children }: PropsWithChildren) {
   return (
     <>
       {children}
-      <ToastManager
-        config={config}
-        position="top"
-        duration={3200}
-        theme="dark"
-        animationStyle="slide"
-        showProgressBar={false}
-        showCloseIcon={true}
-        topOffset={insets.top + 12}
-        width="91%"
-        minHeight={56}
-        style={{
-          borderRadius: theme.radii.lg,
-          overflow: "hidden",
-        }}
-        textStyle={{
-          color: theme.colors.text,
-          fontFamily: theme.typography.fontFamilySemiBold,
-          fontSize: theme.typography.fontSizeBody,
-        }}
-      />
+      <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
+        <ToastManager
+          config={config}
+          position="top"
+          duration={3200}
+          theme="dark"
+          animationStyle="slide"
+          showProgressBar={false}
+          showCloseIcon={true}
+          topOffset={insets.top + 12}
+          width="91%"
+          minHeight={56}
+          useModal={false}
+          style={{
+            borderRadius: theme.radii.lg,
+            overflow: "hidden",
+          }}
+          textStyle={{
+            color: theme.colors.text,
+            fontFamily: theme.typography.fontFamilySemiBold,
+            fontSize: theme.typography.fontSizeBody,
+          }}
+        />
+      </View>
     </>
   );
 }

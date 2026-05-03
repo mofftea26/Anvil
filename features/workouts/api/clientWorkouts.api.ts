@@ -1,4 +1,5 @@
 import { supabase } from "@/shared/supabase/client";
+import { getScheduleTimeOverrides, setScheduleTimeOverride } from "@/shared/utils/scheduleTimeOverrides";
 
 import type {
   ClientWorkoutAssignment,
@@ -10,12 +11,19 @@ import type {
   WorkoutTemplate,
 } from "../types";
 
+function isMissingScheduledTimeColumn(error: unknown): boolean {
+  const msg = String((error as any)?.message ?? "");
+  const code = String((error as any)?.code ?? "");
+  return code === "42703" || (msg.toLowerCase().includes("scheduledtime") && msg.toLowerCase().includes("column"));
+}
+
 type RawClientWorkoutAssignmentRow = {
   id: string;
   clientid: string;
   trainerid: string;
-  workouttemplateid: string;
+  workoutid: string;
   scheduledfor: string; // YYYY-MM-DD
+  scheduledtime: string | null; // HH:mm:ss
   source: string | null;
   programassignmentid: string | null;
   programdaykey: string | null;
@@ -35,13 +43,39 @@ type RawClientProgramAssignmentRow = {
   updatedat: string;
 };
 
+type RawWorkoutSessionRow = {
+  id: string;
+  clientid: string;
+  trainerid: string | null;
+  workouttemplateid: string;
+  assignmentid: string | null;
+  startedat: string;
+  finishedat: string | null;
+  durationsec: number | null;
+  status: string;
+};
+
+type RawWorkoutSetLogRow = {
+  id: string;
+  sessionid: string;
+  serieskey: string;
+  exercisekey: string;
+  setindex: number;
+  actualreps: number | null;
+  actualweightkg: number | null;
+  iscompleted: boolean;
+  createdat: string;
+};
+
 function toClientWorkoutAssignment(row: RawClientWorkoutAssignmentRow): ClientWorkoutAssignment {
   return {
     id: row.id,
     clientId: row.clientid,
     trainerId: row.trainerid,
-    workoutTemplateId: row.workouttemplateid,
+    // NOTE: backend column is `workoutid` (workouts.id). Kept as workoutTemplateId in UI for now.
+    workoutTemplateId: row.workoutid,
     scheduledFor: row.scheduledfor,
+    scheduledTime: row.scheduledtime ?? null,
     source: row.source ?? null,
     programAssignmentId: row.programassignmentid ?? null,
     programDayKey: row.programdaykey ?? null,
@@ -62,7 +96,13 @@ export async function listClientWorkoutAssignments(params: {
   if (res.error) throw res.error;
   const rows = (res.data ?? []) as RawClientWorkoutAssignmentRow[];
   const filtered = params.clientId ? rows.filter((r) => r.clientid === params.clientId) : rows;
-  return filtered.map(toClientWorkoutAssignment);
+  const mapped = filtered.map(toClientWorkoutAssignment);
+  const missingIds = mapped.filter((x) => !x.scheduledTime).map((x) => x.id);
+  if (!missingIds.length) return mapped;
+  const overrides = await getScheduleTimeOverrides(missingIds);
+  return mapped.map((row) =>
+    row.scheduledTime ? row : { ...row, scheduledTime: overrides[row.id] ?? row.scheduledTime }
+  );
 }
 
 export async function fetchActiveClientProgramAssignment(params: {
@@ -124,6 +164,34 @@ function toClientProgramAssignment(row: RawClientProgramAssignmentRow): ClientPr
     progress: toProgressV1(row.progress),
     createdAt: row.createdat,
     updatedAt: row.updatedat,
+  };
+}
+
+function toWorkoutSession(row: RawWorkoutSessionRow): WorkoutSession {
+  return {
+    id: row.id,
+    clientId: row.clientid,
+    trainerId: row.trainerid ?? "",
+    workoutAssignmentId: row.assignmentid ?? null,
+    workoutTemplateId: row.workouttemplateid,
+    startedAt: row.startedat,
+    finishedAt: row.finishedat ?? null,
+    durationSec: row.durationsec ?? null,
+    status: row.status as WorkoutSession["status"],
+  };
+}
+
+function toWorkoutSetLog(row: RawWorkoutSetLogRow): WorkoutSetLog {
+  return {
+    id: row.id,
+    sessionId: row.sessionid,
+    seriesBlockId: row.serieskey ?? null,
+    seriesExerciseId: row.exercisekey ?? null,
+    setIndex: row.setindex,
+    reps: row.actualreps ?? null,
+    weight: row.actualweightkg ?? null,
+    completed: row.iscompleted,
+    createdAt: row.createdat,
   };
 }
 
@@ -212,14 +280,29 @@ export async function listClientWorkoutAssignmentsForProgramAssignment(params: {
   clientId: string;
   programAssignmentId: string;
 }): Promise<ClientWorkoutAssignment[]> {
-  const { data, error } = await supabase
+  let query = await supabase
     .from("clientWorkoutAssignments")
     .select("*")
     .eq("clientid", params.clientId)
     .eq("programassignmentid", params.programAssignmentId)
-    .order("scheduledfor", { ascending: true });
-  if (error) throw error;
-  return ((data ?? []) as RawClientWorkoutAssignmentRow[]).map(toClientWorkoutAssignment);
+    .order("scheduledfor", { ascending: true })
+    .order("scheduledtime", { ascending: true });
+  if (query.error && isMissingScheduledTimeColumn(query.error)) {
+    query = await supabase
+      .from("clientWorkoutAssignments")
+      .select("*")
+      .eq("clientid", params.clientId)
+      .eq("programassignmentid", params.programAssignmentId)
+      .order("scheduledfor", { ascending: true });
+  }
+  if (query.error) throw query.error;
+  const mapped = ((query.data ?? []) as RawClientWorkoutAssignmentRow[]).map(toClientWorkoutAssignment);
+  const missingIds = mapped.filter((x) => !x.scheduledTime).map((x) => x.id);
+  if (!missingIds.length) return mapped;
+  const overrides = await getScheduleTimeOverrides(missingIds);
+  return mapped.map((row) =>
+    row.scheduledTime ? row : { ...row, scheduledTime: overrides[row.id] ?? row.scheduledTime }
+  );
 }
 
 export async function fetchClientWorkoutAssignmentById(
@@ -233,7 +316,44 @@ export async function fetchClientWorkoutAssignmentById(
 
   if (error) throw error;
   if (!data) return null;
-  return toClientWorkoutAssignment(data as RawClientWorkoutAssignmentRow);
+  const mapped = toClientWorkoutAssignment(data as RawClientWorkoutAssignmentRow);
+  if (mapped.scheduledTime) return mapped;
+  const overrides = await getScheduleTimeOverrides([mapped.id]);
+  return { ...mapped, scheduledTime: overrides[mapped.id] ?? mapped.scheduledTime };
+}
+
+export async function updateClientWorkoutAssignmentSchedule(params: {
+  assignmentId: string;
+  scheduledFor: string; // YYYY-MM-DD
+  scheduledTime: string; // HH:mm:ss
+}): Promise<ClientWorkoutAssignment> {
+  let res = await supabase
+    .from("clientWorkoutAssignments")
+    .update({
+      scheduledfor: params.scheduledFor,
+      scheduledtime: params.scheduledTime,
+      updatedat: new Date().toISOString(),
+    })
+    .eq("id", params.assignmentId)
+    .select("*")
+    .single();
+  if (res.error && isMissingScheduledTimeColumn(res.error)) {
+    res = await supabase
+      .from("clientWorkoutAssignments")
+      .update({
+        scheduledfor: params.scheduledFor,
+        updatedat: new Date().toISOString(),
+      })
+      .eq("id", params.assignmentId)
+      .select("*")
+      .single();
+    if (!res.error) {
+      await setScheduleTimeOverride(params.assignmentId, params.scheduledTime);
+    }
+  }
+  if (res.error) throw res.error;
+  const out = toClientWorkoutAssignment(res.data as RawClientWorkoutAssignmentRow);
+  return { ...out, scheduledTime: out.scheduledTime ?? params.scheduledTime };
 }
 
 export async function fetchWorkoutTemplateById(
@@ -259,16 +379,16 @@ export async function listWorkoutSessions(params: {
   let q = supabase
     .from("workoutSessions")
     .select("*")
-    .eq("clientId", params.clientId)
-    .order("startedAt", { ascending: false });
+    .eq("clientid", params.clientId)
+    .order("startedat", { ascending: false });
 
-  if (params.startIso) q = q.gte("startedAt", params.startIso);
-  if (params.endIso) q = q.lt("startedAt", params.endIso);
+  if (params.startIso) q = q.gte("startedat", params.startIso);
+  if (params.endIso) q = q.lt("startedat", params.endIso);
   if (params.limit) q = q.limit(params.limit);
 
   const { data, error } = await q;
   if (error) throw error;
-  return (data as WorkoutSession[]) ?? [];
+  return ((data ?? []) as RawWorkoutSessionRow[]).map(toWorkoutSession);
 }
 
 export async function fetchWorkoutSessionById(
@@ -281,7 +401,8 @@ export async function fetchWorkoutSessionById(
     .maybeSingle();
 
   if (error) throw error;
-  return (data as WorkoutSession | null) ?? null;
+  if (!data) return null;
+  return toWorkoutSession(data as RawWorkoutSessionRow);
 }
 
 export async function getOrCreateInProgressSession(params: {
@@ -294,42 +415,42 @@ export async function getOrCreateInProgressSession(params: {
     const { data, error } = await supabase
       .from("workoutSessions")
       .select("*")
-      .eq("clientId", params.clientId)
-      .eq("workoutAssignmentId", params.workoutAssignmentId)
+      .eq("clientid", params.clientId)
+      .eq("assignmentid", params.workoutAssignmentId)
       .eq("status", "in_progress")
-      .order("startedAt", { ascending: false })
+      .order("startedat", { ascending: false })
       .maybeSingle();
 
     if (error) throw error;
-    if (data) return { session: data as WorkoutSession, resumed: true };
+    if (data) return { session: toWorkoutSession(data as RawWorkoutSessionRow), resumed: true };
   }
 
   const { data: created, error: createError } = await supabase
     .from("workoutSessions")
     .insert({
-      clientId: params.clientId,
-      trainerId: params.trainerId,
-      workoutAssignmentId: params.workoutAssignmentId,
-      workoutTemplateId: params.workoutTemplateId,
+      clientid: params.clientId,
+      trainerid: params.trainerId,
+      assignmentid: params.workoutAssignmentId,
+      workouttemplateid: params.workoutTemplateId,
       status: "in_progress",
-      startedAt: new Date().toISOString(),
+      startedat: new Date().toISOString(),
     })
     .select("*")
     .single();
 
   if (createError) throw createError;
-  return { session: created as WorkoutSession, resumed: false };
+  return { session: toWorkoutSession(created as RawWorkoutSessionRow), resumed: false };
 }
 
 export async function listWorkoutSetLogs(sessionId: string): Promise<WorkoutSetLog[]> {
   const { data, error } = await supabase
     .from("workoutSetLogs")
     .select("*")
-    .eq("sessionId", sessionId)
-    .order("createdAt", { ascending: true });
+    .eq("sessionid", sessionId)
+    .order("createdat", { ascending: true });
 
   if (error) throw error;
-  return (data as WorkoutSetLog[]) ?? [];
+  return ((data ?? []) as RawWorkoutSetLogRow[]).map(toWorkoutSetLog);
 }
 
 export async function upsertWorkoutSetLogs(
@@ -338,21 +459,20 @@ export async function upsertWorkoutSetLogs(
   if (drafts.length === 0) return;
 
   const payload = drafts.map((d) => ({
-    sessionId: d.sessionId,
-    seriesBlockId: d.seriesBlockId,
-    seriesExerciseId: d.seriesExerciseId,
-    setIndex: d.setIndex,
-    reps: d.reps,
-    weight: d.weight,
-    completed: d.completed,
+    sessionid: d.sessionId,
+    serieskey: d.seriesBlockId ?? "__default_series__",
+    exercisekey: d.seriesExerciseId ?? "__unknown_exercise__",
+    setindex: d.setIndex,
+    actualreps: d.reps,
+    actualweightkg: d.weight,
+    iscompleted: d.completed,
+    completedat: d.completed ? new Date().toISOString() : null,
   }));
 
-  // Assumption: unique constraint on (sessionId, seriesExerciseId, setIndex)
-  // TODO: If the backend uses a different uniqueness key, adjust onConflict.
   const { error } = await supabase
     .from("workoutSetLogs")
     .upsert(payload, {
-      onConflict: "sessionId,seriesExerciseId,setIndex",
+      onConflict: "sessionid,serieskey,exercisekey,setindex",
       ignoreDuplicates: false,
     });
 
@@ -367,8 +487,8 @@ export async function finishWorkoutSession(params: {
     .from("workoutSessions")
     .update({
       status: "completed",
-      finishedAt: new Date().toISOString(),
-      durationSec: params.durationSec,
+      finishedat: new Date().toISOString(),
+      durationsec: params.durationSec,
     })
     .eq("id", params.sessionId);
 

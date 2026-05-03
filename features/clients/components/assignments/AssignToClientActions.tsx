@@ -1,5 +1,4 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { View } from "react-native";
 
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import { Button, Icon, useTheme, HStack } from "@/shared/ui";

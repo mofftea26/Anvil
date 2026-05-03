@@ -125,7 +125,9 @@ export function ClientProgramDayDetailScreen(props: { assignmentId: string; dayK
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ padding: theme.spacing.lg, gap: 12, paddingBottom: theme.spacing.xl }}
+        alwaysBounceVertical
+        bounces
+        contentContainerStyle={{ flexGrow: 1, padding: theme.spacing.lg, gap: 12, paddingBottom: theme.spacing.xl }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

@@ -53,6 +53,8 @@ export function KeyboardScreen({
             { backgroundColor: theme.colors.background },
             scrollStyle,
           ]}
+          alwaysBounceVertical
+          bounces
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode={Platform.OS === "ios" ? "on-drag" : "none"}
           showsVerticalScrollIndicator={false}

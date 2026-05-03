@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import React, { useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 
 import type { WorkoutRow } from "@/features/builder/api/workouts.api";
 import { usePublishedWorkouts } from "@/features/library/hooks/usePublishedWorkouts";

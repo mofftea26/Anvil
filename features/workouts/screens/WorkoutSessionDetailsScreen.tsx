@@ -53,11 +53,14 @@ export function WorkoutSessionDetailsScreen(props: {
       <ScrollView
         style={{ flex: 1, backgroundColor: "transparent" }}
         contentContainerStyle={{
+          flexGrow: 1,
           padding: theme.spacing.xl,
           paddingTop: theme.spacing.lg,
           paddingBottom: theme.spacing.xl,
           gap: theme.spacing.lg,
         }}
+        alwaysBounceVertical
+        bounces
         refreshControl={
           <RefreshControl
             refreshing={false}
