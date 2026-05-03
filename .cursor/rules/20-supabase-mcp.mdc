@@ -1,0 +1,64 @@
+---
+description: Supabase MCP backend documentation and safety rules
+globs:
+  ["supabase/**/*", "shared/supabase/**/*.{ts,tsx}", "features/**/api/**/*.{ts,tsx}", "shared/api/**/*.{ts,tsx}"]
+alwaysApply: false
+---
+
+When working with Supabase, use the **`plugin-supabase-supabase` MCP server**. Active project: **Anvil** (`ekvwvxmpuwscqvfzlpek`, region `ap-south-1`, Postgres 17).
+
+## Inspect before changing
+
+Before any backend change, inspect:
+
+- `list_tables` (schemas: `public`)
+- `information_schema.columns` and `information_schema.table_constraints` + `key_column_usage`
+- `pg_indexes`
+- `pg_policies`
+- `pg_trigger`
+- `pg_proc` (filtered by `pg_namespace.nspname='public'`)
+- `list_edge_functions` + `get_edge_function`
+- `storage.buckets` and policies on `storage.objects`
+- Auth assumptions — RLS uses `auth.uid()` and the `users` table linked 1:1 to `auth.users`.
+
+## Schema-change workflow
+
+- Iterate via `execute_sql`. Do **not** call `apply_migration` repeatedly during iteration — every call writes a row to `supabase_migrations.schema_migrations` and breaks `db diff`.
+- When the change is final, write **one** migration file:
+  ```bash
+  supabase migration new <descriptive-name>
+  ```
+  Place it in `/supabase/migrations/` and commit it with the code change.
+- Run `get_advisors` for both `security` and `performance` after the change. Fix or log to `/docs/decisions/technical-debt.md`.
+
+See `/docs/supabase/how-to-change-the-schema.md` for the full runbook.
+
+## Security
+
+- Never put service role keys in frontend code. Frontend uses only `EXPO_PUBLIC_SUPABASE_KEY` (publishable).
+- Never hardcode secrets. Use placeholders (`EXPO_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) in docs.
+- Every public-schema table must have RLS enabled.
+- **Never** use `user_metadata` for authorization decisions. It is user-editable. Use `app_metadata` or the `users.role` column.
+- For an UPDATE to take effect under RLS, the row must also be visible via SELECT. UPDATE policies need a matching SELECT path or the UPDATE silently affects 0 rows.
+- Re-check authorization in WITH CHECK, not just USING. `WITH CHECK true` on an authenticated UPDATE bypasses RLS post-write.
+- Wrap `auth.uid()` in `(select auth.uid())` inside RLS expressions so the planner can hoist it once per query.
+
+## Edge Functions
+
+Edge Functions run with service-role privileges. Every Edge Function that performs any privileged write must:
+
+1. Read `Authorization: Bearer <jwt>`.
+2. Validate the JWT with `supabaseAdmin.auth.getUser(jwt)` and reject `401` on failure.
+3. Re-check the role from `public.users.role` (do not trust JWT claims).
+4. Return JSON envelopes for success and error.
+
+Canonical example: `supabase/functions/anvil-create-client/index.ts`. Use the `anvil-edge-function` skill when adding a new one.
+
+## Documentation
+
+- Document every table touched in `/docs/supabase/tables.md`.
+- Document every RPC touched in `/docs/supabase/rpc-functions.md`. State `SECURITY DEFINER` vs `SECURITY INVOKER` and "Called From".
+- Document every Edge Function in `/docs/supabase/edge-functions.md` using the function template in `/AGENTS.md`.
+- Document RLS policy changes in `/docs/supabase/rls-policies.md`.
+- Update `/docs/decisions/changelog.md` in the same change.
+- If Supabase docs conflict with the live database, trust the database and update the docs.

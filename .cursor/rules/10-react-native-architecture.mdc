@@ -1,0 +1,79 @@
+---
+description: React Native Expo architecture and frontend best practices
+globs:
+  ["app/**/*.{ts,tsx}", "features/**/*.{ts,tsx}", "shared/**/*.{ts,tsx}", "store/**/*.{ts,tsx}"]
+alwaysApply: false
+---
+
+When working on frontend code:
+
+## Architecture
+
+- Follow React Native + Expo best practices. Develop for iOS and Android together; web is secondary.
+- Use TypeScript strictly. No `any` unless documented.
+- Follow feature-based architecture under `/features/<feature>/{api,components,hooks,screens,store?,types,utils?}`.
+- Routes in `/app/` must be thin shells that import a screen from `/features/<feature>/screens/`.
+- Side effects, fetching, and Supabase calls live in `*.api.ts`, `*ApiSlice.ts`, or hooks. Presentational components stay pure.
+- Use the shared Supabase client `@/shared/supabase/client` — never instantiate a new one.
+- Use `@/shared/ui` primitives (`Button`, `Card`, `Chip`, `Input`, `Text`, `Icon`, `IconButton`, `LoadingSpinner`, `BottomSheetPicker`, `KeyboardScreen`, `HStack`, `VStack`, `appToast`, `useAppAlert`, `useTheme`).
+- All user-visible strings go through `useAppTranslation()`.
+
+## Patterns
+
+### Thin route shell
+
+`app/(trainer)/clients.tsx`:
+
+```tsx
+import TrainerClientsScreen from "@/features/clients/screens/TrainerClientsScreen";
+export default TrainerClientsScreen;
+```
+
+No business logic in `/app/`. Layouts (`_layout.tsx`) only configure stack/tabs and gating.
+
+### Hook owns the side effects
+
+```tsx
+function useTrainerClientList(trainerId: string) {
+  const { data, isLoading } = useGetTrainerClientsQuery({ trainerId });
+  // derive, sort, prefetch, telemetry — here, not in the screen
+  return { clients: data ?? [], isLoading };
+}
+```
+
+The screen consumes `useTrainerClientList` and renders `<TrainerClientsScreenView />`.
+
+### React Compiler is enabled
+
+`app.json` sets `experiments.reactCompiler: true`. Trust the compiler for trivial memoization. Only reach for `useMemo`/`useCallback` when:
+
+- You're handing a value to a memoized child where reference identity matters and the compiler can't see through the boundary.
+- The computation is genuinely expensive and runs on every render.
+
+Otherwise leave it inline.
+
+## Performance
+
+- Avoid unnecessary state and `useEffect`.
+- Use `FlatList` with stable keys (never `index` for dynamic data) and memoized row renderers.
+- Do **not** add FlashList without an ADR — it is not currently a dependency.
+- Use `expo-image` for image loading and caching.
+- Avoid creating new arrays/objects inside render that are passed to memoized children.
+- For long-running RTK Query subscriptions, use `keepUnusedDataFor` and `tagTypes` to invalidate precisely.
+- For local-only state that should survive a reload (e.g., schedule time overrides), use `AsyncStorage` or `SecureStore`.
+
+## Animation
+
+- Reanimated 4 worklets + `react-native-gesture-handler` only.
+- Keep animations under 16ms per frame; prefer transforms over layout changes.
+- Document non-trivial animation decisions in `/docs/frontend/animations.md`.
+
+## Platform
+
+- Respect safe areas, keyboard avoidance (use `KeyboardScreen` from `@/shared/ui`), 44pt minimum touch targets, and platform permissions.
+- Status bar is `light` (dark-only theme).
+- Test on iOS and Android together for any change touching navigation, gestures, keyboard, or permissions.
+
+## After every change
+
+Update the related `/docs/frontend/features/<feature>.md` and `/docs/decisions/changelog.md` in the **same change**. See `/docs/frontend/how-to-add-a-feature.md` for the canonical runbook.

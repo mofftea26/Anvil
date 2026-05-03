@@ -1,0 +1,61 @@
+---
+description: Feature documentation must be updated whenever feature code changes
+globs:
+  ["features/**/*.{ts,tsx}", "app/**/*.{ts,tsx}"]
+alwaysApply: false
+---
+
+For every feature change, in the **same PR / same change set**:
+
+1. Identify the related feature documentation in `/docs/frontend/features/`.
+2. Read it before editing.
+3. Update it after editing.
+4. If the feature doc does not exist, create it from the template below.
+5. Update `/docs/frontend/features/README.md` if you added, renamed, or changed the status of a feature.
+6. Append an entry to `/docs/decisions/changelog.md`.
+7. If the feature crosses Supabase, update the corresponding `/docs/supabase/*` files (see `20-supabase-mcp.mdc`).
+
+If you find an issue but do not fix it, log it in `/docs/decisions/technical-debt.md`.
+
+For the canonical end-to-end flow, follow `/docs/frontend/how-to-add-a-feature.md`.
+
+## Feature doc template
+
+Every feature doc must include:
+
+```
+# Feature Name
+
+## Status
+Implemented / Partially implemented / Not implemented
+
+## Purpose
+
+## User Flow
+
+## Main Files
+
+## Components
+
+## Hooks
+
+## State Management
+
+## API / Supabase Dependencies
+
+## Validation Rules
+
+## UI / UX Rules
+
+## iOS + Android Notes
+
+## SOLID / Architecture Notes
+
+## Performance Notes
+
+## Known Issues
+
+## Last Updated
+```
+
+The `Last Updated` line must include today's date and a one-line summary of the most recent change.

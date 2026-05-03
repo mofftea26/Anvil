@@ -1,0 +1,58 @@
+---
+description: Always read and maintain project documentation before and after every task
+alwaysApply: true
+---
+
+You are working inside this project with a living documentation system.
+
+Before making any code change, you must:
+
+1. Read /AGENTS.md.
+2. Read /docs/README.md.
+3. Read the relevant docs for the feature being changed.
+4. If the task touches Supabase, read the relevant files in /docs/supabase/.
+5. Inspect the actual source code before editing.
+6. Treat documentation as part of the source of truth.
+
+After making any code change, in the **same PR / same change set** you must:
+
+1. Update the relevant feature documentation.
+2. Update /docs/frontend/architecture.md if structure changed.
+3. Update /docs/frontend/tech-stack.md if libraries or patterns changed.
+4. Update /docs/supabase/\* if any backend, database, Edge Function, RPC, RLS, storage, or auth behavior changed.
+5. Update /docs/decisions/changelog.md.
+6. Update /docs/decisions/technical-debt.md if you discover issues that are not fixed.
+
+Saying "I'll update docs later" already breaks this rule. Update them now, in the same change.
+
+For the common change shapes, follow the runbooks instead of re-deriving the steps:
+
+- Frontend feature work → `/docs/frontend/how-to-add-a-feature.md`
+- Database / RPC / Edge Function work → `/docs/supabase/how-to-change-the-schema.md`
+
+Never leave documentation stale.
+
+If a relevant documentation file does not exist, create it.
+
+If documentation conflicts with the code, trust the code, then update the documentation.
+
+If something cannot be verified, mark it as:
+
+Needs verification:
+
+- Explain what could not be confirmed.
+- Explain where it should be checked.
+
+All future development must follow:
+
+- SOLID principles
+- feature-based architecture
+- React Native + Expo best practices
+- TypeScript strictness
+- performance-first thinking
+- iOS and Android support together
+- reusable hooks/services/components
+- clean state management
+- secure Supabase usage
+- no frontend service role keys
+- smooth but performant animations

@@ -1,0 +1,44 @@
+---
+description: i18n discipline, RTK Query conventions, and accessibility minimums
+globs:
+  ["app/**/*.{ts,tsx}", "features/**/*.{ts,tsx}", "shared/**/*.{ts,tsx}"]
+alwaysApply: false
+---
+
+## i18n discipline
+
+- Every user-visible string must come from `useAppTranslation()` (`@/shared/i18n/useAppTranslation`).
+- Locale resources live in `shared/i18n/resources/{en,fr,ar}.json`. Adding a key to one file is incomplete — add it to all three.
+- Use namespaced keys (`feature.subarea.thing`), not flat strings.
+- Run `pnpm i18n:check` before opening a PR. CI must fail when keys diverge across `en` / `fr` / `ar`.
+- For Arabic, `applyRtlIfNeeded(lang)` flips RTL. Do not assume `flexDirection: 'row'` or absolute `left/right` positions — use `start`/`end` and the `I18nManager` API.
+- Date / number formatting goes through `Intl.*`, not hand-rolled string concatenation.
+
+## RTK Query conventions
+
+- One shared API instance lives at `shared/api/api.ts`. Feature endpoints attach via `api.injectEndpoints({ endpoints, overrideExisting: false })`.
+- New endpoints must:
+  - declare a `tagTypes` value in `shared/api/api.ts` (add it once at the top).
+  - `provideTags` on read endpoints with `{ type, id }` granularity, not just `[type]`.
+  - `invalidatesTags` on write endpoints with the precise ids touched.
+  - set `keepUnusedDataFor` deliberately when caching matters (default 60s; use higher for catalogs, lower for personalized data).
+- Use `queryFn` (not `query`) for Supabase calls. Wrap the Supabase call and map errors to `ApiError`.
+- Never call `supabase.from(...)` directly inside a screen or presentational component. Go through an endpoint or a hook that owns the endpoint.
+
+## Accessibility minimums
+
+- Touch targets ≥ 44pt. Use `IconButton` or wrap small icons in a sized `Pressable`.
+- Color contrast: text against `theme.colors.bg` must hit WCAG AA (≥ 4.5:1 for body, ≥ 3:1 for large).
+- Every interactive element needs `accessibilityRole` + `accessibilityLabel` (translated). Decorative-only icons get `accessibilityElementsHidden` / `importantForAccessibility="no"`.
+- Forms use `accessibilityHint` for non-obvious behavior. Errors are announced (not just visual).
+- Animations must not be the only signal. Pair motion with text or icon state.
+- Honor `Reduce Motion` preference: gate non-essential animations on `useReducedMotion()` (Reanimated).
+
+## Theme
+
+- Read colors / spacing / radii / typography only from `useTheme()`. No hex literals in feature code.
+- Status bar is `light`. The app is dark-only. If you find yourself adding `userInterfaceStyle === 'light'` branching, stop and ask.
+
+## After changes
+
+Update the relevant feature doc and `/docs/decisions/changelog.md` in the same change.

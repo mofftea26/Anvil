@@ -9,6 +9,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
+    "docs:lint": "node ./scripts/docs-lint.js",
+    "i18n:check": "node ./scripts/i18n-check.js",
     "db:schema": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/dump-schema-only.ps1 -OutFile schema_only.sql",
     "build:android:dev": "eas build -p android --profile development",
     "build:android:preview": "eas build -p android --profile preview",
