@@ -445,6 +445,8 @@ export function ScheduleTimelineBoard(props: {
                     const resetYear = now.getFullYear();
                     setDraftMonth(resetMonth);
                     setDraftYear(resetYear);
+                    props.onChangeMonthYear?.(resetMonth, resetYear);
+                    setPickerOpen(false);
                   }}
                   style={({ pressed }) => [
                     styles.resetIconBtn,

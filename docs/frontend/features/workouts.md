@@ -111,6 +111,7 @@ Lets a client see, browse, and start their assigned workouts. Combines a persona
 
 - Schedule cards use brand accent for "today" rows.
 - Use `ScheduleTimelineBoard` for vertical scrollable lists.
+- In the month/year bottom sheet, tapping reset applies the current month/year immediately and closes the sheet.
 - Pull-to-refresh on each tab.
 - Empty states: friendly copy + "Find a trainer" CTA if unlinked.
 - Don't show absolute timestamps to seconds — use `formatShortDate` and `formatDurationSeconds`.
@@ -141,4 +142,4 @@ Lets a client see, browse, and start their assigned workouts. Combines a persona
 
 ## Last Updated
 
-2026-05-03 — initial documentation generated.
+2026-05-04 — month/year picker reset now applies immediately from the bottom sheet.

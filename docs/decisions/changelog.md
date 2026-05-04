@@ -4,6 +4,23 @@ Log of every change to docs / code / DB. Append new entries at the top. Use the 
 
 ---
 
+## 2026-05-04
+
+### Changed
+- Updated the workouts month/year picker so tapping reset applies the current month and year immediately without requiring an extra apply tap.
+
+### Files Updated
+- `features/workouts/components/ScheduleTimelineBoard.tsx`
+
+### Docs Updated
+- `docs/frontend/features/workouts.md`
+- `docs/decisions/changelog.md`
+
+### Supabase Updated
+- No.
+
+---
+
 ## 2026-05-03 (later)
 
 ### Changed
