@@ -28,9 +28,9 @@ export function CoachAvatar({
   return (
     <View
       style={{
-        width: 44,
-        height: 44,
-        borderRadius: 22,
+        width: 56,
+        height: 56,
+        borderRadius: 28,
         overflow: "hidden",
         alignItems: "center",
         justifyContent: "center",
@@ -48,11 +48,11 @@ export function CoachAvatar({
           transition={1000}
         />
       ) : initials ? (
-        <Text weight="bold" style={{ color: "white", fontSize: 14 }}>
+        <Text weight="bold" style={{ color: "white", fontSize: 18 }}>
           {initials}
         </Text>
       ) : (
-        <Icon name="person" size={20} color="white" />
+        <Icon name="person" size={24} color="white" />
       )}
     </View>
   );

@@ -29,13 +29,14 @@ import { useWeekPillColors } from "@/features/library/components/programs/progra
 import { hexToRgba } from "@/features/profile/utils/trainerProfileUtils";
 import { useAppSelector } from "@/shared/hooks/useAppSelector";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
-import { Text, useAppAlert, useTheme } from "@/shared/ui";
+import { getScreenHorizontalPadding, Text, useAppAlert, useTheme } from "@/shared/ui";
 
 // Note: any animated wrappers are defined in section components.
 
 export default function ProgramTemplateEditorScreen() {
   const { t } = useAppTranslation();
   const theme = useTheme();
+  const screenPadding = getScreenHorizontalPadding(theme);
   const alert = useAppAlert();
   const trainerId = useAppSelector((s) => s.auth.userId ?? "");
   const params = useLocalSearchParams<{ programId: string }>();
@@ -182,7 +183,7 @@ export default function ProgramTemplateEditorScreen() {
 
           <ScrollView
             style={styles.scroll}
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={[styles.scrollContent, { paddingHorizontal: screenPadding }]}
             showsVerticalScrollIndicator={false}
             scrollEnabled={
               !drag.draggingWorkout &&

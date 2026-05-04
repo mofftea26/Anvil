@@ -11,6 +11,7 @@ import {
   type ViewStyle,
 } from "react-native";
 import { useTheme } from "../theme";
+import type { AppTheme } from "../theme";
 
 type KeyboardScreenProps = PropsWithChildren<{
   padding?: number;
@@ -23,8 +24,13 @@ type KeyboardScreenProps = PropsWithChildren<{
   headerHeight?: number;
 }>;
 
+export function getScreenHorizontalPadding(theme: AppTheme): number {
+  return theme.spacing.sm;
+}
+
 export function KeyboardScreen({
   children,
+  padding,
   bottomSpace,
   centerIfShort = false,
   style,
@@ -36,6 +42,7 @@ export function KeyboardScreen({
 
   // Default bottom padding is 12 for all pages
   const bottom = bottomSpace !== undefined ? bottomSpace : 12;
+  const horizontalPadding = padding !== undefined ? padding : getScreenHorizontalPadding(theme);
 
   return (
     <View
@@ -67,7 +74,7 @@ export function KeyboardScreen({
           contentContainerStyle={[
             styles.container,
             {
-              paddingHorizontal: theme.spacing.xs,
+              paddingHorizontal: horizontalPadding,
               paddingTop: theme.spacing.xs,
               paddingBottom: bottom,
             },

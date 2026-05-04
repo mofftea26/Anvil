@@ -82,7 +82,7 @@ const { data, error } = await supabase.rpc("anvil_assign_program_to_client", {
 });
 ```
 
-For a full RPC catalog with signatures + security model, see [`/docs/supabase/rpc-functions.md`](../supabase/rpc-functions.md).
+For a full RPC catalog with signatures + security model, see [`/docs/supabase/rpc-functions.md`](../supabase/rpc-functions.md). Client program calendar/detail reads live in `features/workouts/api/programProgress.api.ts` (`anvil_get_program_progress`, `anvil_get_active_program_detail`).
 
 ## Calling Edge Functions
 

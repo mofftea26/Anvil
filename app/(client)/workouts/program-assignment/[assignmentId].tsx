@@ -1,10 +1,10 @@
 import React from "react";
 import { useLocalSearchParams } from "expo-router";
 
-import { ClientProgramScheduleScreen } from "@/features/workouts/screens/ClientProgramScheduleScreen";
+import { ProgramProgressScreen } from "@/features/workouts/screens/ProgramProgressScreen";
 
 export default function Screen() {
   const { assignmentId } = useLocalSearchParams<{ assignmentId?: string }>();
-  return <ClientProgramScheduleScreen assignmentId={String(assignmentId ?? "")} />;
+  return <ProgramProgressScreen assignmentId={String(assignmentId ?? "")} />;
 }
 

@@ -95,6 +95,7 @@ The library powers two flows:
 - Search input pinned to top.
 - Filter chips are scrollable horizontally.
 - Selection state in the picker uses brand accent.
+- Library exercises, picker, and exercise detail screens use shared app-wide horizontal gutter spacing via `getScreenHorizontalPadding`.
 
 ## iOS + Android Notes
 
@@ -121,4 +122,4 @@ The library powers two flows:
 
 ## Last Updated
 
-2026-05-03 — initial documentation generated.
+2026-05-04 — aligned exercise library and picker/detail screens to shared app-wide horizontal gutter spacing.

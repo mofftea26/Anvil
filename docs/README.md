@@ -48,6 +48,7 @@ The two sides share one Postgres schema with row-level security driving access. 
   workout-runner.md
   exercise-library.md
   profile.md
+  checkins.md
   settings.md
   notifications.md
 

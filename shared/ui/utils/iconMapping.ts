@@ -43,6 +43,7 @@ export const iconMap: Record<string, string> = {
   "grid-outline": "GridIcon",
   barbell: "Dumbbell01Icon",
   "barbell-outline": "Dumbbell01Icon",
+  dumbbell: "Dumbbell01Icon",
   "list-outline": "ListViewIcon",
   "calendar-outline": "Calendar01Icon",
   "book-outline": "Book01Icon",

@@ -23,6 +23,8 @@ All triggers in the `public` schema (May 2026).
 | `workouts` | `trg_workouts_add_series_durations` | BEFORE INSERT/UPDATE | `trg_workouts_add_series_durations` | Inject computed durations into `state` |
 | `workouts` | `trg_workouts_updated_at` | BEFORE UPDATE | `set_updated_at` | Bump `updatedAt` |
 | `workouts` | `workouts_set_updated_at` | BEFORE UPDATE | `set_updated_at` | **Duplicate** of above — drop one (tech debt) |
+| `workoutSessions` | `anvil_session_completion_sync_trigger` | AFTER UPDATE | `anvil_session_completion_sync_trigger` | When session transitions into `status='completed'`, marks the linked `clientWorkoutAssignments` row complete and appends `programdaykey` into the parent program's `progress.completedDayKeys` (with `lastCompletedAt`). |
+| `clientCheckIns` | `trg_clientcheckins_updatedat` | BEFORE UPDATE | `set_updated_at` | Bump `updatedAt`. |
 
 ## Trigger function security model
 
@@ -33,6 +35,12 @@ All triggers in the `public` schema (May 2026).
 
 - The function `handle_new_auth_user()` exists in `pg_proc` and is intended to insert a matching `public.users` row when `auth.users` gets a new row. **Needs verification** that a trigger on `auth.users` calls it (the inspection above only covered `public` triggers).
 
+## Notes on `anvil_session_completion_sync_trigger`
+
+- `EXECUTE` on the trigger function is revoked from `public, anon, authenticated`; the function is reachable only via the trigger row event.
+- It is idempotent: it fires on the OLD→NEW transition into `status='completed'` only. Re-completion is a no-op (the inner UPDATE has `where status <> 'completed'`).
+- It overlaps slightly with `anvil_finish_workout_session` (the canonical RPC also updates the assignment), but the two together cover both code paths: RPC-driven finishes _and_ direct UPDATEs (e.g. trainer corrections, future bulk imports).
+
 ## Last Updated
 
-2026-05-03 — initial documentation generated.
+2026-05-04 — added `anvil_session_completion_sync_trigger` and `trg_clientcheckins_updatedat` (Phase A).

@@ -104,11 +104,10 @@ export function useTrainerClientsAssignmentsSummary(params: {
   /** Increment to force a refetch after mutations. */
   refreshToken?: number;
 }) {
-  const ids = useMemo(
-    () => Array.from(new Set(params.clientIds.filter(Boolean))).sort(),
+  const idsKey = useMemo(
+    () => Array.from(new Set(params.clientIds.filter(Boolean))).sort().join("|"),
     [params.clientIds]
   );
-  const idsKey = useMemo(() => ids.join("|"), [ids]);
   const ymd = useMemo(() => todayYmd(), []);
 
   const [loading, setLoading] = useState(false);
@@ -119,6 +118,7 @@ export function useTrainerClientsAssignmentsSummary(params: {
 
   useEffect(() => {
     let cancelled = false;
+    const ids = idsKey ? idsKey.split("|").filter(Boolean) : [];
     async function run() {
       if (!params.trainerId || !ids.length) {
         setActivePrograms({});
@@ -252,7 +252,7 @@ export function useTrainerClientsAssignmentsSummary(params: {
     return () => {
       cancelled = true;
     };
-  }, [idsKey, ids, params.trainerId, ymd, params.refreshToken]);
+  }, [idsKey, params.trainerId, ymd, params.refreshToken]);
 
   return {
     loading,

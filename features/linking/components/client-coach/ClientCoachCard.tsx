@@ -64,21 +64,42 @@ export function ClientCoachCard({
   if (!data) return null;
 
   const seed = data.trainer?.id || data.trainer?.email || "seed";
+  const statusLabel = t(`linking.management.status.${relationshipStatus}`);
+  const brandName = data.trainerProfile?.brandName?.trim();
+  const headlineName = brandName && brandName.length > 0 ? brandName : coachName;
 
   return (
     <Card
       padded={false}
+      bordered
       style={{
         overflow: "hidden",
         borderColor: hexToRgba(brandA, 0.22),
-        backgroundColor: "rgba(255,255,255,0.06)",
+        backgroundColor: theme.colors.surface2,
       }}
     >
       <View style={{ position: "relative" }}>
+        {data.trainerProfile?.logoUrl ? (
+          <Image
+            source={{ uri: data.trainerProfile.logoUrl }}
+            style={{
+              position: "absolute",
+              left: 0,
+              top: 0,
+              right: 0,
+              bottom: 0,
+              opacity: 0.22,
+            }}
+            contentFit="cover"
+            cachePolicy="none"
+            transition={1000}
+          />
+        ) : null}
         <LinearGradient
           colors={[
-            hexToRgba(brandA, 0.28),
-            hexToRgba(brandB, 0.16),
+            hexToRgba(brandA, 0.5),
+            hexToRgba(brandB, 0.34),
+            "rgba(0,0,0,0.12)",
             "rgba(255,255,255,0.00)",
           ]}
           start={{ x: 0, y: 0 }}
@@ -102,11 +123,8 @@ export function ClientCoachCard({
                 seed={seed}
               />
               <VStack style={{ flex: 1, gap: 4 }}>
-                <Text variant="caption" muted>
-                  {t("linking.coach.title")}
-                </Text>
                 <Text weight="bold" style={{ fontSize: 20 }} numberOfLines={1}>
-                  {data.trainerProfile?.brandName ?? coachName}
+                  {headlineName}
                 </Text>
                 <Text muted numberOfLines={1}>
                   {coachName}
@@ -114,27 +132,36 @@ export function ClientCoachCard({
               </VStack>
             </HStack>
 
-            {data.trainerProfile?.logoUrl ? (
-              <View
-                style={{
-                  width: 54,
-                  height: 54,
-                  borderRadius: 16,
-                  overflow: "hidden",
-                  backgroundColor: "rgba(255,255,255,0.10)",
-                  borderWidth: 1,
-                  borderColor: "rgba(255,255,255,0.14)",
-                }}
-              >
-                <Image
-                  source={{ uri: data.trainerProfile.logoUrl }}
-                  style={{ width: "100%", height: "100%" }}
-                  contentFit="cover"
-                  cachePolicy="none"
-                  transition={1000}
-                />
-              </View>
-            ) : null}
+            <VStack
+              style={{
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+                borderRadius: 999,
+                backgroundColor: hexToRgba(brandA, 0.2),
+                borderWidth: 1,
+                borderColor: hexToRgba(brandA, 0.35),
+              }}
+            >
+              <Text variant="caption" style={{ color: theme.colors.text }}>
+                {statusLabel}
+              </Text>
+            </VStack>
+          </HStack>
+
+          <HStack gap={10}>
+            <Card background="surface" bordered style={{ flex: 1 }}>
+              <VStack style={{ gap: 6 }}>
+                <Text variant="caption" muted>
+                  {t("linking.coach.checkIn")}
+                </Text>
+                <Text weight="bold" style={{ fontSize: 16 }}>
+                  {nextCheckIn}
+                </Text>
+                <Text variant="caption" muted>
+                  {t("linking.coach.subtitle")}
+                </Text>
+              </VStack>
+            </Card>
           </HStack>
 
           {data.trainerProfile?.bio ? (
@@ -143,14 +170,7 @@ export function ClientCoachCard({
             </Text>
           ) : null}
 
-          <Card background="surface2">
-            <HStack align="center" justify="space-between">
-              <Text muted>{t("linking.coach.checkIn")}</Text>
-              <Text weight="semibold">{nextCheckIn}</Text>
-            </HStack>
-          </Card>
-
-          <Card background="surface2">
+          <Card background="surface" bordered>
             <VStack style={{ gap: 10 }}>
               <Text variant="caption" muted>
                 {t("linking.coach.contact")}

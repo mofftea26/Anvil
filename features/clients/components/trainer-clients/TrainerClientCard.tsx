@@ -6,6 +6,7 @@ import { View } from "react-native";
 import {
   formatCheckIn,
   getInitials,
+  hexToRgba,
   pickAvatarBg,
 } from "@/features/clients/utils/clientUi";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
@@ -93,10 +94,10 @@ export function TrainerClientCard({
 
   const statusPill = isArchived
     ? {
-        label: t("linking.clients.archive"),
-        bg: "rgba(255,255,255,0.10)",
-        border: "rgba(255,255,255,0.16)",
-        text: theme.colors.text,
+        label: t("linking.clients.archived"),
+        bg: hexToRgba(theme.colors.textMuted, 0.2),
+        border: hexToRgba(theme.colors.textMuted, 0.4),
+        text: theme.colors.textMuted,
       }
     : {
         label: t(
@@ -104,8 +105,8 @@ export function TrainerClientCard({
             row.management?.clientStatus ?? "active"
           }`
         ),
-        bg: "rgba(255,255,255,0.10)",
-        border: "rgba(255,255,255,0.16)",
+        bg: hexToRgba(theme.colors.accent, 0.18),
+        border: hexToRgba(theme.colors.accent, 0.45),
         text: theme.colors.text,
       };
 
@@ -114,14 +115,25 @@ export function TrainerClientCard({
   const initials = getInitials(c?.firstName, c?.lastName);
   const seed = c?.id || c?.email || row.clientId || row.id;
   const bg = pickAvatarBg(seed);
+  const gradientA = hexToRgba(theme.colors.accent, 0.22);
+  const gradientB = hexToRgba(theme.colors.accent2, 0.12);
+  const borderTone = hexToRgba(theme.colors.accent, 0.26);
 
   return (
-    <Card padded={false} style={{ overflow: "hidden" }}>
+    <Card
+      padded={false}
+      bordered
+      style={{
+        overflow: "hidden",
+        backgroundColor: theme.colors.surface2,
+        borderColor: borderTone,
+      }}
+    >
       <View style={{ position: "relative" }}>
         <LinearGradient
           colors={[
-            "rgba(124,58,237,0.22)",
-            "rgba(56,189,248,0.10)",
+            gradientA,
+            gradientB,
             "rgba(255,255,255,0.00)",
           ]}
           start={{ x: 0, y: 0 }}
@@ -140,15 +152,15 @@ export function TrainerClientCard({
             <HStack align="center" gap={10} style={{ flex: 1 }}>
               <View
                 style={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: 21,
+                  width: 52,
+                  height: 52,
+                  borderRadius: 26,
                   alignItems: "center",
                   justifyContent: "center",
                   overflow: "hidden",
-                  backgroundColor: hasImage ? "rgba(255,255,255,0.10)" : bg,
+                  backgroundColor: hasImage ? theme.colors.surface3 : bg,
                   borderWidth: 1,
-                  borderColor: "rgba(255,255,255,0.14)",
+                  borderColor: theme.colors.border,
                 }}
               >
                 {hasImage ? (
@@ -171,6 +183,9 @@ export function TrainerClientCard({
                 <Text weight="bold" numberOfLines={1} style={{ fontSize: 16 }}>
                   {name}
                 </Text>
+                <Text muted numberOfLines={1}>
+                  {c?.email ?? "—"}
+                </Text>
               </VStack>
             </HStack>
 
@@ -192,9 +207,9 @@ export function TrainerClientCard({
 
           <View
             style={{
-              backgroundColor: "rgba(255,255,255,0.06)",
+              backgroundColor: theme.colors.surface,
               borderWidth: 1,
-              borderColor: "rgba(255,255,255,0.10)",
+              borderColor: theme.colors.border,
               borderRadius: 14,
               paddingVertical: 10,
               paddingHorizontal: 12,
@@ -214,7 +229,7 @@ export function TrainerClientCard({
                 style={{
                   width: 1,
                   alignSelf: "stretch",
-                  backgroundColor: "rgba(255,255,255,0.10)",
+                  backgroundColor: theme.colors.border,
                 }}
               />
 
@@ -265,9 +280,9 @@ export function TrainerClientCard({
             <View
               style={{
                 marginTop: 12,
-                backgroundColor: "rgba(255,255,255,0.06)",
+              backgroundColor: theme.colors.surface,
                 borderWidth: 1,
-                borderColor: "rgba(255,255,255,0.10)",
+              borderColor: theme.colors.border,
                 borderRadius: 14,
                 paddingVertical: 10,
                 paddingHorizontal: 12,

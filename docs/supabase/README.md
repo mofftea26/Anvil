@@ -44,11 +44,11 @@ The backend for Anvil is a Supabase project named **Anvil** (project ref `ekvwvx
 Run `get_advisors` (`security` and `performance`) regularly. Current outstanding warnings (see [`/docs/decisions/technical-debt.md`](../decisions/technical-debt.md) for full triage):
 
 - 15 functions with mutable `search_path` (security `WARN`).
-- 53 `SECURITY DEFINER` RPCs callable by `anon` and 53 by `authenticated` — by design for some, but each should be reviewed.
+- 53 `SECURITY DEFINER` RPCs callable by `anon` (Phase A's 7 new RPCs are explicitly revoked from `anon`) and 60 by `authenticated` (+7 from Phase A; intentional).
 - 2 RLS policies with `WITH CHECK true` (`exercises_update`, `programtemplates_update`).
 - 2 public buckets allow listing (`avatars`, `logos`).
 - Auth leaked-password protection is **disabled**.
 - 83 `auth_rls_initplan` performance warnings (RLS policies re-evaluating `auth.uid()` per row).
-- 35 unused indexes, 41 multiple permissive policies, 1 duplicate index.
+- 33 unused indexes (Phase A added 1 — will resolve once `clientCheckIns` is in use), 41 multiple permissive policies, 1 duplicate index.
 
 These are tracked, not blocking.

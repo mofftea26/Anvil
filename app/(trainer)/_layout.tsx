@@ -23,6 +23,10 @@ export default function TrainerLayout() {
 
       {/* Existing client screen route */}
       <Stack.Screen name="client/[clientId]" options={{ headerShown: false }} />
+
+      <Stack.Screen name="clients-without-program" options={{ headerShown: false }} />
+      <Stack.Screen name="check-ins" options={{ headerShown: false }} />
+      <Stack.Screen name="todays-roster" options={{ headerShown: false }} />
     </Stack>
   );
 }

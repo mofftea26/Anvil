@@ -5,7 +5,7 @@ import type { UnitSystem } from "@/features/profile/utils/units";
 import { AppInput } from "@/shared/components/AppInput";
 import { BottomSheetPicker } from "@/shared/components/BottomSheetPicker";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
-import { Card, Text, useTheme, VStack } from "@/shared/ui";
+import { Card, HStack, Icon, Text, useTheme, VStack } from "@/shared/ui";
 
 type ClientPreferencesCardProps = {
   form: Pick<ClientProfileForm, "unitSystem" | "activityLevel" | "target" | "notes">;
@@ -28,11 +28,14 @@ export function ClientPreferencesCard({
   const theme = useTheme();
 
   return (
-    <Card>
+    <Card bordered background="surface2">
       <VStack style={{ gap: theme.spacing.lg }}>
-        <Text variant="caption" muted>
-          {t("profile.sections.preferences")}
-        </Text>
+        <HStack align="center" justify="space-between">
+          <Text variant="caption" muted>
+            {t("profile.sections.preferences")}
+          </Text>
+          <Icon name="settings" size={16} color={theme.colors.textMuted} />
+        </HStack>
 
         <BottomSheetPicker
           label={t("profile.fields.unitSystem")}

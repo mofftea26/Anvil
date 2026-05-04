@@ -7,7 +7,7 @@ import { AppInput } from "@/shared/components/AppInput";
 import { PhoneInput } from "@/shared/components/PhoneInput";
 import { BottomSheetPicker } from "@/shared/components/BottomSheetPicker";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
-import { Button, Card, Text, useTheme, VStack, HStack } from "@/shared/ui";
+import { Button, Card, HStack, Icon, Text, useTheme, VStack } from "@/shared/ui";
 
 type ClientBasicInfoCardProps = {
   form: Pick<
@@ -37,11 +37,14 @@ export function ClientBasicInfoCard({
   const theme = useTheme();
 
   return (
-    <Card>
+    <Card bordered background="surface2">
       <VStack style={{ gap: theme.spacing.lg }}>
-        <Text variant="caption" muted>
-          {t("profile.sections.basic")}
-        </Text>
+        <HStack align="center" justify="space-between">
+          <Text variant="caption" muted>
+            {t("profile.sections.basic")}
+          </Text>
+          <Icon name="person" size={16} color={theme.colors.textMuted} />
+        </HStack>
 
         <HStack gap={theme.spacing.md}>
           <View style={{ flex: 1 }}>
@@ -88,7 +91,10 @@ export function ClientBasicInfoCard({
           <Button
             variant="secondary"
             onPress={() => setShowDatePicker(true)}
-            contentStyle={{ justifyContent: "flex-start" }}
+            contentStyle={{
+              justifyContent: "flex-start",
+              paddingHorizontal: theme.spacing.md,
+            }}
           >
             <Text
               color={form.birthDate ? theme.colors.text : "rgba(255,255,255,0.45)"}

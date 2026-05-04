@@ -40,6 +40,43 @@ export type ClientProgramAssignment = {
   updatedAt: string;
 };
 
+/**
+ * Per-day row returned by `anvil_get_program_progress(p_program_assignment_id)`.
+ * Status tells the calendar grid how to color each cell.
+ */
+export type ProgramProgressDayStatus = "completed" | "pending" | "missed" | "rest";
+
+export type ProgramProgressDay = {
+  dayKey: string;
+  weekIndex: number;
+  dayIndex: number;
+  scheduledFor: string; // YYYY-MM-DD
+  isRest: boolean;
+  workoutId: string | null;
+  status: ProgramProgressDayStatus;
+};
+
+/** Single-row aggregate from `anvil_get_active_program_detail(p_assignment_id)`. */
+export type ActiveProgramDetail = {
+  assignmentId: string;
+  startDate: string;
+  status: string;
+  notes: string | null;
+  templateId: string;
+  title: string;
+  description: string | null;
+  difficulty: string | null;
+  durationWeeks: number | null;
+  state: unknown;
+  totalDays: number;
+  workoutDays: number;
+  restDays: number;
+  completedDays: number;
+  pendingDays: number;
+  missedDays: number;
+  expectedEndDate: string | null;
+};
+
 export type WorkoutTemplate = {
   id: string;
   trainerId: string;

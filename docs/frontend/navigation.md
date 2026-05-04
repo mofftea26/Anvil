@@ -89,17 +89,20 @@ Trainer:
 - `/(trainer)/(tabs)/{dashboard,library,clients,profile}`
 - `/(trainer)/add-client`
 - `/(trainer)/client/[clientId]`
+- `/(trainer)/clients-without-program` — clients with no active program; quick assign program
+- `/(trainer)/check-ins` — trainer check-in timeline (`clientCheckIns`)
 - `/(trainer)/library/{programs,workouts,exercises,set-types,create-program}`
 - `/(trainer)/library/program-templates/[programId]`
 - `/(trainer)/library/workout-builder/{new,[workoutId],exercise-picker}`
 - `/(trainer)/library/workout-builder/exercise/[exerciseId]`
 
 Client:
-- `/(client)/(tabs)/{dashboard,workouts,coach,profile}`
+- `/(client)/(tabs)/{dashboard,workouts,coach,profile}` — workouts tab honors `?tab=schedule|program|history|stats`.
 - `/(client)/find-trainer`
 - `/(client)/link-trainer`
+- `/(client)/program/[assignmentId]` — program progress (info + calendar grid); canonical path from dashboard / My Program.
 - `/(client)/workouts/assigned/[assignmentId]`
-- `/(client)/workouts/program-assignment/[assignmentId]`
+- `/(client)/workouts/program-assignment/[assignmentId]` — same `ProgramProgressScreen` as `/(client)/program/[assignmentId]` (legacy path retained).
 - `/(client)/workouts/program-assignment/[assignmentId]/day/[dayKey]`
 - `/(client)/workouts/run/[assignmentId]`
 - `/(client)/workouts/sessions/[sessionId]`

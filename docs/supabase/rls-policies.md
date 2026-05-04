@@ -186,6 +186,17 @@ Both have `…_select`, `…_all`, `…_write` policies. `…_select` requires t
 | --- | --- | --- |
 | `workout_stats_daily_select_own` / `_insert_own` / `_update_own` / `_delete_own` | SELECT/INSERT/UPDATE/DELETE | `auth.uid() = clientid` |
 
+## `clientCheckIns`
+
+> Wraps `auth.uid()` as `(select auth.uid())` per the runbook. UPDATE policy replicates the USING expression in WITH CHECK.
+
+| Policy | CMD | Roles | Notes |
+| --- | --- | --- | --- |
+| `clientcheckins_select_participant` | SELECT | authenticated | trainer self OR client self with active `trainerClients` link |
+| `clientcheckins_insert_trainer` | INSERT | authenticated | `trainerId = (select auth.uid())` AND active link to `clientId` |
+| `clientcheckins_update_trainer` | UPDATE | authenticated | trainer with active link (USING ↔ WITH CHECK) |
+| `clientcheckins_delete_trainer` | DELETE | authenticated | `trainerId = (select auth.uid())` |
+
 ## Storage policies
 
 See [`storage.md`](./storage.md). Buckets `avatars` and `logos` have public read; only the owner (folder = `auth.uid()`) can write/delete. `pdfs` is private (no public read policy).
@@ -195,10 +206,10 @@ See [`storage.md`](./storage.md). Buckets `avatars` and `logos` have public read
 Pulled from `get_advisors` (May 2026):
 
 - `rls_policy_always_true`: `exercises_update`, `programtemplates_update`.
-- `pg_graphql_anon_table_exposed`: 15 tables visible to `anon` via GraphQL `SELECT`.
-- `pg_graphql_authenticated_table_exposed`: 23 tables visible to `authenticated` via GraphQL.
-- `anon_security_definer_function_executable`: 53 RPCs callable by `anon`.
-- `authenticated_security_definer_function_executable`: 53 RPCs callable by `authenticated` (expected for most).
+- `pg_graphql_anon_table_exposed`: 16 tables visible to `anon` via GraphQL `SELECT` (added `clientCheckIns` in Phase A — RLS denies anon).
+- `pg_graphql_authenticated_table_exposed`: 24 tables visible to `authenticated` via GraphQL (added `clientCheckIns` — RLS deny non-participant).
+- `anon_security_definer_function_executable`: 53 RPCs callable by `anon` (Phase A's 7 new RPCs are explicitly revoked from `anon`).
+- `authenticated_security_definer_function_executable`: 60 RPCs callable by `authenticated` (+7 from Phase A — expected; these RPCs are intentionally callable from the app).
 - `function_search_path_mutable`: 15 functions need `SET search_path = public`.
 - `public_bucket_allows_listing`: `avatars`, `logos`.
 - `auth_leaked_password_protection`: disabled.
@@ -207,4 +218,4 @@ All triaged in [`/docs/decisions/technical-debt.md`](../decisions/technical-debt
 
 ## Last Updated
 
-2026-05-03 — initial documentation generated.
+2026-05-04 — added `clientCheckIns` policies (Phase A overhaul).

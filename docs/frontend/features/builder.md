@@ -81,6 +81,7 @@ Trainers use the workout builder to author standalone workouts and per-day worko
 - Horizontal `FlatList` carousel for series pages with paginated snap.
 - `SetsEditorSheet` and `SetTypePickerSheet` use `BottomSheetPicker` from `@/shared/ui`.
 - Long-press exercise card to delete; tap to open detail.
+- Builder screens (builder, picker, and exercise detail) use shared app-wide horizontal gutter spacing via `getScreenHorizontalPadding`.
 
 ## iOS + Android Notes
 
@@ -109,4 +110,4 @@ Trainers use the workout builder to author standalone workouts and per-day worko
 
 ## Last Updated
 
-2026-05-03 — feature doc backfilled during the docs / rules / skills audit pass.
+2026-05-04 — builder screens aligned to shared app-wide horizontal gutter spacing.

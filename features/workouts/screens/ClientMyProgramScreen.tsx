@@ -5,13 +5,13 @@ import { router } from "expo-router";
 import { listClientWorkoutAssignmentsForProgramAssignment } from "@/features/workouts/api/clientWorkouts.api";
 import { useAppSelector } from "@/shared/hooks/useAppSelector";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
-import { HStack, Icon, Text, useTheme, VStack } from "@/shared/ui";
+import { getScreenHorizontalPadding, HStack, Icon, Text, useTheme, VStack, appToast } from "@/shared/ui";
 
 import { useClientProgramAssignments } from "../hooks/useClientProgramAssignments";
+import { useActiveProgramDetail } from "../hooks/useProgramProgress";
 import { useProgramTemplatesPublicMap } from "../hooks/useProgramTemplatesPublicMap";
 import { useWorkoutTemplatesMap } from "../hooks/useWorkoutTemplatesMap";
 import type { ClientWorkoutAssignment } from "../types";
-import { computeProgressPercent, normalizeCompletedDayKeys, totalPlannedDayKeys } from "../utils/programProgress";
 
 function ListSkeleton() {
   const theme = useTheme();
@@ -34,6 +34,7 @@ function ListSkeleton() {
 
 export function ClientMyProgramScreen() {
   const theme = useTheme();
+  const screenPadding = getScreenHorizontalPadding(theme);
   const { t } = useAppTranslation();
   const clientId = useAppSelector((s) => s.auth.userId ?? "");
 
@@ -58,6 +59,12 @@ export function ClientMyProgramScreen() {
   const activeProgramTemplate = activeProgram
     ? (templatesById[activeProgram.programTemplateId] ?? null)
     : null;
+
+  const dq = useActiveProgramDetail(activeProgram?.id ?? null);
+
+  useEffect(() => {
+    if (dq.error) appToast.error(dq.error);
+  }, [dq.error]);
 
   useEffect(() => {
     let cancelled = false;
@@ -91,63 +98,20 @@ export function ClientMyProgramScreen() {
   );
   const { templatesById: workoutTemplatesById } = useWorkoutTemplatesMap(workoutIds);
 
-  const programState = (activeProgramTemplate?.state as any) ?? null;
-  const resolvedDifficulty: string | null = useMemo(() => {
-    const fromState = programState?.difficulty;
-    const fromCol = activeProgramTemplate?.difficulty;
-    const val = (fromState ?? fromCol ?? null) as string | null;
-    return val && typeof val === "string" ? val : null;
-  }, [programState, activeProgramTemplate?.difficulty]);
-  const resolvedDurationWeeks: number | null = useMemo(() => {
-    const fromState = typeof programState?.durationWeeks === "number" ? programState.durationWeeks : null;
-    const fromCol = typeof activeProgramTemplate?.durationWeeks === "number" ? activeProgramTemplate.durationWeeks : null;
-    if (fromState && fromState > 0) return fromState;
-    if (fromCol && fromCol > 0) return fromCol;
-    const phases = programState?.phases ?? [];
-    let totalWeeks = 0;
-    for (const phase of phases) totalWeeks += (phase?.weeks?.length ?? 0);
-    return totalWeeks > 0 ? totalWeeks : null;
-  }, [programState, activeProgramTemplate?.durationWeeks]);
-  const totalPlannedDays = totalPlannedDayKeys(programState ?? null).length;
-  const completedDayKeys = normalizeCompletedDayKeys(activeProgram?.progress);
-  const completionPercent = computeProgressPercent({
-    totalPlannedDays,
-    completedDays: completedDayKeys.length,
-  });
-  const plannedWorkoutDays = useMemo(() => {
-    const phases = programState?.phases ?? [];
-    let total = 0;
-    for (const phase of phases) {
-      for (const week of phase?.weeks ?? []) {
-        for (const day of week?.days ?? []) {
-          const isWorkoutType = day?.type === "workout";
-          const hasWorkoutRef = Boolean(day?.workoutRef);
-          const hasWorkoutArray = Array.isArray(day?.workouts) && day.workouts.length > 0;
-          if (isWorkoutType || hasWorkoutRef || hasWorkoutArray) total += 1;
-        }
-      }
-    }
-    return total;
-  }, [programState]);
-  const completedScheduled = useMemo(
-    () => activeProgramWorkouts.filter((x) => String(x.status ?? "") === "completed").length,
-    [activeProgramWorkouts]
-  );
-  const upcomingScheduled = Math.max(0, activeProgramWorkouts.length - completedScheduled);
-  const nextWorkout = activeProgramWorkouts.find((x) => String(x.status ?? "") !== "completed") ?? null;
-  const elapsedDays = useMemo(() => {
-    if (!activeProgram?.startDate) return 0;
-    const from = new Date(`${activeProgram.startDate}T00:00:00`);
-    if (Number.isNaN(from.getTime())) return 0;
-    const now = new Date();
-    const diff = Math.floor((now.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
-    return Math.max(0, diff + 1);
-  }, [activeProgram?.startDate]);
-  const estimatedTotalDays = useMemo(() => {
-    if (resolvedDurationWeeks && resolvedDurationWeeks > 0) return resolvedDurationWeeks * 7;
-    return totalPlannedDays;
-  }, [resolvedDurationWeeks, totalPlannedDays]);
-  const remainingDays = Math.max(0, estimatedTotalDays - elapsedDays);
+  const detail = dq.detail;
+  const displayTitle =
+    detail?.title ?? activeProgramTemplate?.title ?? t("clients.program", "Program");
+  const displayDescription = detail?.description ?? activeProgramTemplate?.description ?? null;
+
+  const resolvedDifficulty = detail?.difficulty ?? null;
+  const completionPercent =
+    detail && detail.totalDays > 0
+      ? Math.round((detail.completedDays / detail.totalDays) * 100)
+      : 0;
+  const daysLeft = detail ? detail.pendingDays + detail.missedDays : 0;
+  const completedForBar = detail?.completedDays ?? 0;
+  const totalForBar = detail?.totalDays ?? 0;
+
   const progressBarWidth = `${Math.max(0, Math.min(100, completionPercent))}%` as `${number}%`;
 
   const difficultyLabel = useMemo(() => {
@@ -165,12 +129,28 @@ export function ClientMyProgramScreen() {
     return theme.colors.accent;
   }, [resolvedDifficulty, theme.colors.accent, theme.colors.accent2, theme.colors.danger]);
   const startDateLabel = useMemo(() => {
-    const raw = activeProgram?.startDate;
+    const raw = detail?.startDate ?? activeProgram?.startDate;
     if (!raw) return "—";
     const d = new Date(`${raw}T00:00:00`);
     if (Number.isNaN(d.getTime())) return String(raw);
     return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-  }, [activeProgram?.startDate]);
+  }, [detail?.startDate, activeProgram?.startDate]);
+  const durationWeeksLabel =
+    detail?.durationWeeks && detail.durationWeeks > 0
+      ? t("client.program.weeks", "{{n}} weeks", { n: String(detail.durationWeeks) })
+      : "—";
+
+  const nextWorkout = activeProgramWorkouts.find((x) => String(x.status ?? "") !== "completed") ?? null;
+
+  const [syncRefreshing, setSyncRefreshing] = useState(false);
+  const onPullRefresh = async () => {
+    setSyncRefreshing(true);
+    try {
+      await Promise.all([q.onRefresh(), dq.refresh()]);
+    } finally {
+      setSyncRefreshing(false);
+    }
+  };
 
   return (
     <ScrollView
@@ -180,15 +160,15 @@ export function ClientMyProgramScreen() {
       contentContainerStyle={[
         styles.content,
         {
-          paddingHorizontal: theme.spacing.md,
+          paddingHorizontal: screenPadding,
           paddingTop: theme.spacing.sm,
           paddingBottom: theme.spacing.lg,
         },
       ]}
       refreshControl={
         <RefreshControl
-          refreshing={q.refreshing}
-          onRefresh={() => void q.onRefresh()}
+          refreshing={q.refreshing || syncRefreshing}
+          onRefresh={() => void onPullRefresh()}
           tintColor={theme.colors.text}
         />
       }
@@ -218,11 +198,11 @@ export function ClientMyProgramScreen() {
               </Text>
             </HStack>
             <Text weight="bold" numberOfLines={2} style={{ fontSize: 26, lineHeight: 32 }}>
-              {activeProgramTemplate?.title ?? t("clients.program", "Program")}
+              {dq.loading && !detail ? t("common.loading", "Loading…") : displayTitle}
             </Text>
-            {activeProgramTemplate?.description ? (
+            {displayDescription ? (
               <Text style={{ color: theme.colors.textMuted, lineHeight: 20, marginTop: 6 }} numberOfLines={3}>
-                {activeProgramTemplate.description}
+                {displayDescription}
               </Text>
             ) : null}
 
@@ -233,15 +213,27 @@ export function ClientMyProgramScreen() {
               </HStack>
               <HStack align="center" gap={6} style={[styles.chip, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
                 <Icon name="timer-outline" size={13} color={theme.colors.textMuted} />
-                <Text weight="semibold" style={{ fontSize: 12 }}>
-                  {resolvedDurationWeeks
-                    ? t("client.program.weeks", "{{n}} weeks", { n: String(resolvedDurationWeeks) })
-                    : "—"}
-                </Text>
+                <Text weight="semibold" style={{ fontSize: 12 }}>{durationWeeksLabel}</Text>
               </HStack>
               <HStack align="center" gap={6} style={[styles.chip, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
                 <Icon name="calendar-03" size={13} color={theme.colors.textMuted} />
                 <Text weight="semibold" style={{ fontSize: 12 }}>{startDateLabel}</Text>
+              </HStack>
+              <HStack align="center" gap={6} style={[styles.chip, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                <Icon name="layers-outline" size={13} color={theme.colors.textMuted} />
+                <Text weight="semibold" style={{ fontSize: 12 }}>
+                  {detail
+                    ? t("client.program.totalDaysChip", "{{n}} days", { n: String(detail.totalDays) })
+                    : "—"}
+                </Text>
+              </HStack>
+              <HStack align="center" gap={6} style={[styles.chip, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                <Icon name="pulse" size={13} color={theme.colors.textMuted} />
+                <Text weight="semibold" style={{ fontSize: 12 }}>
+                  {detail
+                    ? t("client.program.daysLeftChip", "{{n}} left", { n: String(daysLeft) })
+                    : "—"}
+                </Text>
               </HStack>
             </HStack>
 
@@ -259,10 +251,10 @@ export function ClientMyProgramScreen() {
               </View>
               <HStack justify="space-between" style={{ marginTop: 6 }}>
                 <Text style={{ color: theme.colors.textMuted, fontSize: 11 }}>
-                  {`${completedDayKeys.length} / ${totalPlannedDays} ${t("client.program.daysShort", "days")}`}
+                  {`${completedForBar} / ${totalForBar} ${t("client.program.daysShort", "days")}`}
                 </Text>
                 <Text style={{ color: theme.colors.textMuted, fontSize: 11 }}>
-                  {t("client.program.remainingDays", "{{n}} days left", { n: String(remainingDays) })}
+                  {t("client.program.remainingDays", "{{n}} days left", { n: String(daysLeft) })}
                 </Text>
               </HStack>
             </View>
@@ -272,39 +264,39 @@ export function ClientMyProgramScreen() {
             <Text weight="semibold">{t("client.program.planSummary", "Plan summary")}</Text>
             <View style={styles.summaryGrid}>
               <View style={[styles.summaryTile, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-                <Text style={styles.statValue}>{String(plannedWorkoutDays)}</Text>
-                <Text style={[styles.statLabel, { color: theme.colors.textMuted }]} numberOfLines={1}>
-                  {t("client.program.workoutDays", "Workout days")}
-                </Text>
-              </View>
-              <View style={[styles.summaryTile, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-                <Text style={styles.statValue}>{String(totalPlannedDays)}</Text>
+                <Text style={styles.statValue}>{detail ? String(detail.totalDays) : "—"}</Text>
                 <Text style={[styles.statLabel, { color: theme.colors.textMuted }]} numberOfLines={1}>
                   {t("client.program.totalDays", "Total days")}
                 </Text>
               </View>
               <View style={[styles.summaryTile, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-                <Text style={styles.statValue}>{String(activeProgramWorkouts.length)}</Text>
+                <Text style={styles.statValue}>{detail ? String(detail.workoutDays) : "—"}</Text>
                 <Text style={[styles.statLabel, { color: theme.colors.textMuted }]} numberOfLines={1}>
-                  {t("client.program.scheduledWorkouts", "Scheduled")}
+                  {t("client.program.workoutDays", "Workout days")}
                 </Text>
               </View>
               <View style={[styles.summaryTile, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-                <Text style={[styles.statValue, { color: theme.colors.accent }]}>{String(completedScheduled)}</Text>
+                <Text style={styles.statValue}>{detail ? String(detail.restDays) : "—"}</Text>
+                <Text style={[styles.statLabel, { color: theme.colors.textMuted }]} numberOfLines={1}>
+                  {t("client.programProgress.info.restDays", "Rest days")}
+                </Text>
+              </View>
+              <View style={[styles.summaryTile, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                <Text style={[styles.statValue, { color: theme.colors.accent }]}>{detail ? String(detail.completedDays) : "—"}</Text>
                 <Text style={[styles.statLabel, { color: theme.colors.textMuted }]} numberOfLines={1}>
                   {t("client.program.completed", "Completed")}
                 </Text>
               </View>
               <View style={[styles.summaryTile, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-                <Text style={styles.statValue}>{String(upcomingScheduled)}</Text>
+                <Text style={styles.statValue}>{detail ? String(detail.pendingDays) : "—"}</Text>
                 <Text style={[styles.statLabel, { color: theme.colors.textMuted }]} numberOfLines={1}>
-                  {t("client.workouts.upcoming", "Upcoming")}
+                  {t("client.programProgress.info.pendingDays", "Pending")}
                 </Text>
               </View>
               <View style={[styles.summaryTile, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-                <Text style={styles.statValue}>{String(elapsedDays)}</Text>
+                <Text style={styles.statValue}>{detail ? String(detail.missedDays) : "—"}</Text>
                 <Text style={[styles.statLabel, { color: theme.colors.textMuted }]} numberOfLines={1}>
-                  {t("client.program.elapsed", "Elapsed")}
+                  {t("client.programProgress.info.missedDays", "Missed")}
                 </Text>
               </View>
             </View>
@@ -347,7 +339,7 @@ export function ClientMyProgramScreen() {
 
           <Pressable
             onPress={() =>
-              router.push(`/(client)/workouts/program-assignment/${activeProgram.id}` as any)
+              router.push(`/(client)/program/${activeProgram.id}` as Parameters<typeof router.push>[0])
             }
             style={({ pressed }) => [styles.primaryAction, { opacity: pressed ? 0.85 : 1, borderColor: theme.colors.accent }]}
           >
@@ -368,7 +360,9 @@ export function ClientMyProgramScreen() {
                   return (
                     <Pressable
                       key={a.id}
-                      onPress={() => router.push(`/(client)/workouts/program-assignment/${a.id}` as any)}
+                      onPress={() =>
+                        router.push(`/(client)/program/${a.id}` as Parameters<typeof router.push>[0])
+                      }
                       style={({ pressed }) => ({
                         opacity: pressed ? 0.84 : 1,
                       })}
@@ -396,13 +390,6 @@ export function ClientMyProgramScreen() {
               </VStack>
             </View>
           ) : null}
-
-          <Text style={{ color: theme.colors.textMuted, textAlign: "center", fontSize: 12 }}>
-            {t(
-              "client.program.singleActiveHint",
-              "Only one program can be active at a time. New assignments replace previous active plan.",
-            )}
-          </Text>
         </VStack>
       )}
     </ScrollView>

@@ -19,6 +19,7 @@ import {
   StickyHeader,
   Text,
   useAppAlert,
+  getScreenHorizontalPadding,
   useTheme,
   VStack,
 } from "@/shared/ui";
@@ -26,6 +27,7 @@ import {
 export default function ProgramTemplatesListScreen() {
   const { t } = useAppTranslation();
   const theme = useTheme();
+  const screenPadding = getScreenHorizontalPadding(theme);
   const alert = useAppAlert();
   const [assignOpen, setAssignOpen] = React.useState(false);
   const [assignItem, setAssignItem] = React.useState<{ id: string; title: string } | null>(null);
@@ -75,12 +77,12 @@ export default function ProgramTemplatesListScreen() {
 
       {/* Filter chips: All, difficulty, Archived (different color) */}
       <View
-        style={[styles.filterRow, { borderBottomColor: theme.colors.border }]}
+        style={[styles.filterRow, { borderBottomColor: theme.colors.border, paddingHorizontal: screenPadding }]}
       >
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.chipScroll}
+          contentContainerStyle={[styles.chipScroll, { paddingRight: screenPadding }]}
         >
           <Chip
             label={t("library.programsScreen.filterAll", "All")}
@@ -188,7 +190,8 @@ export default function ProgramTemplatesListScreen() {
         }
         contentContainerStyle={{
           flexGrow: 1,
-          padding: theme.spacing.lg,
+          paddingTop: theme.spacing.lg,
+          paddingHorizontal: screenPadding,
           paddingBottom: theme.spacing.xl,
           gap: theme.spacing.md,
         }}

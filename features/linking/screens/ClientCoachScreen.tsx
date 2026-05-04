@@ -6,6 +6,7 @@ import { ClientCoachNotLinked } from "@/features/linking/components/client-coach
 import { useClientCoach } from "@/features/linking/hooks/client-coach/useClientCoach";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import {
+  Card,
   KeyboardScreen,
   LoadingSpinner,
   StickyHeader,
@@ -91,34 +92,38 @@ export default function ClientCoachScreen() {
           />
         }
       >
-        {error ? (
-          <Text color={theme.colors.danger}>
-            {(error as { message?: string })?.message ?? t("auth.errors.generic")}
-          </Text>
-        ) : null}
+        <VStack style={{ gap: theme.spacing.md }}>
+          {error ? (
+            <Card bordered background="surface2">
+              <Text color={theme.colors.danger}>
+                {(error as { message?: string })?.message ?? t("auth.errors.generic")}
+              </Text>
+            </Card>
+          ) : null}
 
-        {isLoading ? <LoadingSpinner /> : null}
+          {isLoading ? <LoadingSpinner /> : null}
 
-        {!isLoading && !data ? <ClientCoachNotLinked /> : null}
+          {!isLoading && !data ? <ClientCoachNotLinked /> : null}
 
-        {data ? (
-          <VStack style={{ gap: theme.spacing.lg }}>
-            <ClientCoachCard
-              data={data}
-              coachName={coachName}
-              nextCheckIn={nextCheckIn}
-              relationshipStatus={relationshipStatus}
-              brandA={brandA}
-              brandB={brandB}
-              onPause={onPause}
-              onResume={onResume}
-              onDisconnect={onDisconnect}
-              isPauseResumeLoading={isPauseResumeLoading}
-              isDisconnectLoading={isDisconnectLoading}
-            />
-            <ClientCoachCertsCard certs={certs} />
-          </VStack>
-        ) : null}
+          {data ? (
+            <VStack style={{ gap: theme.spacing.lg }}>
+              <ClientCoachCard
+                data={data}
+                coachName={coachName}
+                nextCheckIn={nextCheckIn}
+                relationshipStatus={relationshipStatus}
+                brandA={brandA}
+                brandB={brandB}
+                onPause={onPause}
+                onResume={onResume}
+                onDisconnect={onDisconnect}
+                isPauseResumeLoading={isPauseResumeLoading}
+                isDisconnectLoading={isDisconnectLoading}
+              />
+              <ClientCoachCertsCard certs={certs} />
+            </VStack>
+          ) : null}
+        </VStack>
       </KeyboardScreen>
     </View>
   );

@@ -4,7 +4,7 @@ import { View } from "react-native";
 import type { ClientProfileForm } from "@/features/profile/hooks/client-profile/useClientProfile";
 import { AppInput } from "@/shared/components/AppInput";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
-import { Card, Text, useTheme, VStack, HStack } from "@/shared/ui";
+import { Card, HStack, Icon, Text, useTheme, VStack } from "@/shared/ui";
 
 type ClientBodyMetricsCardProps = {
   form: Pick<
@@ -19,11 +19,14 @@ export function ClientBodyMetricsCard({ form, setForm }: ClientBodyMetricsCardPr
   const theme = useTheme();
 
   return (
-    <Card>
+    <Card bordered background="surface2">
       <VStack style={{ gap: theme.spacing.lg }}>
-        <Text variant="caption" muted>
-          {t("profile.sections.body")}
-        </Text>
+        <HStack align="center" justify="space-between">
+          <Text variant="caption" muted>
+            {t("profile.sections.body")}
+          </Text>
+          <Icon name="pulse" size={16} color={theme.colors.textMuted} />
+        </HStack>
 
         {form.unitSystem === "imperial" ? (
           <>

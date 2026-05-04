@@ -3,10 +3,16 @@ import { StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
-import { appToast, Text, useTheme, VStack } from "@/shared/ui";
+import {
+  appToast,
+  getScreenHorizontalPadding,
+  Text,
+  TimelineBoard,
+  useTheme,
+  VStack,
+} from "@/shared/ui";
 
 import { updateClientWorkoutAssignmentSchedule } from "../api/clientWorkouts.api";
-import { ScheduleTimelineBoard } from "../components/ScheduleTimelineBoard";
 import { useClientWorkoutSchedule } from "../hooks/useClientWorkoutSchedule";
 import { useClientProgramAssignments } from "../hooks/useClientProgramAssignments";
 import { useProgramTemplatesPublicMap } from "../hooks/useProgramTemplatesPublicMap";
@@ -33,6 +39,7 @@ function ScheduleSkeleton() {
 
 export function ClientScheduleScreen(props: { clientId: string }) {
   const theme = useTheme();
+  const screenPadding = getScreenHorizontalPadding(theme);
   const { t } = useAppTranslation();
 
   const schedule = useClientWorkoutSchedule({ clientId: props.clientId });
@@ -121,12 +128,12 @@ export function ClientScheduleScreen(props: { clientId: string }) {
   );
 
   return (
-    <View style={[styles.root, { paddingHorizontal: theme.spacing.sm, paddingTop: theme.spacing.xs, paddingBottom: theme.spacing.sm }]}>
+    <View style={[styles.root, { paddingHorizontal: screenPadding, paddingTop: theme.spacing.xs, paddingBottom: theme.spacing.sm }]}>
         {schedule.isLoading ? (
           <ScheduleSkeleton />
         ) : (
           <VStack style={{ gap: 6, flex: 1 }}>
-            <ScheduleTimelineBoard
+            <TimelineBoard
               title={t("client.workouts.schedule", "Schedule")}
               monthLabel={schedule.monthLabel}
               monthIndex={schedule.monthIndex}

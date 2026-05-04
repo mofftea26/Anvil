@@ -16,13 +16,46 @@ import { WorkoutHistoryScreen } from "./WorkoutHistoryScreen";
 import { ClientStatsScreen } from "./ClientStatsScreen";
 import { ClientMyProgramScreen } from "./ClientMyProgramScreen";
 
-export function ClientWorkoutsScreen() {
+const VALID_TABS: ReadonlySet<WorkoutsTopTabKey> = new Set([
+  "program",
+  "schedule",
+  "history",
+  "stats",
+]);
+
+function normalizeInitialTab(value?: string | null): WorkoutsTopTabKey {
+  if (value && VALID_TABS.has(value as WorkoutsTopTabKey)) {
+    return value as WorkoutsTopTabKey;
+  }
+  return "program";
+}
+
+export type ClientWorkoutsScreenProps = {
+  /**
+   * Optional initial tab. Used by the route shell to honor a `?tab=` query
+   * param (e.g. dashboard "Schedule" pill deep-links to `?tab=schedule`).
+   * Unknown values fall back to `program`.
+   */
+  initialTab?: WorkoutsTopTabKey | string | null;
+};
+
+export function ClientWorkoutsScreen(props: ClientWorkoutsScreenProps = {}) {
   const theme = useTheme();
   const { t } = useAppTranslation();
   const userId = useAppSelector((s) => s.auth.userId);
 
-  const [tab, setTab] = React.useState<WorkoutsTopTabKey>("program");
+  const [tab, setTab] = React.useState<WorkoutsTopTabKey>(() =>
+    normalizeInitialTab(props.initialTab)
+  );
   const transition = React.useRef(new Animated.Value(1)).current;
+
+  // Keep the active tab in sync when the route shell pushes a new `?tab=` param
+  // (e.g. user is already on `/workouts` and re-taps the dashboard "Schedule"
+  // pill — Expo Router updates the search params without remounting).
+  React.useEffect(() => {
+    const next = normalizeInitialTab(props.initialTab);
+    setTab((prev) => (prev === next ? prev : next));
+  }, [props.initialTab]);
 
   const changeTab = React.useCallback(
     (next: WorkoutsTopTabKey) => {

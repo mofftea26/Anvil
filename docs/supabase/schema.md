@@ -96,6 +96,7 @@ Click each table name for the full doc in [`tables.md`](./tables.md).
 | `workoutSessions` | A run of a workout (in_progress / completed) | Client + trainer |
 | `workoutSetLogs` | Per-set log inside a session | Session participants |
 | `workoutStatsDaily` | Per-client per-day aggregate (volume, sessions, etc.) | Client |
+| `clientCheckIns` | Per-day trainer-scheduled check-in slots (drag/drop timeline) | Trainer (write) + client (read) |
 
 ## Enums
 
@@ -133,4 +134,4 @@ Notable extensions **not** installed: `pg_cron`, `pg_net`, `vector`, `http`. Doc
 
 ## Last Updated
 
-2026-05-03 — initial documentation generated.
+2026-05-04 — added `clientCheckIns` (Phase A overhaul).

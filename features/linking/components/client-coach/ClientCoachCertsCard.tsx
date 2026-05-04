@@ -1,17 +1,21 @@
 import { View } from "react-native";
 
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
-import { Card, Chip, Text, VStack } from "@/shared/ui";
+import { Card, Chip, HStack, Icon, Text, useTheme, VStack } from "@/shared/ui";
 
 type ClientCoachCertsCardProps = { certs: string[] };
 
 export function ClientCoachCertsCard({ certs }: ClientCoachCertsCardProps) {
   const { t } = useAppTranslation();
+  const theme = useTheme();
 
   return (
-    <Card>
+    <Card bordered background="surface2">
       <VStack style={{ gap: 10 }}>
-        <Text weight="bold">{t("profile.fields.certifications")}</Text>
+        <HStack align="center" justify="space-between">
+          <Text weight="bold">{t("profile.fields.certifications")}</Text>
+          <Icon name="award" size={16} color={theme.colors.textMuted} />
+        </HStack>
         {certs.length ? (
           <View
             style={{

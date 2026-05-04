@@ -16,7 +16,7 @@ import { useSetTypesDictionary } from "@/features/library/hooks/useSetTypesDicti
 import type { SetTypeRow } from "@/features/library/types/setTypes";
 import { consumePendingProgramDayAttachment } from "@/features/library/utils/programDayAttachmentBridge";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
-import { AnimatedArrow, appToast, DurationCircle, HStack, Icon, Text, useTheme } from "@/shared/ui";
+import { AnimatedArrow, appToast, DurationCircle, getScreenHorizontalPadding, HStack, Icon, Text, useTheme } from "@/shared/ui";
 
 import { useFocusEffect } from "@react-navigation/native";
 import { AddSeriesCard, SeriesPage } from "../components/SeriesPage";
@@ -50,6 +50,7 @@ function createEmptySeriesState(): WorkoutSeries[] {
 export function WorkoutBuilderScreen({ mode }: Props) {
   const { t } = useAppTranslation();
   const theme = useTheme();
+  const screenPadding = getScreenHorizontalPadding(theme);
   const { width } = useWindowDimensions();
 
   const routeParams = useLocalSearchParams<{
@@ -257,7 +258,7 @@ export function WorkoutBuilderScreen({ mode }: Props) {
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.customHeader}>
+      <View style={[styles.customHeader, { paddingHorizontal: screenPadding }]}>
         <HStack align="center" justify="space-between" style={styles.headerContent}>
           <Pressable onPress={() => router.back()} style={styles.backButton}>
             <Icon name="chevron-back" size={22} color={theme.colors.text} />
@@ -316,7 +317,7 @@ export function WorkoutBuilderScreen({ mode }: Props) {
       </View>
 
       {error ? (
-        <View style={{ paddingHorizontal: 14, paddingBottom: 6 }}>
+        <View style={{ paddingHorizontal: screenPadding, paddingBottom: 6 }}>
           <Text style={{ color: "rgba(255,100,100,0.95)", fontWeight: "900" }}>
             {error}
           </Text>
@@ -343,7 +344,7 @@ export function WorkoutBuilderScreen({ mode }: Props) {
         renderItem={({ item, index }) => {
           if (item.kind === "addSeries") {
             return (
-              <View style={{ width, paddingHorizontal: 14, height: "100%" }}>
+              <View style={{ width, paddingHorizontal: screenPadding, height: "100%" }}>
                 <AddSeriesCard onPress={onAddSeries} />
               </View>
             );
@@ -353,7 +354,7 @@ export function WorkoutBuilderScreen({ mode }: Props) {
           if (!s) return <View style={{ width, height: "100%" }} />;
 
           return (
-            <View style={{ width, paddingHorizontal: 14, height: "100%" }}>
+            <View style={{ width, paddingHorizontal: screenPadding, height: "100%" }}>
                 <SeriesPage
                   series={s}
                   seriesIndex={index}
@@ -365,7 +366,7 @@ export function WorkoutBuilderScreen({ mode }: Props) {
         }}
       />
 
-      <View style={styles.arrowsContainer}>
+      <View style={[styles.arrowsContainer, { paddingHorizontal: screenPadding }]}>
         {currentSeriesIndex > 0 && (
           <View style={styles.leftArrows}>
             <AnimatedArrow direction="left" />

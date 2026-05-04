@@ -526,3 +526,61 @@ Per-client per-day aggregate (sessions, duration, sets, reps, volume).
 
 ### Last Updated
 2026-05-03
+
+---
+
+## `clientCheckIns`
+
+### Purpose
+Per-day check-in slots that a trainer schedules per client. Powers the trainer's check-ins timeline (drag/drop reorder + per-day picker) and the trainer dashboard's `CheckInsCard`.
+
+### Columns
+| Column | Type | Nullable | Default |
+| --- | --- | --- | --- |
+| `id` | `uuid` | NO | `gen_random_uuid()` |
+| `trainerId` | `uuid` | NO | FK `users.id` ON DELETE CASCADE |
+| `clientId` | `uuid` | NO | FK `users.id` ON DELETE CASCADE |
+| `scheduledFor` | `date` | NO | — |
+| `scheduledTime` | `time` | YES | — |
+| `sortOrder` | `int` | NO | `0` |
+| `status` | `text` | NO | `'scheduled'` (CHECK ∈ `scheduled|completed|missed|cancelled`) |
+| `notes` | `text` | YES | — |
+| `metricSummary` | `text` | YES | — |
+| `createdAt` | `timestamptz` | NO | `now()` |
+| `updatedAt` | `timestamptz` | NO | `now()` |
+
+### Relationships
+- `trainerId` → `users.id`
+- `clientId` → `users.id`
+- Authorization spine: trainer ↔ client must have a `trainerClients` row with `status='active'` for any participant access (enforced by RLS + RPCs).
+
+### Indexes
+- `clientCheckIns_pkey` (`id`)
+- `idx_clientcheckins_trainer_date_sort` (`trainerId`, `scheduledFor`, `sortOrder`) — drives the trainer timeline by-date query
+- `idx_clientcheckins_client_date` (`clientId`, `scheduledFor`) — drives the client-side participant lookup
+
+### RLS Policies
+- `clientcheckins_select_participant` (SELECT, authenticated): trainer self OR client self with active link
+- `clientcheckins_insert_trainer` (INSERT, authenticated): `trainerId = auth.uid()` AND active link to `clientId`
+- `clientcheckins_update_trainer` (UPDATE, authenticated): trainer with active link (USING + WITH CHECK)
+- `clientcheckins_delete_trainer` (DELETE, authenticated): `trainerId = auth.uid()`
+
+### Triggers
+- `trg_clientcheckins_updatedat` (BEFORE UPDATE) → `set_updated_at`.
+
+### Used By Frontend Features
+- `checkins` (trainer side) — see `/docs/frontend/features/checkins.md` (created in Phase D).
+- `dashboard` (trainer side) — `CheckInsCard` count.
+
+### Used By Functions
+- `anvil_get_trainer_checkins_by_date(date)`
+- `anvil_upsert_client_checkin(uuid, uuid, date, time, text, text, text, int)`
+- `anvil_reorder_client_checkin(uuid, int, time, date)`
+- `anvil_delete_client_checkin(uuid)`
+
+### Notes
+- The legacy `anvil_mark_client_checkin` RPC (which only stamps `trainerClientManagement.lastCheckInAt`) is **kept** for backward compatibility with the existing client-row check-in pill.
+- Inserted rows default `sortOrder` is `0`; the upsert RPC computes `max(sortOrder)+1` per `(trainerId, scheduledFor)` to produce stable order on append.
+
+### Last Updated
+2026-05-04

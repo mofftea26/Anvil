@@ -60,6 +60,7 @@ Lets a trainer build multi-week, multi-phase **program templates** (a structured
 - `DayPlannerSheet` — bottom sheet to attach a workout to one phase day, with palette swatches.
 - `ProgramTemplateEditor*` — the live editor (week pills, day rows, drag-reorder).
 - `CreateProgramTemplate*` — wizard form fields.
+- `ProgramCalendarGrid` (`features/workouts/components/program/ProgramCalendarGrid.tsx`) — client-side reusable week × day grid showing each program day's status. Consumes `ProgramProgressDay[]` from `anvil_get_program_progress` (`status: completed | pending | missed | rest`). Used by `ProgramProgressScreen` (`/(client)/program/[assignmentId]`).
 
 ## Hooks
 
@@ -101,12 +102,15 @@ Lets a trainer build multi-week, multi-phase **program templates** (a structured
 - `update_program_assignment_start_date(p_assignment_id, p_start_date)`.
 - `archive_client_program_assignment` / `reactivate_client_program_assignment` / `unassign_program_from_client` / `reset_client_program_assignment_progress`.
 - `get_my_program_assignments()` / `get_trainer_client_program_assignments(p_client_id)`.
+- `anvil_get_program_progress(p_program_assignment_id)` — per-day status table for a client program assignment (template walk + assignment/session truth); used by `ProgramProgressScreen` / `ProgramCalendarGrid` (see [`workouts.md`](./workouts.md)).
+- `anvil_get_active_program_detail(p_assignment_id)` — single round-trip: assignment + template + aggregate day counts (`totalDays`, workout/rest/completed/pending/missed, expected end); used by My Program and program info header.
 
 ### Triggers
 - `anvil_program_children_bump_trigger` on `programPhases`/`programPhaseDays` (bumps audit ts on parent template).
 - `anvil_set_template_audit_fields` on `programTemplates` insert/update.
 - `anvil_lock_creator_owner_fields` on `programTemplates` update (prevents changing creator/owner).
 - `anvil_touch_program_template_timestamps` on update.
+- `anvil_session_completion_sync_trigger` on `workoutSessions` (`AFTER UPDATE`): when a session becomes `status='completed'`, marks the linked `clientWorkoutAssignments` row completed and appends `programdaykey` to `clientProgramAssignments.progress.completedDayKeys` (plus `lastCompletedAt`). Keeps program progress in sync when the client finishes early without a separate `mark_program_day_complete` call. See `/docs/supabase/triggers.md`.
 
 ## Validation Rules
 
@@ -122,6 +126,7 @@ Lets a trainer build multi-week, multi-phase **program templates** (a structured
 - Day planner sheet uses `react-native-gesture-handler` pan gestures with a swipe-hint animation.
 - Drag-reorder uses Reanimated worklets; release with haptic feedback.
 - Confirmations for destructive actions (`Delete`, `Unassign`) via `useAppAlert`.
+- Program templates list screen uses the shared app-wide horizontal gutter helper (`getScreenHorizontalPadding`) for consistent edge spacing.
 
 ## iOS + Android Notes
 
@@ -149,4 +154,6 @@ Lets a trainer build multi-week, multi-phase **program templates** (a structured
 
 ## Last Updated
 
-2026-05-03 — initial documentation generated.
+2026-05-04 — Phase E: documented `anvil_session_completion_sync_trigger` (session finish → assignment + program day progress).
+2026-05-04 — Phase C: `ProgramCalendarGrid` is wired into `ProgramProgressScreen` (client); see `docs/frontend/features/workouts.md`.
+2026-05-04 — Phase B: added the reusable `ProgramCalendarGrid` (week × day status grid) and the `ProgramProgressDay` type that wraps the `anvil_get_program_progress` RPC return rows.

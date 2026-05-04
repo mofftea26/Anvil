@@ -18,11 +18,14 @@ export function TrainerFormCard({ form, setForm }: TrainerFormCardProps) {
   const alert = useAppAlert();
 
   return (
-    <Card>
+    <Card bordered background="surface2">
       <VStack style={{ gap: theme.spacing.lg }}>
-        <Text variant="caption" muted>
-          {t("profile.sections.trainer")}
-        </Text>
+        <HStack align="center" justify="space-between">
+          <Text variant="caption" muted>
+            {t("profile.sections.trainer")}
+          </Text>
+          <Icon name="user" size={16} color={theme.colors.textMuted} />
+        </HStack>
 
         <HStack gap={theme.spacing.md}>
           <View style={{ flex: 1 }}>

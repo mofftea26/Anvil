@@ -17,7 +17,7 @@ import { fetchExerciseById } from "../api/exercises.api";
 import { VideoPlayerModal } from "../components/VideoPlayerModal";
 import type { Exercise } from "../types/exercise";
 
-import { Icon, StickyHeader, Text, useTheme } from "@/shared/ui";
+import { getScreenHorizontalPadding, Icon, StickyHeader, Text, useTheme } from "@/shared/ui";
 
 const SPEED_OPTIONS = [0.5, 0.75, 1, 2] as const;
 type SpeedOption = (typeof SPEED_OPTIONS)[number];
@@ -40,6 +40,7 @@ function formatDate(iso: string | null): string {
 
 export default function ExerciseDetailScreen() {
   const theme = useTheme();
+  const screenPadding = getScreenHorizontalPadding(theme);
   const params = useLocalSearchParams<{ exerciseId: string }>();
   const exerciseId = params.exerciseId ?? null;
 
@@ -127,7 +128,7 @@ export default function ExerciseDetailScreen() {
       <StickyHeader title={exercise.title} showBackButton />
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingHorizontal: screenPadding }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Hero – video autoplays here when videoUrl; image or placeholder otherwise */}

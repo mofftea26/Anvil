@@ -14,7 +14,7 @@ import { fetchExercises } from "@/shared/api/exercises.api";
 import type { Exercise } from "@/shared/types/exercise";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import { formatSlugToLabel } from "@/shared/utils";
-import { Chip, ExerciseLibraryCard, Icon, StickyHeader, Text, useTheme } from "@/shared/ui";
+import { Chip, ExerciseLibraryCard, getScreenHorizontalPadding, Icon, StickyHeader, Text, useTheme } from "@/shared/ui";
 
 function getUniqueMuscles(exercises: Exercise[]): string[] {
   const set = new Set<string>();
@@ -29,6 +29,7 @@ function getUniqueMuscles(exercises: Exercise[]): string[] {
 export default function ExercisesScreen() {
   const { t } = useAppTranslation();
   const theme = useTheme();
+  const screenPadding = getScreenHorizontalPadding(theme);
 
   const [query, setQuery] = useState("");
   const [selectedMuscles, setSelectedMuscles] = useState<string[]>([]);
@@ -86,7 +87,7 @@ export default function ExercisesScreen() {
       />
 
       {/* Search – same layout as picker but no selection count */}
-      <View style={[styles.toolbar, { borderBottomColor: theme.colors.border }]}>
+      <View style={[styles.toolbar, { borderBottomColor: theme.colors.border, paddingHorizontal: screenPadding }]}>
         <View
           style={[
             styles.searchWrap,
@@ -114,7 +115,7 @@ export default function ExercisesScreen() {
 
       {/* Target muscle filter */}
       {allMuscles.length > 0 && (
-        <View style={[styles.filterRow, { borderBottomColor: theme.colors.border }]}>
+        <View style={[styles.filterRow, { borderBottomColor: theme.colors.border, paddingHorizontal: screenPadding }]}>
           <Text
             style={[styles.filterLabel, { color: theme.colors.textMuted }]}
             numberOfLines={1}
@@ -124,7 +125,7 @@ export default function ExercisesScreen() {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chipScroll}
+            contentContainerStyle={[styles.chipScroll, { paddingRight: screenPadding }]}
           >
             {allMuscles.map((muscle) => (
               <Chip
@@ -151,7 +152,7 @@ export default function ExercisesScreen() {
         <FlatList
           data={exercises}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, { paddingHorizontal: screenPadding }]}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
           renderItem={({ item }) => (
             <ExerciseLibraryCard

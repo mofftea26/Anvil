@@ -36,6 +36,8 @@ The Anvil frontend follows a **feature-based** layout with a thin **route layer*
 └────────────────────────────────────────────────────────────────┘
 ```
 
+The client **Schedule** tab and trainer **Check-ins** timeline both compose `shared/ui/timeline/TimelineBoard` (optional `renderItemContent` swaps row chrome). Trainer-only check-in scheduling lives in `features/checkins/` (`docs/frontend/features/checkins.md`).
+
 ---
 
 ## Provider tree (`app/_layout.tsx`)

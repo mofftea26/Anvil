@@ -55,10 +55,12 @@ This means the UI adopts the coach's brand seamlessly for that client. If no bra
 Re-exports include:
 
 - **Layout**: `KeyboardScreen`, `HStack`, `VStack`, `TabBackgroundGradient`, `StickyHeader` (+ `useStickyHeaderHeight`).
+- **Layout helpers**: `getScreenHorizontalPadding(theme)` for a single app-wide horizontal screen gutter.
 - **Inputs**: `Input` (+ `InputProps`), `BottomSheetPicker` (+ `BottomSheetOption`, `BottomSheetPickerProps`), `ColorPickerField`, `ImagePickerField`.
 - **Buttons**: `Button` (+ `ButtonProps`), `IconButton` (+ `IconButtonProps`).
 - **Display**: `Card`, `Chip`, `Divider`, `Text`, `Icon`, `LoadingSpinner`, `ProgressBar`, `DurationCircle`, `AnimatedArrow`, `ExerciseLibraryCard`, `ProfileAccountCard`.
 - **Feedback**: `appToast` (programmatic), `<ToastProvider />` (mount once), `AppAlertProvider` + `useAppAlert`.
+- **Time-aware boards**: `TimelineBoard` (+ `TimelineBoardProps`, `TimelineDay`, `TimelineItem`) — generic vertical hour-grid timeline with horizontal day pills, month/year picker, and draggable items. Used by both the workouts schedule (`ClientScheduleScreen`) and the upcoming trainer check-ins screen. The `renderItemContent` prop lets callers swap the inner card layout without re-implementing the drag/preview logic; `bottomHintText` renders an optional muted footer string.
 - **Theme**: `ThemeProvider`, `useTheme`, `darkTheme`.
 
 Always import from `@/shared/ui` (the barrel) — never reach into individual files.
@@ -101,6 +103,7 @@ const confirmed = await alert.confirm({
 - Use `theme.spacing.{xs, sm, md, lg, xl, xxl}` exclusively.
 - Use `<HStack gap={theme.spacing.md} />` and `<VStack gap={theme.spacing.md} />` to compose flex layouts cleanly.
 - Use `<KeyboardScreen />` for any screen with a text input — it handles `KeyboardAvoidingView`, scrolling, and safe-area inset.
+- Use `getScreenHorizontalPadding(theme)` for screen-level horizontal gutters (default = `theme.spacing.sm`) instead of hardcoded per-screen values.
 
 ## Iconography
 

@@ -28,7 +28,9 @@ auth.users
             ├─1:N─ workoutSessions (clientid → users.id; trainerid? → users.id; workouttemplateid → workouts.id)
             │         └─1:N─ workoutSetLogs (sessionid → workoutSessions.id)
             │
-            └─1:N─ workoutStatsDaily (clientid is logical FK; not a hard FK in the live DB — **Needs verification**)
+            ├─1:N─ workoutStatsDaily (clientid is logical FK; not a hard FK in the live DB — **Needs verification**)
+            │
+            └─1:N─ clientCheckIns (trainerId → users.id ON DELETE CASCADE, clientId → users.id ON DELETE CASCADE)
 ```
 
 ## FK details (verified via `information_schema.table_constraints`)
@@ -63,6 +65,8 @@ auth.users
 | `workoutSetPrescriptions.seriesExerciseId` | `workoutSeriesExercises.id` |
 | `workoutSetPrescriptions.setTypeId` | `setTypes.id` |
 | `workouts.trainerId` | `auth.users.id` (per `information_schema.constraint_column_usage`; the parent is `auth.users`, not the public `users`) |
+| `clientCheckIns.trainerId` | `users.id` (`ON DELETE CASCADE`) |
+| `clientCheckIns.clientId` | `users.id` (`ON DELETE CASCADE`) |
 
 ## Cardinality summary
 
@@ -84,4 +88,4 @@ The cascade rules on each FK were not enumerated here — when adding migrations
 
 ## Last Updated
 
-2026-05-03 — initial documentation generated.
+2026-05-04 — added `clientCheckIns` (Phase A overhaul).

@@ -71,6 +71,38 @@ Every callable function in the `public` schema, grouped by domain. All `anvil_*`
 
 ### `anvil_mark_client_checkin(p_client_id, p_next_check_in_at)`
 - Stamps `lastCheckInAt = now()` and sets `nextCheckInAt`.
+- **Kept for backward compatibility** with the legacy "mark check-in" pill. The new `clientCheckIns` table + RPCs (below) are the primary surface for trainer check-in scheduling.
+
+### `anvil_get_trainer_clients_without_active_program()` → `TABLE(linkid uuid, clientid uuid, firstname text, lastname text, email text, avatarurl text, lastcheckinat timestamptz, clientstatus text)`
+
+#### Type
+RPC (`SECURITY DEFINER`).
+
+#### Purpose
+Lists the calling trainer's active clients who have **no** `clientProgramAssignments` row with `status='active'`. Powers the trainer dashboard `NoProgramCard` count and the `ClientsWithoutProgramScreen` (Phase D).
+
+#### Inputs
+- (none)
+
+#### Output
+- One row per client; ordered by `firstName, lastName` nulls last.
+
+#### Tables Used
+- `trainerClients`, `users`, `trainerClientManagement` (left join), `clientProgramAssignments`.
+
+#### RLS / Security Notes
+- `SECURITY DEFINER`. `SET search_path = public`.
+- Caller scope: returns rows only where `trainerClients.trainerId = auth.uid()` and `status='active'`.
+- `revoke … from public, anon`; `grant … to authenticated`.
+
+#### Called From
+- `useClientsWithoutActiveProgram` hook (Phase D).
+
+#### Error Cases
+- `Not authenticated`.
+
+#### Last Updated
+2026-05-04
 
 ### `anvil_delete_archived_client_link(p_client_id)`
 - Permanently removes a link. Only allowed if `status='archived'`.
@@ -163,6 +195,75 @@ Every callable function in the `public` schema, grouped by domain. All `anvil_*`
 ### `get_trainer_client_program_assignments(p_client_id)` → `SETOF clientProgramAssignments`
 - Trainer reads a client's program assignments (link check).
 
+### `anvil_get_program_progress(p_program_assignment_id uuid)` → `TABLE(daykey text, weekindex int, dayindex int, scheduledfor date, isrest boolean, workoutid uuid, status text)`
+
+#### Type
+RPC (`SECURITY DEFINER`).
+
+#### Purpose
+Returns the per-day progress timeline for a program assignment. Walks `programTemplates.state` (phase → week → day) deterministically, derives global `weekIndex`/`dayIndex` from `scheduled_for - startdate`, and resolves a status per row:
+
+- `rest` — `dy.type = 'rest'`
+- `completed` — there is a `clientWorkoutAssignments` row with `status='completed'` for this `(programassignmentid, programdaykey)` OR the day key is in `clientProgramAssignments.progress.completedDayKeys`
+- `missed` — past day, not completed
+- `pending` — today or future, not completed
+
+#### Inputs
+- `p_program_assignment_id uuid`
+
+#### Output
+`TABLE(daykey text, weekindex int, dayindex int, scheduledfor date, isrest boolean, workoutid uuid, status text)`. Ordered by `weekindex, dayindex`.
+
+#### Tables Used
+- `clientProgramAssignments`, `programTemplates`, `clientWorkoutAssignments`.
+
+#### RLS / Security Notes
+- `SECURITY DEFINER`. `SET search_path = public`.
+- Authorization: caller must be the assignment's client OR the assignment's trainer with an active `trainerClients` link (validated by `_require_trainer_link`).
+- `revoke execute … from public, anon`; `grant execute … to authenticated`.
+
+#### Called From
+- `useProgramProgress` hook (Phase C) — client-side `ProgramProgressScreen`.
+- Server-side: `anvil_get_active_program_detail` (Phase A) for the aggregate counts.
+
+#### Error Cases
+- `Program assignment not found`.
+- `Not allowed` (caller is neither client nor linked trainer).
+- `Program template state not found`.
+
+#### Last Updated
+2026-05-04
+
+### `anvil_get_active_program_detail(p_assignment_id uuid)` → composite TABLE row
+
+#### Type
+RPC (`SECURITY DEFINER`).
+
+#### Purpose
+Single round-trip read for the active program card. Joins `clientProgramAssignments` + `programTemplates` and aggregates the day counts produced by `anvil_get_program_progress`.
+
+#### Inputs
+- `p_assignment_id uuid`
+
+#### Output
+`TABLE(assignmentid uuid, startdate date, status text, notes text, templateid uuid, title text, description text, difficulty text, durationweeks int, state jsonb, totaldays int, workoutdays int, restdays int, completeddays int, pendingdays int, misseddays int, expectedenddate date)` — exactly one row.
+
+#### Tables Used
+- `clientProgramAssignments`, `programTemplates`. Recursively calls `anvil_get_program_progress` for the counts (which reads `clientWorkoutAssignments`).
+
+#### RLS / Security Notes
+- Same authorization as `anvil_get_program_progress`.
+- `revoke … from public, anon`; `grant … to authenticated`.
+
+#### Called From
+- `useActiveProgramDetail` hook (Phase C) — `ClientMyProgramScreen` and `ProgramProgressScreen` info section.
+
+#### Error Cases
+- `Program assignment not found`, `Program template not found`, `Not allowed`.
+
+#### Last Updated
+2026-05-04
+
 ---
 
 ## Workout assignment
@@ -213,10 +314,69 @@ Every callable function in the `public` schema, grouped by domain. All `anvil_*`
 
 ---
 
+## Check-ins
+
+> See [`tables.md#clientcheckins`](./tables.md#clientcheckins). All four are `SECURITY DEFINER` and revoked from `anon`.
+
+### `anvil_get_trainer_checkins_by_date(p_date date)` → `TABLE(...)`
+
+#### Purpose
+Lists all `clientCheckIns` rows scheduled for `p_date` for the calling trainer, joined with `users` for the client snapshot (`firstName`, `lastName`, `avatarUrl`).
+
+#### Output columns
+`id, trainerid, clientid, scheduledfor, scheduledtime, sortorder, status, notes, metricsummary, createdat, updatedat, clientfirstname, clientlastname, clientavatarurl`. Ordered by `sortOrder, scheduledTime, createdAt`.
+
+#### Security
+- Caller-scoped via `auth.uid() = trainerId` (filtered in the SELECT).
+- `revoke … from public, anon`; `grant … to authenticated`.
+
+#### Called From
+- `useTrainerCheckIns` hook (Phase D), `TrainerCheckInsTimelineScreen`.
+
+### `anvil_upsert_client_checkin(p_id uuid, p_client_id uuid, p_scheduled_for date, p_scheduled_time time, p_status text, p_notes text, p_metric_summary text, p_sort_order int)` → `clientCheckIns`
+
+#### Purpose
+Insert when `p_id IS NULL`, otherwise update the row (only if it belongs to the calling trainer).
+
+- Validates the trainer ↔ client active link via `_require_trainer_link`.
+- On insert with `p_sort_order IS NULL`, the function picks `max(sortOrder)+1` for the `(trainerId, scheduledFor)` group so new rows append to the end of the day.
+- Validates `p_status ∈ scheduled|completed|missed|cancelled`.
+
+#### Security
+- `SECURITY DEFINER`. `SET search_path = public`.
+- `revoke … from public, anon`; `grant … to authenticated`.
+
+#### Error Cases
+- `Not authenticated`, `Client not linked`, `Invalid check-in status`, `Check-in not found or not owned by caller`.
+
+### `anvil_reorder_client_checkin(p_checkin_id uuid, p_sort_order int, p_scheduled_time time, p_scheduled_for date)` → `clientCheckIns`
+
+#### Purpose
+Used after a drag/drop. Updates `sortOrder` and optionally `scheduledTime` / `scheduledFor` on a single row. Caller must own the row (`trainerId = auth.uid()`).
+
+#### Security
+- `SECURITY DEFINER`. `revoke … from public, anon`; `grant … to authenticated`.
+
+### `anvil_delete_client_checkin(p_id uuid)` → `boolean`
+
+#### Purpose
+Hard-delete a check-in slot owned by the caller.
+
+#### Security
+- `SECURITY DEFINER`. `revoke … from public, anon`; `grant … to authenticated`.
+
+#### Error Cases
+- `Check-in not found or not owned by caller`.
+
+---
+
 ## Misc
 
 ### `trg_workouts_add_series_durations()` (trigger fn)
 - BEFORE INSERT/UPDATE on `workouts`: calls `add_series_durations_to_state(state)` to enrich the JSON with computed durations.
+
+### `anvil_session_completion_sync_trigger()` (trigger fn — Phase A)
+- AFTER UPDATE on `workoutSessions`. When a session transitions into `status='completed'`, marks the linked `clientWorkoutAssignments` row complete and appends the `programdaykey` to `clientProgramAssignments.progress.completedDayKeys` (with `lastCompletedAt`). EXECUTE revoked from all roles — only the trigger event invokes it. See [`triggers.md`](./triggers.md).
 
 ---
 
@@ -255,14 +415,21 @@ mark_program_day_complete(p_program_assignment_id, p_day_key)
 unmark_program_day_complete(p_program_assignment_id, p_day_key)
 get_my_program_assignments()
 get_my_workout_schedule(p_from, p_to)
+anvil_get_program_progress(p_program_assignment_id)
+anvil_get_active_program_detail(p_assignment_id)
+anvil_get_trainer_clients_without_active_program()
+anvil_get_trainer_checkins_by_date(p_date)
+anvil_upsert_client_checkin(p_id, p_client_id, p_scheduled_for, p_scheduled_time, p_status, p_notes, p_metric_summary, p_sort_order)
+anvil_reorder_client_checkin(p_checkin_id, p_sort_order, p_scheduled_time, p_scheduled_for)
+anvil_delete_client_checkin(p_id)
 ```
 
 ## Outstanding warnings
 
 - 15 functions with mutable `search_path` — set `SET search_path = public` in each.
-- 53 RPCs are callable by both `anon` and `authenticated`. For most, `revoke execute on function … from anon;` is appropriate.
+- 53 RPCs are callable by `anon` (Phase A's 7 new RPCs are explicitly revoked from `anon` — they don't add to this count). 60 RPCs are callable by `authenticated` (+7 from Phase A; intentional).
 - Document each function's caller surface deliberately, then run the security advisor again.
 
 ## Last Updated
 
-2026-05-03 — initial documentation generated.
+2026-05-04 — added `anvil_get_program_progress`, `anvil_get_active_program_detail`, `anvil_get_trainer_clients_without_active_program`, and the four `clientCheckIns` RPCs (Phase A overhaul). Also documented `anvil_session_completion_sync_trigger`.

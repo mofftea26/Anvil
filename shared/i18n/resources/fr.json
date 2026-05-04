@@ -41,6 +41,7 @@
   },
   "tabs": {
     "dashboard": "Tableau de bord",
+    "library": "Bibliothèque",
     "profile": "Profil",
     "clients": "Clients",
     "coach": "Coach",
@@ -48,7 +49,70 @@
   },
   "client": {
     "dashboardTitle": "Tableau de bord",
-    "dashboardSubtitle": "Votre plan et vos progrès apparaîtront ici.",
+    "dashboardSubtitle": "Votre entraînement, en un coup d'œil.",
+    "dashboard": {
+      "greeting": {
+        "morning": "Bonjour",
+        "afternoon": "Bon après-midi",
+        "evening": "Bonsoir",
+        "morningNamed": "Bonjour, {{name}}",
+        "afternoonNamed": "Bon après-midi, {{name}}",
+        "eveningNamed": "Bonsoir, {{name}}"
+      },
+      "heroTagline": "Faisons de cette journée une victoire.",
+      "todayWorkoutLabel": "SÉANCE DU JOUR",
+      "todayCompleted": "TERMINÉE AUJOURD'HUI",
+      "todayRest": "Jour de repos",
+      "todayRestSubtitle": "Pas d'entraînement aujourd'hui. La récupération compte aussi.",
+      "tapToStart": "Touchez pour commencer la séance",
+      "startWorkout": "Commencer",
+      "viewWorkout": "Voir",
+      "workoutFallback": "Séance prévue",
+      "programFallback": "Programme actif",
+      "weekOf": "Semaine {{week}} sur {{total}}",
+      "programWeekNumber": "Semaine {{week}}",
+      "weekDone": "Semaine faite",
+      "programWeek": "Semaine du programme",
+      "coach": "Coach",
+      "coachLinked": "Lié",
+      "coachNotLinked": "Non lié",
+      "openWorkouts": "Calendrier",
+      "openProgram": "Programme",
+      "openCoach": "Coach",
+      "linkedCoachCta": "Ouvrir mon coach",
+      "activeProgramProgressTitle": "Ouvrir la progression du programme"
+    },
+    "programProgress": {
+      "weekLabel": "Semaine {{n}}",
+      "dayStatus": {
+        "completed": "Terminé",
+        "pending": "À venir",
+        "missed": "Manqué",
+        "rest": "Repos"
+      },
+      "info": {
+        "startDate": "Date de début",
+        "expectedEnd": "Fin prévue",
+        "duration": "Durée",
+        "difficulty": "Difficulté",
+        "restDays": "Jours de repos",
+        "pendingDays": "En attente",
+        "missedDays": "Manqués"
+      },
+      "modal": {
+        "title": "Jour d'entraînement",
+        "preview": "Exercices",
+        "noPreview": "Pas de liste d'exercices.",
+        "goRun": "Aller à la séance",
+        "viewAssigned": "Voir la séance",
+        "noAssignment": "Séance pas encore planifiée.",
+        "awaitingSchedule": "Ce jour n'a pas encore d'exécution liée."
+      }
+    },
+    "program": {
+      "totalDaysChip": "{{n}} jours",
+      "daysLeftChip": "{{n}} restants"
+    },
     "profileSubtitle": "Informations personnelles et préférences.",
     "profileTitle": "Profil",
     "profileCardRole": "Rôle",
@@ -56,7 +120,74 @@
   },
   "trainer": {
     "dashboardTitle": "Tableau de bord",
-    "dashboardSubtitle": "Clients, programmes et invitations apparaîtront ici.",
+    "dashboardSubtitle": "Votre coaching, en une vue.",
+    "dashboard": {
+      "coachFallback": "Coach",
+      "greeting": "Salut, {{name}}",
+      "heroSummary": "{{active}} clients actifs · {{today}} en séance aujourd'hui",
+      "todayTitle": "Le programme du jour",
+      "todaySubtitle": "{{n}} clients à l'entraînement",
+      "viewAll": "Tout voir",
+      "viewAllRosterHint": "Ouvre le programme complet du jour",
+      "workoutLabel": "Séance",
+      "restDay": "Repos",
+      "moreClients": "+{{n}} de plus",
+      "focusNoProgram": "{{n}} clients sans programme",
+      "emptyNoClients": "Aucun client actif. Ajoutez votre premier client.",
+      "allRest": "Tout le monde est au repos aujourd'hui.",
+      "unnamedClient": "Client sans nom",
+      "activeClients": "Actifs",
+      "plannedToday": "Aujourd'hui",
+      "noProgram": "Sans programme",
+      "checkInsToday": "Check-ins aujourd'hui",
+      "noProgramCardTitle": "Besoin d'un programme",
+      "noProgramCardHint": "Clients sans programme actif",
+      "checkInsCardTitle": "Check-ins aujourd'hui",
+      "checkInsCardHint": "Ouvrir la chronologie des check-ins",
+      "addClient": "Ajouter",
+      "viewClients": "Clients",
+      "openLibrary": "Bibliothèque"
+    },
+    "checkIns": {
+      "title": "Check-ins",
+      "subtitle": "Planifier et suivre les check-ins clients",
+      "timelineTitle": "Chronologie",
+      "dragHint": "Glissez les check-ins pour changer l'heure. Touchez une carte pour modifier.",
+      "addFab": "Ajouter un check-in",
+      "unnamedClient": "Client",
+      "newTitle": "Nouveau check-in",
+      "editTitle": "Modifier le check-in",
+      "client": "Client",
+      "pickClient": "Choisir un client",
+      "pickClientSheet": "Choisir un client",
+      "time": "Heure",
+      "statusField": "Statut",
+      "notes": "Notes",
+      "notesPlaceholder": "Notes de séance…",
+      "metrics": "Résumé des métriques",
+      "saved": "Check-in enregistré",
+      "deleted": "Check-in supprimé",
+      "deleteTitle": "Supprimer le check-in ?",
+      "deleteBody": "Cela supprime le créneau prévu.",
+      "status": {
+        "scheduled": "Prévu",
+        "completed": "Terminé",
+        "missed": "Manqué",
+        "cancelled": "Annulé"
+      }
+    },
+    "todaysRoster": {
+      "title": "Programme du jour",
+      "subtitle": "{{n}} en séance aujourd'hui"
+    },
+    "noProgram": {
+      "screenTitle": "Clients sans programme",
+      "screenSubtitle": "Clients actifs sans affectation de programme active",
+      "empty": "Tous les clients actifs ont un programme. Bravo.",
+      "lastCheckIn": "Dernier check-in {{date}}",
+      "neverCheckedIn": "Aucun check-in enregistré",
+      "quickAssign": "Attribuer un programme"
+    },
     "profileSubtitle": "Compte, marque et préférences.",
     "profileTitle": "Profil",
     "profileCardRole": "Rôle",
@@ -73,6 +204,7 @@
     "back": "Retour",
     "continue": "Continuer",
     "done": "Terminé",
+    "gotIt": "Compris",
     "cancel": "Annuler",
     "close": "Fermer",
     "save": "Enregistrer",
@@ -280,15 +412,53 @@
   },
   "library": {
     "createProgram": {
-      "title": "Créer un programme",
-      "subtitle": "Concevez des phases d'entraînement complètes avec planification hebdomadaire intelligente."
+      "title": "Nouveau modèle de programme",
+      "subtitle": "Indiquez le titre, la difficulté et la durée. Vous assignerez les séances aux jours ensuite.",
+      "titleLabel": "Titre",
+      "titlePlaceholder": "Nom du programme",
+      "difficultyLabel": "Difficulté",
+      "durationWeeks": "Durée (semaines)",
+      "descriptionLabel": "Description (facultatif)",
+      "descriptionPlaceholder": "Brève description",
+      "createAndEdit": "Créer et modifier"
     },
     "programsScreen": {
+      "title": "Modèles de programmes",
       "subtitle": "Gérez vos programmes d'entraînement avec des outils de recherche et de partage puissants.",
+      "empty": "Aucun programme pour le moment.",
+      "newProgram": "Nouveau programme",
+      "weeks": "{{count}} semaine",
+      "weeks_other": "{{count}} semaines",
+      "filterAll": "Tous",
+      "filterArchived": "Archivés",
+      "difficultyBeginner": "Débutant",
+      "difficultyIntermediate": "Intermédiaire",
+      "difficultyAdvanced": "Avancé",
+      "menuDuplicate": "Dupliquer",
+      "menuArchive": "Archiver",
+      "menuDelete": "Supprimer",
+      "archiveConfirm": "Archiver ce programme ?",
+      "deleteConfirm": "Supprimer ce programme ? Cette action est irréversible.",
+      "lastEdited": "Modifié",
       "phase": "Phase",
       "addPhase": "Ajouter une phase",
       "phaseN": "Phase {{n}}",
-      "addWorkoutDay": "Ajouter une séance"
+      "weeksSection": "Semaines",
+      "addWorkoutDay": "Ajouter une séance",
+      "weekDayHeader": "Semaine {{week}} · {{day}}",
+      "oneWorkout": "1 séance",
+      "workoutCount": "{{count}} séance",
+      "workoutCount_other": "{{count}} séances",
+      "noWorkoutsThisDay": "Aucune séance ce jour",
+      "tapAddToAddWorkout": "Touchez + ci-dessus pour ajouter une séance",
+      "replaceWorkout": "Remplacer",
+      "remove": "Retirer",
+      "removeWorkout": "Retirer",
+      "removeWorkoutConfirm": "Retirer la séance de ce jour ?",
+      "removePhaseConfirm": "Supprimer cette phase ? Elle contient des séances.",
+      "removeWeekConfirm": "Supprimer cette semaine ? Elle contient des séances.",
+      "workoutNotFound": "Séance introuvable.",
+      "more": "plus"
     },
     "workoutsScreen": {
       "subtitle": "Construisez des blocs d'entraînement sophistiqués avec progression de séries structurée."
@@ -311,7 +481,9 @@
     },
     "exercisesScreen": {
       "title": "Bibliothèque d'exercices",
-      "subtitle": "À venir : liste + filtres + création d’exercices personnalisés."
+      "subtitle": "Explorez une vaste bibliothèque d'exercices avec filtres intelligents et personnalisation.",
+      "searchPlaceholder": "Rechercher des exercices…",
+      "filterByMuscle": "Muscle ciblé"
     },
     "setTypesDictionaryScreen": {
       "loadError": "Erreur lors du chargement des types de séries.",

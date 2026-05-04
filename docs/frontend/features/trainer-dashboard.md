@@ -2,53 +2,56 @@
 
 ## Status
 
-Partially implemented. The screen is mounted as the trainer's first tab, but the body is currently a placeholder (only the sticky header + pull-to-refresh).
+Implemented.
 
 ## Purpose
 
-Trainer's home tab. Eventually a one-glance overview of:
+Trainer's home tab. One-glance overview of:
 
-- Today's scheduled sessions across clients.
-- Pending trainer requests / inbox.
-- Active clients and their adherence.
-- Quick links to the library and "Add client".
-- Last 7 days of training volume across the trainer's clients.
+- Today's scheduled sessions across clients (roster card).
+- Active client count and **today's scheduled check-ins** count (`clientCheckIns` for current date).
+- Clients who need an **active program** (entry to the dedicated list screen).
+- Quick path to **add client**.
 
 ## User Flow
 
-1. Trainer signs in → app/index.tsx routes to `/(trainer)/(tabs)/dashboard`.
-2. Pull-to-refresh re-fetches whatever data the dashboard cards depend on (placeholder for now).
-3. Tapping a card / row navigates to the relevant screen (clients, library, add-client, etc.).
+1. Trainer signs in → `app/index.tsx` routes to `/(trainer)/(tabs)/dashboard`.
+2. Trainer can tap refresh in the header to reload clients, profile, assignment summary, and today's check-in count.
+3. **Need a program** card → `/(trainer)/clients-without-program` (RPC `anvil_get_trainer_clients_without_active_program`).
+4. **Check-ins today** card → `/(trainer)/check-ins`.
+5. **Add client** button → `/(trainer)/add-client`.
 
 ## Main Files
 
-- `features/dashboard/screens/TrainerDashboardScreen.tsx` — current placeholder.
+- `features/dashboard/screens/TrainerDashboardScreen.tsx` — layout, hero, roster, stat chips, dashboard cards, add client.
 - Route: `app/(trainer)/(tabs)/dashboard.tsx`.
 
 ## Components
 
-- `StickyHeader` — title + subtitle.
-- `TabBackgroundGradient` — radial gradient using brand colors (provided by `ThemeProvider`).
-- (Planned) cards: `TodayScheduleCard`, `RequestsInboxCard`, `RecentClientsCard`, `QuickActionsCard`.
+- `StickyHeader` — title + subtitle + refresh.
+- `TabBackgroundGradient` — brand gradient.
+- `HeroCard` (local) — greeting, avatar, active + training today summary.
+- `TodayRosterCard` (local) — today's training clients.
+- `StatChip` (local) — two tiles: **Active** clients, **Check-ins today** (from `useTrainerTodayCheckInsCount`).
+- `NoProgramCard` (local) — danger-styled card; badge = count without active program.
+- `CheckInsCard` (local) — accent-styled card; shows today's check-in count + chevron.
+- `Button` (full width) — Add client.
 
 ## Hooks
 
-- (Planned) `useTrainerDashboardData()` — composes:
-  - `useGetTrainerRequestsInboxQuery`,
-  - `useTrainerClients()`,
-  - `useGetTrainerClientsAssignmentsSummary()` (already exists),
-  - workout-session aggregates per client.
+- `useMyProfile()` — trainer name/avatar in hero.
+- `useTrainerClients()` — roster and refresh.
+- `useTrainerClientsAssignmentsSummary()` — active programs, today's workouts, titles; drives `noProgramCount` and roster rows.
+- `useTrainerTodayCheckInsCount(refreshToken)` — `anvil_get_trainer_checkins_by_date(today)` length; stays in sync on refresh and focus.
 
 ## State Management
 
-- All shared data via RTK Query slices (`linking`, `assignments.api`).
-- Local state only for `refreshing`.
+- RTK Query + local summary refresh token.
+- Local refreshing flag for header button.
 
 ## API / Supabase Dependencies
 
-- (Planned) `get_trainer_requests_inbox(p_trainer_email text)` — RPC.
-- (Planned) `clientWorkoutAssignments`, `workoutSessions`, `workoutStatsDaily` for adherence.
-- `trainerClients` for client roster.
+- `trainerClients`, assignments tables (summary hook), indirectly `clientCheckIns` via check-in count hook.
 
 ## Validation Rules
 
@@ -56,31 +59,25 @@ N/A.
 
 ## UI / UX Rules
 
-- Cards on `theme.colors.background` with subtle inner backgrounds.
-- Tappable cards must hit min 44pt.
-- Empty state per card: short copy + a primary action.
-- Pull-to-refresh tint = `theme.colors.text`.
+- Fixed layout without vertical scroll; blocks fit the viewport.
+- Tappable cards and buttons meet minimum touch targets.
 
 ## iOS + Android Notes
 
-- `TabBackgroundGradient` uses `expo-linear-gradient` — performant on both platforms.
-- Respect bottom-tab inset when adding the last card.
+- Same as other dashboard surfaces; respect bottom tab inset.
 
 ## SOLID / Architecture Notes
 
-- Each card lives in its own file under `features/dashboard/components/trainer/`. The screen is composition-only.
-- Data hooks live in `features/dashboard/hooks/` so cards stay presentational.
+- Presentational pieces are local to the screen file; consider extracting to `features/dashboard/components/trainer/` if the screen grows further.
 
 ## Performance Notes
 
-- Don't hammer Supabase on every focus — rely on RTK Query caching and optional `keepUnusedDataFor: 0` for true inboxes.
-- Use `useMemo` for derived counts only when the source array is large.
+- Check-in count is one RPC per refresh/focus; summary hook batches assignment reads.
 
 ## Known Issues
 
-- Body is empty — primary feature surface is unfinished.
-- No analytics/event hooks.
+- `noProgramCount` on the dashboard is still derived from the assignment summary hook (local computation) while the **list** screen uses `anvil_get_trainer_clients_without_active_program()`; counts should match for active clients but **Needs verification** if edge cases diverge.
 
 ## Last Updated
 
-2026-05-03 — initial documentation generated.
+2026-05-04 — Phase D: `NoProgramCard`, `CheckInsCard`, two stat chips, removed Clients/Library quick pills; today's check-ins stat + card; `useTrainerTodayCheckInsCount`.

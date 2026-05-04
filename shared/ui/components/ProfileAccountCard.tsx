@@ -56,6 +56,7 @@ export function ProfileAccountCard({
   // NEW:
   isUploading,
   uploadLabel,
+  changeLabel,
 }: {
   title: string;
   firstName: string;
@@ -71,6 +72,7 @@ export function ProfileAccountCard({
   // NEW:
   isUploading?: boolean;
   uploadLabel?: string;
+  changeLabel?: string;
 }) {
   const theme = useTheme();
   const initials = getInitials(firstName, lastName);
@@ -80,9 +82,19 @@ export function ProfileAccountCard({
   const isBusy = Boolean(disabled || isUploading);
 
   return (
-    <Card>
-      <VStack style={{ gap: theme.spacing.sm }}>
-        <HStack align="center" justify="space-between">
+    <Card
+      bordered
+      style={{
+        backgroundColor: theme.colors.surface2,
+        shadowColor: "#000",
+        shadowOpacity: 0.2,
+        shadowRadius: 14,
+        shadowOffset: { width: 0, height: 6 },
+        elevation: 4,
+      }}
+    >
+      <VStack style={{ gap: theme.spacing.md }}>
+        <HStack align="center" justify="space-between" style={{ minHeight: 24 }}>
           <Text variant="caption" muted>
             {title}
           </Text>
@@ -92,13 +104,16 @@ export function ProfileAccountCard({
               onPress={onPressClear}
               disabled={isBusy}
               style={({ pressed }) => ({
-                opacity: isBusy ? 0.5 : pressed ? 0.8 : 1,
-                paddingHorizontal: 6,
-                paddingVertical: 4,
-                borderRadius: 10,
+                opacity: isBusy ? 0.5 : pressed ? 0.82 : 1,
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+                borderRadius: 999,
+                borderWidth: 1,
+                borderColor: theme.colors.border,
+                backgroundColor: theme.colors.surface3,
               })}
             >
-              <Text variant="caption" style={{ opacity: 0.9 }}>
+              <Text variant="caption" style={{ color: theme.colors.text }}>
                 {clearLabel ?? "Clear"}
               </Text>
             </Pressable>
@@ -107,7 +122,7 @@ export function ProfileAccountCard({
           )}
         </HStack>
 
-        <HStack align="center" gap={12}>
+        <HStack align="center" gap={14}>
           <Pressable
             onPress={onPressAvatar}
             style={{ position: "relative" }}
@@ -115,9 +130,9 @@ export function ProfileAccountCard({
           >
             <View
               style={{
-                width: 64,
-                height: 64,
-                borderRadius: 32,
+                width: 78,
+                height: 78,
+                borderRadius: 39,
                 overflow: "hidden",
                 borderWidth: 1,
                 borderColor: theme.colors.border,
@@ -165,16 +180,15 @@ export function ProfileAccountCard({
               ) : null}
             </View>
 
-            {/* Edit icon */}
             <View
               style={{
                 position: "absolute",
                 right: -2,
                 bottom: -2,
-                width: 26,
-                height: 26,
-                borderRadius: 13,
-                backgroundColor: "rgba(0,0,0,0.35)",
+                width: 30,
+                height: 30,
+                borderRadius: 15,
+                backgroundColor: "rgba(0,0,0,0.5)",
                 borderWidth: 1,
                 borderColor: "rgba(255,255,255,0.20)",
                 alignItems: "center",
@@ -191,22 +205,29 @@ export function ProfileAccountCard({
           </Pressable>
 
           <VStack style={{ flex: 1 }}>
-            <Text weight="bold" style={{ fontSize: 16 }}>
+            <Text weight="bold" style={{ fontSize: 19 }}>
               {`${firstName ?? ""} ${lastName ?? ""}`.trim() || "—"}
             </Text>
 
-            {/* NEW: status line */}
             {isUploading ? (
-              <HStack align="center" gap={8} style={{ marginTop: 2 }}>
+              <HStack align="center" gap={8} style={{ marginTop: 4 }}>
                 <Text muted numberOfLines={1}>
                   {uploadLabel ?? "Uploading…"}
                 </Text>
               </HStack>
             ) : (
-              <Text muted numberOfLines={1}>
+              <Text muted numberOfLines={1} style={{ marginTop: 2 }}>
                 {email}
               </Text>
             )}
+            {!isUploading && changeLabel ? (
+              <Text
+                variant="caption"
+                style={{ marginTop: 6, color: theme.colors.accent }}
+              >
+                {changeLabel}
+              </Text>
+            ) : null}
           </VStack>
         </HStack>
       </VStack>

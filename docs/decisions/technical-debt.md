@@ -116,11 +116,11 @@ Date Found:    2026-05-03
 
 ---
 
-## 35 unused indexes & 1 duplicate index
+## 33 unused indexes & 1 duplicate index
 Status:        open
 Priority:      low
 Area:          supabase
-Problem:       Performance advisor lists 35 unused indexes and 1 duplicate (`trainerClients` has `trainer_clients_trainer_id_client_id_key` and `trainerclients_trainerid_clientid_key`). Wasted writes and storage.
+Problem:       Performance advisor lists 33 unused indexes and 1 duplicate (`trainerClients` has `trainer_clients_trainer_id_client_id_key` and `trainerclients_trainerid_clientid_key`). Wasted writes and storage. Phase A added one new unused index (`idx_clientcheckins_client_date`); it will resolve once the client side reads check-ins.
 Suggested Fix: For each unused index, confirm via `pg_stat_user_indexes` then `drop index if exists …`. Drop one of the duplicate trainerClients indexes.
 Related Files: Migration file under `supabase/migrations/`.
 Date Found:    2026-05-03

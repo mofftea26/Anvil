@@ -12,19 +12,21 @@ Lets a client see, browse, and start their assigned workouts. Combines a persona
 
 1. Client taps **Workouts** tab → `ClientWorkoutsScreen`. Top tabs (`WorkoutsTopTabs`):
    - **Schedule** — timeline of `clientWorkoutAssignments` for the next ~14 days (`useClientWorkoutSchedule`).
-   - **My program** — current `clientProgramAssignments` row + scheduled days (`useClientProgramAssignments`).
+   - **My program** tab (`ClientMyProgramScreen`) — active assignment hero + plan summary from `useActiveProgramDetail` (`anvil_get_active_program_detail`); next workout from materialized assignments; "View full program schedule" → `/(client)/program/[assignmentId]`.
    - **History** — past completed sessions (`WorkoutHistoryScreen`).
    - **Stats** — `workoutStatsDaily` aggregates (`ClientStatsScreen`).
 2. Tapping a scheduled card → `/(client)/workouts/assigned/[assignmentId]` → `AssignedWorkoutDetailsScreen` (read-only template view + Start CTA).
 3. Tapping **Start** → `/(client)/workouts/run/[assignmentId]` → see [`workout-runner.md`](./workout-runner.md).
-4. Program assignments → `ClientProgramScheduleScreen` shows weeks/days; tapping a day opens `ClientProgramDayDetailScreen`.
+4. **Program progress** — `ProgramProgressScreen` at `/(client)/program/[assignmentId]` (and legacy `/(client)/workouts/program-assignment/[assignmentId]`): `ProgramInfoSection` + `ProgramCalendarGrid` from `anvil_get_program_progress`; tapping a non-rest day opens `WorkoutDayModal` (assignment resolved per `programDayKey`). The older `ClientProgramScheduleScreen` list remains available as legacy/alternate UX if linked elsewhere; the day-key sub-route `.../program-assignment/[assignmentId]/day/[dayKey]` remains for deep links.
 
 ## Main Files
 
 - API
   - `features/workouts/api/clientWorkouts.api.ts` — async functions wrapping RPCs and reads.
+  - `features/workouts/api/programProgress.api.ts` — `anvil_get_program_progress`, `anvil_get_active_program_detail`.
 - Hooks
   - `features/workouts/hooks/useAssignedWorkout.ts`
+  - `features/workouts/hooks/useProgramProgress.ts` — `useProgramProgress` (calendar + detail) / `useActiveProgramDetail` (My Program).
   - `features/workouts/hooks/useClientWorkoutSchedule.ts`
   - `features/workouts/hooks/useClientProgramAssignments.ts`
   - `features/workouts/hooks/useProgramTemplatesPublicMap.ts`
@@ -34,6 +36,7 @@ Lets a client see, browse, and start their assigned workouts. Combines a persona
   - `features/workouts/screens/ClientWorkoutsScreen.tsx`
   - `features/workouts/screens/ClientScheduleScreen.tsx`
   - `features/workouts/screens/ClientMyProgramScreen.tsx`
+  - `features/workouts/screens/ProgramProgressScreen.tsx`
   - `features/workouts/screens/ClientProgramScheduleScreen.tsx`
   - `features/workouts/screens/ClientProgramDayDetailScreen.tsx`
   - `features/workouts/screens/AssignedWorkoutDetailsScreen.tsx`
@@ -41,21 +44,25 @@ Lets a client see, browse, and start their assigned workouts. Combines a persona
   - `features/workouts/screens/WorkoutHistoryScreen.tsx`
   - `features/workouts/screens/WorkoutSessionDetailsScreen.tsx`
 - Components
-  - `features/workouts/components/ScheduleTimelineBoard.tsx`
+  - `features/workouts/components/ScheduleTimelineBoard.tsx` — thin re-export of the shared `TimelineBoard` (kept for backwards compatibility with existing imports). The actual implementation lives in `shared/ui/timeline/TimelineBoard.tsx`.
   - `features/workouts/components/WorkoutsTopTabs.tsx`
   - `features/workouts/components/WorkoutTemplateReadOnly.tsx`
+  - `features/workouts/components/program/ProgramCalendarGrid.tsx` — week-row × day-col grid; statuses from `anvil_get_program_progress`.
+  - `features/workouts/components/program/ProgramInfoSection.tsx` — read-only summary from `anvil_get_active_program_detail`.
+  - `features/workouts/components/program/WorkoutDayModal.tsx` — bottom-sheet style modal for a workout day; uses `useAssignedWorkout` when an assignment exists.
   - `features/workouts/components/charts/MiniBarChart.tsx`
   - `features/workouts/components/run/*` — covered in [`workout-runner.md`](./workout-runner.md)
 - Utils
   - `features/workouts/utils/dateUtils.ts`
   - `features/workouts/utils/programProgress.ts`
   - `features/workouts/utils/programSchedule.ts`
-  - `features/workouts/utils/scheduleTime.ts`
+  - `features/workouts/utils/scheduleTime.ts` — re-export shim. The canonical implementation now lives in `shared/utils/scheduleTime.ts` so the shared `TimelineBoard` and the new check-ins timeline can use the same time math.
   - `features/workouts/utils/workoutMetrics.ts`
 - Types
   - `features/workouts/types.ts`
 - Routes
   - `app/(client)/(tabs)/workouts.tsx`
+  - `app/(client)/program/[assignmentId].tsx`
   - `app/(client)/workouts/_layout.tsx`
   - `app/(client)/workouts/assigned/[assignmentId].tsx`
   - `app/(client)/workouts/program-assignment/[assignmentId].tsx`
@@ -65,8 +72,10 @@ Lets a client see, browse, and start their assigned workouts. Combines a persona
 
 ## Components
 
-- `WorkoutsTopTabs` — segmented control across `schedule | program | history | stats`.
-- `ScheduleTimelineBoard` — vertical day list with cards per assignment.
+- `WorkoutsTopTabs` — segmented control across `schedule | program | history | stats`. Now accepts an optional `initialTab` via `ClientWorkoutsScreen` props so that the route shell `app/(client)/(tabs)/workouts.tsx` can deep-link to a sub-tab via the `?tab=` query param (e.g. `/(client)/(tabs)/workouts?tab=schedule`).
+- `ScheduleTimelineBoard` — re-export of the shared `TimelineBoard` (`@/shared/ui`). Vertical hour-grid timeline with horizontal day pills, month/year picker, and draggable items.
+- `ProgramCalendarGrid` — week × day calendar; statuses from `anvil_get_program_progress` (`completed | pending | missed | rest`).
+- `ProgramInfoSection` / `WorkoutDayModal` — program progress screen building blocks.
 - `WorkoutTemplateReadOnly` — non-editable rendering of a workout's series/exercises/sets (used in details + history).
 - `MiniBarChart` — small bar chart for stats (volume per day, etc.).
 - `WorkoutRunExerciseCard`, `WorkoutRunSetRow` — runner-only.
@@ -75,7 +84,8 @@ Lets a client see, browse, and start their assigned workouts. Combines a persona
 
 - `useClientWorkoutSchedule({ from, to })` — calls `get_my_workout_schedule(p_from, p_to)`. Returns assignments + helpers to apply local schedule-time overrides (see `shared/utils/scheduleTimeOverrides.ts`).
 - `useClientProgramAssignments()` — reads `get_my_program_assignments()`.
-- `useAssignedWorkout(assignmentId)` — fetches a single assignment + its template (joins workouts → blocks → exercises).
+- `useProgramProgress(assignmentId, { includeDays?, includeDetail? })` / `useActiveProgramDetail(assignmentId)` — RPC-backed program calendar and aggregate detail (`programProgress.api.ts`).
+- `useAssignedWorkout(assignmentId, { enabled? })` — fetches a single assignment + its template; pass `enabled: false` to skip fetches (e.g. closed modal).
 - `useWorkoutTemplatesMap(ids)` — batch fetch of workouts by id (avoid N+1).
 - `useProgramTemplatesPublicMap(ids)` — same, for program templates.
 - `useWorkoutSessionDetails(sessionId)` — for the post-finish summary screen.
@@ -98,6 +108,8 @@ Lets a client see, browse, and start their assigned workouts. Combines a persona
 ### RPCs
 - `get_my_workout_schedule(p_from, p_to)` — returns `clientWorkoutAssignments` for the calling client.
 - `get_my_program_assignments()` — same, for programs.
+- `anvil_get_program_progress(p_program_assignment_id)` — per-day status rows for the calendar.
+- `anvil_get_active_program_detail(p_assignment_id)` — one-row assignment + template + day counts.
 - `mark_program_day_complete(p_program_assignment_id, p_day_key)` / `unmark_program_day_complete(...)`.
 - `update_workout_assignment_date(p_assignment_id, p_scheduled_for)`.
 - `archive_client_workout_assignment` / `reactivate_client_workout_assignment`.
@@ -115,6 +127,7 @@ Lets a client see, browse, and start their assigned workouts. Combines a persona
 - Pull-to-refresh on each tab.
 - Empty states: friendly copy + "Find a trainer" CTA if unlinked.
 - Don't show absolute timestamps to seconds — use `formatShortDate` and `formatDurationSeconds`.
+- Client schedule/program screens use the shared app-wide horizontal gutter helper (`getScreenHorizontalPadding`) for consistent edge spacing.
 
 ## iOS + Android Notes
 
@@ -142,4 +155,5 @@ Lets a client see, browse, and start their assigned workouts. Combines a persona
 
 ## Last Updated
 
-2026-05-04 — month/year picker reset now applies immediately from the bottom sheet.
+2026-05-04 — Phase C: `ProgramProgressScreen` + `programProgress.api` / `useProgramProgress`; `ClientMyProgramScreen` uses `useActiveProgramDetail`; `program-assignment` route and new `/(client)/program/[assignmentId]` show the calendar UX; My Program plan summary trimmed to RPC counts; `useAssignedWorkout` supports `enabled`.
+2026-05-04 — Phase B: extracted the schedule timeline into the shared `TimelineBoard` (with `renderItemContent` / `bottomHintText` props), moved the schedule-time utils to `shared/utils/scheduleTime.ts`, added a reusable `ProgramCalendarGrid`, and wired the workouts-tab deep link via the `?tab=` query param so the dashboard can jump straight to the schedule sub-tab.

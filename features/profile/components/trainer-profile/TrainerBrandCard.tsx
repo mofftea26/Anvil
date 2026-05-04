@@ -42,7 +42,14 @@ export function TrainerBrandCard({
   const brandB = theme.colors.accent2;
 
   return (
-    <Card padded={false} style={{ overflow: "hidden" }}>
+    <Card
+      padded={false}
+      bordered
+      style={{
+        overflow: "hidden",
+        backgroundColor: theme.colors.surface2,
+      }}
+    >
       <LinearGradient
         colors={[
           hexToRgba(brandA, 0.2),
@@ -60,9 +67,12 @@ export function TrainerBrandCard({
         }}
       />
       <VStack style={{ gap: theme.spacing.lg, padding: theme.spacing.lg }}>
-        <Text variant="caption" muted>
-          {t("profile.sections.brandManagement")}
-        </Text>
+        <HStack align="center" justify="space-between">
+          <Text variant="caption" muted>
+            {t("profile.sections.brandManagement")}
+          </Text>
+          <Icon name="edit" size={16} color={theme.colors.textMuted} />
+        </HStack>
 
         <AppInput
           label={t("profile.fields.brandName")}

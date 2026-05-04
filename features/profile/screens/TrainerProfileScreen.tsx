@@ -9,6 +9,8 @@ import { KeyboardScreen } from "@/shared/components/KeyboardScreen";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import {
     Button,
+    Card,
+    HStack,
     ProfileAccountCard,
     StickyHeader,
     Text,
@@ -51,13 +53,11 @@ export default function TrainerProfileScreen() {
   const brandA = theme.colors.accent;
   const brandB = theme.colors.accent2;
   const headerHeight = useStickyHeaderHeight({ subtitle: true });
-
   return (
     <View
       style={{
         flex: 1,
         backgroundColor: theme.colors.background,
-        paddingHorizontal: theme.spacing.sm,
       }}
     >
       <LinearGradient
@@ -90,9 +90,11 @@ export default function TrainerProfileScreen() {
           />
         }
       >
-        <VStack style={{ gap: theme.spacing.lg }}>
+        <VStack style={{ gap: theme.spacing.md }}>
           {error ? (
-            <Text color={theme.colors.danger}>{error}</Text>
+            <Card bordered background="surface2">
+              <Text color={theme.colors.danger}>{error}</Text>
+            </Card>
           ) : null}
 
           <ProfileAccountCard
@@ -116,6 +118,7 @@ export default function TrainerProfileScreen() {
               })
             }
             clearLabel={t("profile.actions.clearPhoto")}
+            changeLabel={t("common.change")}
             disabled={isAvatarUploading || clearingAvatar}
             isUploading={isAvatarUploading}
             uploadLabel={
@@ -136,23 +139,32 @@ export default function TrainerProfileScreen() {
           />
 
           {saveError ? (
-            <Text color={theme.colors.danger}>{saveError}</Text>
+            <Card bordered background="surface2">
+              <Text color={theme.colors.danger}>{saveError}</Text>
+            </Card>
           ) : null}
 
-          <Button
-            isLoading={saving || isLoading}
-            onPress={onPressSave}
-          >
-            {t("common.save")}
-          </Button>
-
-          <Button
-            variant="secondary"
-            isLoading={signingOut}
-            onPress={onPressSignOut}
-          >
-            {t("profile.actions.signOut")}
-          </Button>
+          <HStack gap={theme.spacing.md}>
+            <View style={{ flex: 1 }}>
+              <Button
+                variant="secondary"
+                isLoading={signingOut}
+                onPress={onPressSignOut}
+                fullWidth
+              >
+                {t("profile.actions.signOut")}
+              </Button>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Button
+                isLoading={saving || isLoading}
+                onPress={onPressSave}
+                fullWidth
+              >
+                {t("common.save")}
+              </Button>
+            </View>
+          </HStack>
         </VStack>
       </KeyboardScreen>
     </View>

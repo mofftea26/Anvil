@@ -25,9 +25,15 @@ export { ProfileAccountCard } from "./components/ProfileAccountCard";
 export { ProgressBar } from "./components/ProgressBar";
 export { StickyHeader, useStickyHeaderHeight } from "./components/StickyHeader";
 export { Text } from "./components/Text";
-export { KeyboardScreen } from "./layout/KeyboardScreen";
+export { KeyboardScreen, getScreenHorizontalPadding } from "./layout/KeyboardScreen";
 export { HStack, VStack } from "./layout/Stack";
 export { TabBackgroundGradient } from "./layout/TabBackgroundGradient";
 export { ThemeProvider, darkTheme, useTheme } from "./theme";
+export { TimelineBoard } from "./timeline/TimelineBoard";
+export type {
+  TimelineBoardProps,
+  TimelineDay,
+  TimelineItem,
+} from "./timeline/TimelineBoard";
 export { appToast } from "./toast/toast";
 export { ToastProvider } from "./toast/ToastProvider";

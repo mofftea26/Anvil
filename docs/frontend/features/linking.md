@@ -66,6 +66,7 @@ There are four entry paths into a link:
 - `RequestTrainerForm` — email + message form.
 - `RequestTrainerRequestsList` — shows the client's outgoing requests with their status.
 - `ClientCoachCard`, `ClientCoachCertsCard`, `CoachAvatar`, `ClientCoachNotLinked`.
+- `LinkedCoachCard` (`features/linking/components/client-coach/LinkedCoachCard.tsx`) — reusable single-tap "open coach" hero card. Renders the trainer's `logoUrl` as a full-card cover image with a brand-tinted gradient overlay for legibility, plus a `Linked`/`Unlinked` status pill, the coach's first name (large), and a chevron CTA. Used by `ClientDashboardScreen` in place of the previous StatChip-coach + `openCoach` ActionPill pair, and available for any future surface needing the same affordance.
 
 ## Hooks
 
@@ -123,6 +124,9 @@ There are four entry paths into a link:
 - Actions show toasts on success/failure via `appToast`.
 - Confirmations (cancel link, decline request) go through `useAppAlert`.
 - Use brand-aware accent for the client's "Coach" tab.
+- The client coach card emphasizes trainer branding by using the trainer logo as a full-card background image (`cover`) with gradient overlays for legibility, and no separate foreground logo tile.
+- The coach headline uses `trainerProfile.brandName` when present; if no active brand name exists, it falls back to the trainer's display name.
+- The not-linked coach state uses dual CTAs (`Link now` and `Find a trainer`) for clearer onboarding into linking flows.
 
 ## iOS + Android Notes
 
@@ -149,4 +153,4 @@ There are four entry paths into a link:
 
 ## Last Updated
 
-2026-05-03 — initial documentation generated.
+2026-05-04 — Phase C: `LinkedCoachCard` is used on the client dashboard; Phase B delivered the component.

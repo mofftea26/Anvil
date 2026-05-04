@@ -5,7 +5,16 @@ import { appToast } from "@/shared/ui";
 import { fetchClientWorkoutAssignmentById, fetchWorkoutTemplateById } from "../api/clientWorkouts.api";
 import type { ClientWorkoutAssignment, WorkoutTemplate } from "../types";
 
-export function useAssignedWorkout(assignmentId: string) {
+export type UseAssignedWorkoutOptions = {
+  /** When false, no network fetch runs (keeps last reset state). */
+  enabled?: boolean;
+};
+
+export function useAssignedWorkout(
+  assignmentId: string,
+  options: UseAssignedWorkoutOptions = {}
+) {
+  const enabled = options.enabled !== false && Boolean(assignmentId);
   const [assignment, setAssignment] = useState<ClientWorkoutAssignment | null>(null);
   const [template, setTemplate] = useState<WorkoutTemplate | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -14,6 +23,13 @@ export function useAssignedWorkout(assignmentId: string) {
   const workoutTemplateId = assignment?.workoutTemplateId ?? null;
 
   const refetch = useCallback(async () => {
+    if (!enabled) {
+      setAssignment(null);
+      setTemplate(null);
+      setIsLoading(false);
+      setError(null);
+      return;
+    }
     setError(null);
     setIsLoading(true);
     try {
@@ -30,7 +46,7 @@ export function useAssignedWorkout(assignmentId: string) {
     } finally {
       setIsLoading(false);
     }
-  }, [assignmentId]);
+  }, [assignmentId, enabled]);
 
   useEffect(() => {
     void refetch();

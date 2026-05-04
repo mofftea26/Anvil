@@ -1,4 +1,3 @@
-import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { RefreshControl, View } from "react-native";
 
@@ -10,6 +9,8 @@ import { KeyboardScreen } from "@/shared/components/KeyboardScreen";
 import { useAppTranslation } from "@/shared/i18n/useAppTranslation";
 import {
   Button,
+  Card,
+  HStack,
   ProfileAccountCard,
   StickyHeader,
   Text,
@@ -53,33 +54,23 @@ export default function ClientProfileScreen() {
     saveError,
     onPressSave,
     onPressSignOut,
-    hexToRgba,
   } = useClientProfile();
 
-  const brandA = theme.colors.accent;
-  const brandB = theme.colors.accent2;
   const headerHeight = useStickyHeaderHeight({ subtitle: true });
-
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <LinearGradient
-        colors={[
-          hexToRgba(brandA, 0.45),
-          hexToRgba(brandB, 0.3),
-          "rgba(0,0,0,0.00)",
-        ]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={{ position: "absolute", left: 0, top: 0, right: 0, bottom: 0 }}
-      />
-
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: theme.colors.background,
+      }}
+    >
       <StickyHeader
         title={t("tabs.profile")}
         subtitle={t("client.profileSubtitle")}
+        backgroundColor={theme.colors.background}
       />
 
       <KeyboardScreen
-        padding={12}
         bottomSpace={12}
         headerHeight={headerHeight}
         style={{ backgroundColor: "transparent" }}
@@ -92,9 +83,11 @@ export default function ClientProfileScreen() {
           />
         }
       >
-        <VStack style={{ gap: theme.spacing.lg }}>
+        <VStack style={{ gap: theme.spacing.md }}>
           {error ? (
-            <Text color={theme.colors.danger}>{error}</Text>
+            <Card bordered background="surface2">
+              <Text color={theme.colors.danger}>{error}</Text>
+            </Card>
           ) : null}
 
           <ProfileAccountCard
@@ -118,6 +111,7 @@ export default function ClientProfileScreen() {
               })
             }
             clearLabel={t("profile.actions.clearPhoto")}
+            changeLabel={t("common.change")}
             disabled={isAvatarUploading || clearingAvatar}
             isUploading={isAvatarUploading}
             uploadLabel={
@@ -150,23 +144,32 @@ export default function ClientProfileScreen() {
           />
 
           {saveError ? (
-            <Text color={theme.colors.danger}>{saveError}</Text>
+            <Card bordered background="surface2">
+              <Text color={theme.colors.danger}>{saveError}</Text>
+            </Card>
           ) : null}
 
-          <Button
-            isLoading={saving || isLoading}
-            onPress={onPressSave}
-          >
-            {t("common.save")}
-          </Button>
-
-          <Button
-            variant="secondary"
-            isLoading={signingOut}
-            onPress={onPressSignOut}
-          >
-            {t("profile.actions.signOut")}
-          </Button>
+          <HStack gap={theme.spacing.md}>
+            <View style={{ flex: 1 }}>
+              <Button
+                variant="secondary"
+                isLoading={signingOut}
+                onPress={onPressSignOut}
+                fullWidth
+              >
+                {t("profile.actions.signOut")}
+              </Button>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Button
+                isLoading={saving || isLoading}
+                onPress={onPressSave}
+                fullWidth
+              >
+                {t("common.save")}
+              </Button>
+            </View>
+          </HStack>
         </VStack>
       </KeyboardScreen>
     </View>

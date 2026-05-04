@@ -21,6 +21,8 @@
 │   │   ├── _layout.tsx              ← Stack with auth/role guard
 │   │   ├── (tabs)/                  ← Dashboard / Library / Clients / Profile
 │   │   ├── add-client.tsx           ← Add-client modal route
+│   │   ├── clients-without-program.tsx
+│   │   ├── check-ins.tsx
 │   │   ├── client/[clientId].tsx    ← Client detail
 │   │   └── library/                 ← Programs, workouts, exercises, set-types
 │   │       ├── _layout.tsx
@@ -54,9 +56,16 @@
 │   ├── dashboard/                   ← TrainerDashboardScreen + ClientDashboardScreen
 │   ├── clients/                     ← Trainer client list/details/assignments
 │   │   ├── api/assignments.api.ts
+│   │   ├── api/clientsWithoutProgram.api.ts
 │   │   ├── components/
 │   │   ├── hooks/
 │   │   └── screens/
+│   ├── checkins/                    ← Trainer check-in timeline (clientCheckIns RPCs)
+│   │   ├── api/checkins.api.ts
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── screens/
+│   │   └── types.ts
 │   ├── library/                     ← Programs, workouts, exercises, set types (trainer)
 │   ├── workouts/                    ← Client schedule + workout runner + sessions
 │   ├── builder/                     ← Workout & exercise builder (trainer)

@@ -96,6 +96,10 @@ The current user's profile is also the source of `firstName/lastName/avatarUrl` 
 - Save buttons per section (so users don't save the whole world by accident).
 - Use `appToast.success` after saves.
 - Brand color changes apply live via the theme; preview uses the same accent.
+- Both trainer and client profile screens use a modern layered layout with account card, focused section cards, and a clear bottom action row for save/sign-out.
+- Account and section cards use bordered `surface2` styling for stronger visual grouping and readability on dark theme.
+- The client birth-date selector button uses left content padding so its text aligns with other form fields.
+- Profile screens now rely on shared `KeyboardScreen` horizontal spacing (instead of per-screen wrapper padding) so spacing stays consistent with the app-wide screen gutter.
 
 ## iOS + Android Notes
 
@@ -124,4 +128,4 @@ The current user's profile is also the source of `firstName/lastName/avatarUrl` 
 
 ## Last Updated
 
-2026-05-03 — initial documentation generated.
+2026-05-04 — profile redesign follow-up: removed top overview section, fixed birth-date field left padding, and moved to shared app-wide screen gutter spacing.
